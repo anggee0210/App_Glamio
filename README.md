@@ -1,5 +1,5 @@
 [README.md](https://github.com/user-attachments/files/34886891/README.md)
-# GLAMIO 💅
+# GLAMIO 
 
 App web de formación en belleza (uñas, cabello y cejas): academia de cursos, comunidad, calculadora de precios y reseñas verificadas.
 
