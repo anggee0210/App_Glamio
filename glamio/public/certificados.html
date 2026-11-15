@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis certificados – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main>
+    <h1>Mis certificados</h1>
+    <div id="lista"><p>Cargando…</p></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    async function iniciar() {
+      const usuaria = await pintarCabecera();
+      const lista = document.getElementById('lista');
+      if (!usuaria) {
+        lista.innerHTML = '<p><a href="/login.html">Entra</a> para ver tus certificados.</p>';
+        return;
+      }
+      try {
+        const certificados = await api('/api/certificados');
+        lista.innerHTML = certificados.map(c => {
+          const fecha = new Date(c.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+          return `
+            <div class="tarjeta fila certificado-fila">
+              <div>
+                <strong>🎓 ${esc(c.titulo)}</strong>
+                <span class="etiqueta" style="margin:0 0 0 6px">${esc(c.icono)} ${esc(c.categoria)}</span>
+                <p class="ayuda">Terminado el ${fecha} · Nº GLAMIO-${String(c.numero).padStart(5, '0')}</p>
+              </div>
+              <a class="boton" href="/certificado.html?curso=${c.curso_id}">Ver certificado</a>
+            </div>`;
+        }).join('') || `
+          <p class="mensaje">Todavía no has terminado ningún curso. ¡Cuando termines uno, su certificado aparecerá aquí! 🎓</p>
+          <a class="boton" href="/index.html">Ver los cursos</a>`;
+      } catch (err) {
+        // Por ejemplo, la administradora: ella no hace cursos
+        lista.innerHTML = `<p class="mensaje">${esc(err.message)}</p>`;
+      }
+    }
+    iniciar();
+  </script>
+</body>
+</html>
