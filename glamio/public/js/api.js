@@ -46,17 +46,54 @@ async function pintarCabecera() {
 
   let html = `<a href="/index.html">Cursos</a><a href="/muro.html">Muro</a>`;
   if (usuaria) {
-    html += `<a href="/calculadora.html">Calcular mi precio</a>`;
+    // "Mis precios": servicios propios y la lista de los guardados.
+    // (Desde cada curso hay otro botón que abre la calculadora con sus materiales.)
+    html += `<a href="/calculadora.html">Mis precios</a>`;
     // Solo quien hace cursos tiene certificados
     if (['alumna', 'profesional'].includes(usuaria.perfil)) html += `<a href="/certificados.html">Mis certificados</a>`;
     if (usuaria.perfil === 'administradora') html += `<a href="/admin.html">Panel</a>`;
+    // 🔔 La directora: dudas sin responder. Alumna y profesional: respuestas nuevas a sus dudas.
+    // La alumna y la profesional ven además la palabra "Notificaciones", más clara que la campana sola
+    const textoCampana = usuaria.perfil === 'administradora' ? '' : ' Notificaciones';
+    html += `<a href="/avisos.html" id="campana" title="Notificaciones">🔔${textoCampana}<span class="contador oculto"></span></a>`;
     html += `<a href="#" id="salir">Salir (${esc(usuaria.nombre)})</a>`;
   } else {
     html += `<a href="/login.html">Entrar</a><a href="/registro.html">Registrarme</a>`;
   }
   menu.innerHTML = html;
   activarSalir();
+  if (usuaria) {
+    usuariaCampana = usuaria;
+    actualizarCampana();
+    // Cada minuto vuelve a preguntar al servidor, por si llega algo con la página abierta
+    // (sin servicios externos: solo un fetch).
+    setInterval(actualizarCampana, 60 * 1000);
+  }
   return usuaria;
+}
+
+// 🔔 Qué pregunta la campana según el perfil
+let usuariaCampana = null;
+function rutaAvisos(usuaria) {
+  return usuaria.perfil === 'administradora' ? '/api/dudas/sin-responder' : '/api/dudas/mis-avisos';
+}
+
+// Pone en la campana el número de avisos (sin número si no hay ninguno)
+async function actualizarCampana() {
+  const contador = document.querySelector('#campana .contador');
+  if (!contador || !usuariaCampana) return;
+  try {
+    const avisos = await api(rutaAvisos(usuariaCampana));
+    const n = avisos.length;
+    contador.textContent = n > 99 ? '99+' : n;
+    contador.classList.toggle('oculto', n === 0);
+    const esAdmin = usuariaCampana.perfil === 'administradora';
+    document.getElementById('campana').title = n === 0 ? 'No hay avisos nuevos'
+      : esAdmin ? `${n} ${n === 1 ? 'duda' : 'dudas'} sin responder`
+      : `${n} ${n === 1 ? 'respuesta nueva' : 'respuestas nuevas'} a tus dudas`;
+  } catch (e) {
+    // Si falla (p. ej. la sesión ha caducado), la campana se queda sin número: no es grave
+  }
 }
 
 // Botón "Salir": cierra la sesión y vuelve al inicio

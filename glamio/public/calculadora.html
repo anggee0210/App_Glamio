@@ -10,24 +10,29 @@
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main style="max-width:560px">
     <h1>Calcular mi precio</h1>
+    <p class="ayuda" id="origen"></p>
     <form id="form">
-      <label>Nombre del servicio <input name="nombre" required placeholder="Ej: Semipermanente manos"></label>
+      <label>Nombre del servicio <input name="nombre" required maxlength="100" placeholder="Ej: Semipermanente manos"></label>
       <label>Categoría <select name="categoria_id" id="categoria"></select></label>
 
       <h2>Materiales (coste por servicio)</h2>
+      <p class="ayuda">Pon lo que gastas de cada material en <strong>un</strong> servicio, no lo que cuesta el bote entero.</p>
       <div id="materiales"></div>
       <button type="button" class="boton secundario" id="anadir">+ Añadir material</button>
 
       <h2>Tiempo y margen</h2>
-      <label>Minutos que tardas <input type="number" name="minutos" value="60" min="1"></label>
-      <label>Cuánto quieres ganar por hora (€) <input type="number" name="precio_hora" value="12" step="0.5"></label>
-      <label>Margen (%) <input type="number" name="margen" value="30"></label>
+      <label>Minutos que tardas <input type="number" name="minutos" value="60" min="1" max="1440" step="1"></label>
+      <label>Cuánto quieres ganar por hora (€) <input type="number" name="precio_hora" value="12" min="0" max="1000" step="0.5"></label>
+      <label>Margen (%) <input type="number" name="margen" value="30" min="0" max="500"></label>
 
-      <div class="tarjeta destacada"><h2 style="margin:0">Precio sugerido: <span id="resultado">0 €</span></h2></div>
-      <button class="boton">Guardar servicio</button>
+      <div class="tarjeta destacada"><h2 style="margin:0">Precio sugerido: <span id="resultado">–</span></h2></div>
+      <p class="mensaje error oculto" id="error"></p>
+      <p class="mensaje oculto" id="exito"></p>
+      <button class="boton" id="guardar">Guardar servicio</button>
     </form>
 
-    <h2>Mis servicios</h2>
+    <h2>Mis precios guardados</h2>
+    <p class="mensaje error oculto" id="error-servicios"></p>
     <div id="servicios"></div>
   </main>
 
@@ -36,13 +41,31 @@
     const form = document.getElementById('form');
     const cursoId = param('curso');
 
-    function filaMaterial(nombre = '', coste = '') {
+    // Mensajes dentro de la página (en vez de alert)
+    function mostrar(idElemento, texto) {
+      const p = document.getElementById(idElemento);
+      p.textContent = texto;
+      p.classList.toggle('oculto', !texto);
+    }
+
+    function euros(n) {
+      return Number(n).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+    }
+
+    // Una fila de material. "cantidad" es la pista que viene del curso (ej. "1 bote").
+    function filaMaterial(nombre = '', cantidad = '') {
       const div = document.createElement('div');
-      div.className = 'fila';
+      div.className = 'material';
       div.style.marginBottom = '6px';
-      div.innerHTML = `<input class="m-nombre" placeholder="Material" value="${esc(nombre)}">
-        <input class="m-coste" type="number" step="0.01" placeholder="€" value="${coste}" style="max-width:90px">
-        <button type="button" class="chip">✕</button>`;
+      div.innerHTML = `
+        <div class="fila">
+          <input class="m-nombre" placeholder="Material" maxlength="100">
+          <input class="m-coste" type="number" step="0.01" min="0" max="10000" placeholder="€" style="max-width:90px">
+          <button type="button" class="chip" title="Quitar material">✕</button>
+        </div>
+        ${cantidad ? `<p class="ayuda">En el curso: ${esc(cantidad)}</p>` : ''}`;
+      // El nombre lo ponemos con .value (no dentro del HTML) para que unas comillas no rompan el input
+      div.querySelector('.m-nombre').value = nombre;
       div.querySelector('button').onclick = () => { div.remove(); calcular(); };
       document.getElementById('materiales').appendChild(div);
     }
@@ -50,45 +73,85 @@
     function leerDatos() {
       const datos = Object.fromEntries(new FormData(form));
       datos.curso_id = cursoId;
-      datos.materiales = [...document.querySelectorAll('#materiales .fila')].map(f => ({
-        nombre: f.querySelector('.m-nombre').value,
-        coste: Number(f.querySelector('.m-coste').value || 0)
-      })).filter(m => m.nombre);
+      datos.materiales = [...document.querySelectorAll('#materiales .material')].map(f => ({
+        nombre: f.querySelector('.m-nombre').value.trim(),
+        coste: f.querySelector('.m-coste').value || 0
+      })).filter(m => m.nombre); // las filas sin nombre se ignoran
       return datos;
     }
 
+    // Se llama en cada tecla. Si llegan dos respuestas desordenadas,
+    // solo hacemos caso a la última petición (por eso el contador).
+    let ultimaPeticion = 0;
     async function calcular() {
-      const r = await api('/api/servicios/calcular', { method: 'POST', body: leerDatos() });
-      document.getElementById('resultado').textContent = r.precio_sugerido.toFixed(2) + ' €';
+      const numero = ++ultimaPeticion;
+      try {
+        const r = await api('/api/servicios/calcular', { method: 'POST', body: leerDatos() });
+        if (numero !== ultimaPeticion) return;
+        document.getElementById('resultado').textContent = euros(r.precio_sugerido);
+        mostrar('error', '');
+      } catch (err) {
+        if (numero !== ultimaPeticion) return;
+        document.getElementById('resultado').textContent = '–';
+        mostrar('error', err.message); // ej. "El margen debe estar entre 0 y 500 %"
+      }
     }
 
     async function cargarServicios() {
+      const caja = document.getElementById('servicios');
+      let servicios;
       try {
-        const servicios = await api('/api/servicios');
-        document.getElementById('servicios').innerHTML = servicios.map(s => `
-          <div class="tarjeta" style="margin-bottom:8px">
-            <strong>${esc(s.nombre)}</strong> – ${s.precio_sugerido} €
-            <small>(${s.minutos} min · ${s.materiales.length} materiales)</small>
-          </div>`).join('') || '<p>Aún no has guardado servicios.</p>';
+        servicios = await api('/api/servicios');
       } catch (e) {
-        document.getElementById('servicios').innerHTML = '<p><a href="/login.html">Entra</a> para guardar tus servicios.</p>';
+        caja.innerHTML = '<p><a href="/login.html">Entra</a> para guardar tus servicios.</p>';
+        return;
+      }
+      caja.innerHTML = servicios.map(s => `
+        <div class="tarjeta fila" style="margin-bottom:8px;justify-content:space-between">
+          <div>
+            <strong>${esc(s.nombre)}</strong> – ${euros(s.precio_sugerido)}
+            <p class="ayuda">${s.minutos} min · ${Number(s.precio_hora)} €/h · margen ${Number(s.margen)} % · ${s.materiales.length} materiales</p>
+          </div>
+          <button type="button" class="chip peligro" data-borrar="${s.id}" title="Borrar servicio">🗑</button>
+        </div>`).join('') || '<p class="ayuda">Aún no has guardado servicios.</p>';
+
+      caja.querySelectorAll('[data-borrar]').forEach(b => b.onclick = () => borrarServicio(b.dataset.borrar));
+    }
+
+    async function borrarServicio(idServicio) {
+      if (!confirm('¿Borrar este servicio? No se puede deshacer.')) return;
+      try {
+        await api('/api/servicios/' + idServicio, { method: 'DELETE' });
+        mostrar('error-servicios', '');
+        cargarServicios();
+      } catch (err) {
+        mostrar('error-servicios', err.message);
       }
     }
 
     async function iniciar() {
       await pintarCabecera();
       const categorias = await api('/api/categorias');
-      document.getElementById('categoria').innerHTML = categorias.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+      document.getElementById('categoria').innerHTML =
+        categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
 
-      // Si venimos de un curso, cargamos sus materiales
-      if (cursoId) {
-        const curso = await api('/api/cursos/' + cursoId);
-        form.nombre.value = curso.titulo;
-        form.categoria_id.value = curso.categoria_id;
-        curso.materiales.forEach(m => filaMaterial(m.nombre, ''));
+      // Si venimos de un curso, cargamos sus materiales (la alumna pone el coste)
+      if (!cursoId) {
+        document.getElementById('origen').textContent =
+          'Calcula un servicio propio o revisa tus precios guardados. Para cargar los materiales de un curso, usa el botón de la página del curso.';
       } else {
-        filaMaterial();
+        try {
+          const curso = await api('/api/cursos/' + cursoId);
+          form.nombre.value = curso.titulo;
+          form.categoria_id.value = curso.categoria_id;
+          document.getElementById('origen').textContent = 'Materiales del curso «' + curso.titulo + '»';
+          curso.materiales.forEach(m => filaMaterial(m.nombre, m.cantidad));
+        } catch (err) {
+          mostrar('error', 'No se pudo cargar el curso: ' + err.message);
+        }
       }
+      if (!document.querySelector('#materiales .material')) filaMaterial();
+      calcular();
       cargarServicios();
     }
 
@@ -96,10 +159,19 @@
     form.addEventListener('input', calcular);
     form.onsubmit = async (e) => {
       e.preventDefault();
+      mostrar('exito', '');
+      const boton = document.getElementById('guardar');
+      boton.disabled = true; // evita guardar dos veces con doble clic
       try {
-        await api('/api/servicios', { method: 'POST', body: leerDatos() });
+        const s = await api('/api/servicios', { method: 'POST', body: leerDatos() });
+        mostrar('error', '');
+        mostrar('exito', `✅ Guardado «${s.nombre}» a ${euros(s.precio_sugerido)}`);
         cargarServicios();
-      } catch (err) { alert(err.message); }
+      } catch (err) {
+        mostrar('error', err.message);
+      } finally {
+        boton.disabled = false;
+      }
     };
 
     iniciar();

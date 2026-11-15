@@ -17,10 +17,11 @@
 
     <h2>Dudas de esta lección</h2>
     <form id="form-duda" class="tarjeta">
-      <textarea name="texto" rows="2" placeholder="Escribe tu duda..." required></textarea>
+      <textarea name="texto" rows="2" placeholder="Escribe tu duda..." required maxlength="1000"></textarea>
       <label>Foto (opcional) <input type="file" name="foto" accept="image/*"></label>
       <button class="boton">Preguntar</button>
     </form>
+    <p class="mensaje error oculto" id="error-dudas"></p>
     <div id="dudas" style="margin-top:12px"></div>
   </main>
 
@@ -102,54 +103,142 @@
       msg.classList.remove('oculto');
     };
 
+    // "15 nov, 22:44"
+    function fechaCorta(fecha) {
+      return new Date(fecha).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Nombre + etiqueta del perfil + fecha. La directora académica se distingue
+    // para que la alumna sepa qué respuesta viene de la academia.
+    function autoria(x) {
+      const etiqueta = x.perfil === 'administradora' ? ' <span class="etiqueta">🎓 Directora académica</span>'
+        : x.perfil === 'profesional' ? ' <span class="etiqueta gris">Profesional</span>' : '';
+      return `<strong>${esc(x.nombre)}</strong>${etiqueta} <span class="ayuda" style="display:inline">· ${fechaCorta(x.fecha)}</span>`;
+    }
+
+    function mostrarErrorDudas(texto) {
+      const p = document.getElementById('error-dudas');
+      p.textContent = texto;
+      p.classList.toggle('oculto', !texto);
+      // Si el error viene de una duda de más abajo, llevamos la vista hasta el aviso
+      if (texto) p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     async function cargarDudas() {
-      const dudas = await api('/api/dudas?leccion=' + id);
+      let dudas;
+      try {
+        dudas = await api('/api/dudas?leccion=' + id);
+      } catch (err) {
+        mostrarErrorDudas('No se pudieron cargar las dudas: ' + err.message);
+        return;
+      }
       const esAdmin = usuaria && usuaria.perfil === 'administradora';
       document.getElementById('dudas').innerHTML = dudas.map(d => `
-        <div class="tarjeta" style="margin-bottom:10px">
-          <p><strong>${esc(d.nombre)}:</strong> ${esc(d.texto)}</p>
-          ${d.foto ? `<img src="${d.foto}" alt="" style="max-width:220px">` : ''}
+        <div class="tarjeta" id="duda-${d.id}" style="margin-bottom:10px">
+          <p style="margin:0">${autoria(d)}</p>
+          <p style="margin:6px 0">${esc(d.texto)}</p>
+          ${d.foto ? `<a href="${d.foto}" target="_blank" title="Ver la foto en grande"><img src="${d.foto}" alt="Foto de la duda" style="max-width:220px"></a>` : ''}
+          ${d.respuestas.length ? '' : '<p class="ayuda" style="margin-top:8px">Aún sin respuestas. ¿Sabes la solución? ¡Ayuda a tu compañera!</p>'}
           ${d.respuestas.map(r => `
             <div class="tarjeta ${r.destacada ? 'destacada' : ''}" style="margin-top:8px">
               ${r.destacada ? '<span class="etiqueta">⭐ Respuesta destacada</span>' : ''}
-              <p><strong>${esc(r.nombre)}:</strong> ${esc(r.texto)}</p>
+              <p style="margin:4px 0 0">${autoria(r)}</p>
+              <p style="margin:6px 0">${esc(r.texto)}</p>
               <div class="fila">
-                ${esAdmin && !r.destacada ? `<button class="chip" onclick="destacar(${r.id})">Destacar</button>` : ''}
+                ${esAdmin && !r.destacada ? `<button class="chip" onclick="destacar(${r.id})">⭐ Destacar</button>` : ''}
+                ${esAdmin && r.destacada ? `<button class="chip peligro" onclick="quitarDestacada(${r.id})">Quitar destacada</button>` : ''}
                 <button class="chip" onclick="reportar('respuesta', ${r.id})">Reportar</button>
               </div>
             </div>`).join('')}
           <form class="fila" style="flex-direction:row;margin-top:8px" onsubmit="responder(event, ${d.id})">
-            <input name="texto" placeholder="Responder..." required>
+            <input name="texto" placeholder="Responder..." required maxlength="1000">
             <button class="boton">Enviar</button>
           </form>
           <button class="chip" style="margin-top:6px" onclick="reportar('duda', ${d.id})">Reportar</button>
-        </div>`).join('') || '<p>Nadie ha preguntado todavía.</p>';
+        </div>`).join('') || '<p class="ayuda">Nadie ha preguntado todavía. ¡Sé la primera!</p>';
+
+      // Si venimos de la campana (…#duda-5), bajamos hasta esa duda. El navegador no lo hace
+      // solo porque las dudas llegan DESPUÉS de cargar la página. (Solo la primera vez.)
+      if (location.hash && !yaBajeALaDuda) {
+        yaBajeALaDuda = true;
+        const destino = document.querySelector(location.hash);
+        if (destino) destino.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      // 🔔 La alumna ya está viendo las respuestas a sus dudas de esta lección:
+      // las marcamos como vistas y la campana del menú se actualiza.
+      if (usuaria && ['alumna', 'profesional'].includes(usuaria.perfil)) {
+        api('/api/dudas/mis-avisos/leidos', { method: 'PUT', body: { leccion_id: Number(id) } })
+          .then(actualizarCampana)
+          .catch(() => {}); // si falla, solo significa que el aviso sigue en la campana
+      }
+    }
+    let yaBajeALaDuda = false;
+
+    // Envía un formulario sin que el doble clic lo mande dos veces:
+    // el botón se desactiva mientras espera al servidor y se reactiva al terminar.
+    async function enviarSinRepetir(formulario, accion) {
+      const boton = formulario.querySelector('button');
+      boton.disabled = true;
+      try {
+        await accion();
+        mostrarErrorDudas('');
+        return true;
+      } catch (err) {
+        mostrarErrorDudas(err.message); // ej. "Escribe tu duda" o "La foto de la duda tiene que ser una imagen"
+        return false;
+      } finally {
+        boton.disabled = false;
+      }
     }
 
     document.getElementById('form-duda').onsubmit = async (e) => {
       e.preventDefault();
-      const datos = new FormData(e.target);
+      const form = e.target;
+      const datos = new FormData(form);
       datos.append('leccion_id', id);
-      await api('/api/dudas', { method: 'POST', body: datos });
-      e.target.reset();
-      cargarDudas();
+      const bien = await enviarSinRepetir(form, () => api('/api/dudas', { method: 'POST', body: datos }));
+      if (bien) { form.reset(); cargarDudas(); }
     };
 
     async function responder(e, dudaId) {
       e.preventDefault();
-      await api(`/api/dudas/${dudaId}/respuestas`, { method: 'POST', body: { texto: e.target.texto.value } });
-      cargarDudas();
+      const form = e.target;
+      const bien = await enviarSinRepetir(form, () =>
+        api(`/api/dudas/${dudaId}/respuestas`, { method: 'POST', body: { texto: form.texto.value } }));
+      if (bien) cargarDudas(); // si falla, no recargamos: así no se pierde lo escrito
     }
 
+    // Destacar y quitar usan la misma dirección: PUT pone la estrella, DELETE la quita
     async function destacar(respuestaId) {
-      await api(`/api/dudas/respuestas/${respuestaId}/destacar`, { method: 'PUT' });
+      await cambiarDestacada(respuestaId, 'PUT');
+    }
+
+    async function quitarDestacada(respuestaId) {
+      if (!confirm('¿Quitar la estrella de esta respuesta? La duda se quedará sin respuesta destacada.')) return;
+      await cambiarDestacada(respuestaId, 'DELETE');
+    }
+
+    async function cambiarDestacada(respuestaId, metodo) {
+      try {
+        await api(`/api/dudas/respuestas/${respuestaId}/destacar`, { method: metodo });
+        mostrarErrorDudas('');
+      } catch (err) {
+        mostrarErrorDudas(err.message); // ej. "Esa respuesta no estaba destacada"
+      }
       cargarDudas();
     }
 
     async function reportar(tipo, elementoId) {
       const motivo = prompt('¿Por qué lo reportas?');
       if (motivo === null) return;
-      await api('/api/reportes', { method: 'POST', body: { tipo, elemento_id: elementoId, motivo } });
+      // (Reportar y moderar se repasan a fondo el 23/11; de momento, al menos, se ve si falla)
+      try {
+        await api('/api/reportes', { method: 'POST', body: { tipo, elemento_id: elementoId, motivo } });
+        mostrarErrorDudas('');
+      } catch (err) {
+        mostrarErrorDudas(err.message);
+      }
       cargarDudas();
     }
 

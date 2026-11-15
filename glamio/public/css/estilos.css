@@ -87,3 +87,15 @@ input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var
 /* Tablet y escritorio */
 @media (min-width: 640px) { .rejilla { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 900px) { .rejilla { grid-template-columns: repeat(3, 1fr); } }
+
+/* 🔔 Campana de la directora: número rojo de dudas sin responder */
+#campana { position: relative; text-decoration: none; }
+.contador { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 2px; border-radius: 999px;
+  background: #d33; color: #fff; font-size: .7rem; font-weight: 700; line-height: 18px; text-align: center; }
+.contador.oculto { display: none; } /* va después de .contador para que gane */
+.aviso-duda { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 10px; }
+.aviso-duda .texto { margin: 6px 0; }
+@media (max-width: 520px) { .aviso-duda { flex-direction: column; align-items: stretch; } }
+/* Al llegar desde un aviso (leccion.html?id=1#duda-5), la duda se ilumina un momento */
+.tarjeta:target { animation: brillo 2s ease-out; }
+@keyframes brillo { from { box-shadow: 0 0 0 4px var(--rosa); } to { box-shadow: 0 0 0 0 transparent; } }

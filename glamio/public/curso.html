@@ -36,7 +36,8 @@
 
     <h2>Materiales</h2>
     <ul id="materiales" style="padding-left:20px"></ul>
-    <a class="boton secundario" id="ir-calculadora" href="#" style="margin-top:10px;display:inline-block">Calcular mi precio con estos materiales</a>
+    <!-- Oculto al principio: solo aparece si está inscrita (ver pintarCabeceraCurso) -->
+    <a class="boton secundario oculto" id="ir-calculadora" href="#" style="margin-top:10px">Calcular mi precio con estos materiales</a>
 
     <h2>Reseñas</h2>
     <form id="form-resena" class="tarjeta oculto">
@@ -117,6 +118,11 @@
         ${accion}`;
       const btn = document.getElementById('inscribirse');
       if (btn) btn.onclick = alPulsarInscribirme;
+
+      // "Calcular mi precio con estos materiales": para quien está inscrita (y la administradora,
+      // que también usa la calculadora). Sin materiales, el botón no tendría nada que cargar.
+      const puedeCalcular = inscrita || (usuaria && usuaria.perfil === 'administradora');
+      document.getElementById('ir-calculadora').classList.toggle('oculto', !puedeCalcular || curso.materiales.length === 0);
     }
 
     // Lecciones: 🔒 si no está inscrita, ✅ si ya la ha hecho

@@ -197,3 +197,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER resena_solo_si_terminado
   BEFORE INSERT OR UPDATE OF usuaria_id, curso_id ON resenas_cursos
   FOR EACH ROW EXECUTE FUNCTION comprobar_resena_terminada();
+
+-- 🔔 Avisos de la alumna (16/11): ¿ha visto ya la autora de la duda esta respuesta?
+-- (En la base que ya existía se añadió con ALTER TABLE ... ADD COLUMN y las antiguas se marcaron como leídas.)
+ALTER TABLE respuestas ADD COLUMN IF NOT EXISTS leida BOOLEAN NOT NULL DEFAULT FALSE;

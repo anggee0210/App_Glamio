@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avisos – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main style="max-width:720px">
+    <h1 id="titulo">🔔 Avisos</h1>
+    <p class="ayuda" id="explicacion"></p>
+    <p class="mensaje error oculto" id="error"></p>
+    <button class="chip oculto" id="todo-visto" style="margin-top:10px">✓ Marcar todo como visto</button>
+    <div id="lista" style="margin-top:12px"><p>Cargando…</p></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    const PERFILES = { alumna: 'Alumna', profesional: 'Profesional', administradora: '🎓 Directora académica' };
+    let usuaria = null;
+
+    // "hace 5 min", "hace 3 h", "ayer 18:20" o "12 nov"
+    function haceCuanto(fecha) {
+      const d = new Date(fecha);
+      const minutos = Math.round((Date.now() - d) / 60000);
+      if (minutos < 1) return 'ahora mismo';
+      if (minutos < 60) return `hace ${minutos} min`;
+      if (minutos < 24 * 60) return `hace ${Math.round(minutos / 60)} h`;
+      const hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      if (minutos < 48 * 60) return 'ayer ' + hora;
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    }
+
+    function etiqueta(perfil) {
+      const clase = perfil === 'administradora' ? 'etiqueta' : 'etiqueta gris';
+      return `<span class="${clase}">${PERFILES[perfil] || esc(perfil)}</span>`;
+    }
+
+    function mostrarError(texto) {
+      const p = document.getElementById('error');
+      p.textContent = texto;
+      p.classList.toggle('oculto', !texto);
+    }
+
+    // Directora: una tarjeta por duda que aún no ha contestado
+    function tarjetaDudaSinResponder(d) {
+      return `
+        <div class="tarjeta aviso-duda">
+          <div>
+            <strong>${esc(d.nombre)}</strong> ${etiqueta(d.perfil)}
+            <p class="ayuda">${esc(d.curso)} › ${esc(d.leccion)}</p>
+            <p class="texto">«${esc(d.texto)}» ${d.foto ? '📷' : ''}</p>
+            <p class="ayuda">${haceCuanto(d.fecha)}${d.respuestas
+              ? ` · ${d.respuestas} ${d.respuestas === 1 ? 'respuesta' : 'respuestas'} de compañeras` : ''}</p>
+          </div>
+          <a class="boton" href="/leccion.html?id=${d.leccion_id}#duda-${d.id}">Ir a responder →</a>
+        </div>`;
+    }
+
+    // Alumna / profesional: una tarjeta por respuesta nueva a una de sus dudas
+    function tarjetaRespuestaNueva(r) {
+      return `
+        <div class="tarjeta aviso-duda ${r.destacada ? 'destacada' : ''}">
+          <div>
+            <strong>${esc(r.nombre)}</strong> ${etiqueta(r.perfil)} respondió a tu duda
+            ${r.destacada ? '<span class="etiqueta">⭐ Destacada</span>' : ''}
+            <p class="ayuda">${esc(r.curso)} › ${esc(r.leccion)} · Tu duda: «${esc(r.duda)}»</p>
+            <p class="texto">${esc(r.texto)}</p>
+            <p class="ayuda">${haceCuanto(r.fecha)}</p>
+          </div>
+          <a class="boton" href="/leccion.html?id=${r.leccion_id}#duda-${r.duda_id}">Ver en la lección →</a>
+        </div>`;
+    }
+
+    async function cargar() {
+      const esAdmin = usuaria.perfil === 'administradora';
+      const lista = document.getElementById('lista');
+      let avisos;
+      try {
+        avisos = await api(rutaAvisos(usuaria)); // rutaAvisos() está en api.js
+      } catch (err) {
+        lista.innerHTML = '';
+        return mostrarError(err.message);
+      }
+      lista.innerHTML = avisos.map(esAdmin ? tarjetaDudaSinResponder : tarjetaRespuestaNueva).join('')
+        || `<p class="mensaje">🎉 ¡Todo al día! ${esAdmin ? 'No hay dudas pendientes.' : 'No tienes notificaciones nuevas.'}</p>`;
+      // La directora no "marca como visto": sus avisos se van al responder
+      document.getElementById('todo-visto').classList.toggle('oculto', esAdmin || avisos.length === 0);
+    }
+
+    document.getElementById('todo-visto').onclick = async () => {
+      try {
+        await api('/api/dudas/mis-avisos/leidos', { method: 'PUT', body: {} });
+        mostrarError('');
+        await cargar();
+        actualizarCampana();
+      } catch (err) { mostrarError(err.message); }
+    };
+
+    async function iniciar() {
+      usuaria = await pintarCabecera();
+      if (!usuaria) {
+        document.querySelector('main').innerHTML =
+          '<p class="mensaje"><a href="/login.html">Entra</a> para ver tus avisos.</p>';
+        return;
+      }
+      const esAdmin = usuaria.perfil === 'administradora';
+      document.getElementById('titulo').textContent = esAdmin ? '🔔 Dudas sin responder' : '🔔 Mis notificaciones';
+      document.title = (esAdmin ? 'Dudas sin responder' : 'Mis notificaciones') + ' – GLAMIO';
+      document.getElementById('explicacion').textContent = esAdmin
+        ? 'Dudas de las alumnas y profesionales que todavía no has contestado. Al responder, desaparecen solas de esta lista.'
+        : 'Aquí te avisamos cuando alguien responde a las dudas que has hecho. Al abrir la lección, se marcan como vistas.';
+      cargar();
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>
