@@ -1071,3 +1071,24 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 .boton-reportar .icono-linea { width: 16px; height: 16px; }
 .fila-reportar { padding-top: 12px; border-top: 1px solid var(--borde); }
 .con-foto { color: #8a7d90; font-size: .9em; }
+
+/* =====================================================================
+   LOGO de la cabecera y del pie, un poco más grande (petición de la autora).
+   Solo .cabecera y .pie-logo: el logo grande de Entrar/Registrarme no cambia.
+   ===================================================================== */
+.cabecera .logo { gap: 12px; }
+.cabecera .logo img { width: 58px; height: 58px; }
+.cabecera .logo-nombre { font-size: 1.9rem; }
+.cabecera .logo-lema { font-size: .72rem; letter-spacing: 1.9px; margin-top: 4px; }
+.pie-logo { gap: 16px; }
+.pie-logo img { width: 74px; height: 74px; border-radius: 50%; } /* la misma G redonda de la cabecera */
+.pie-logo .logo-nombre { font-size: 2.1rem; }
+.pie-logo .logo-lema { font-size: .78rem; letter-spacing: 2px; margin-top: 4px; }
+@media (max-width: 640px) {
+  /* En el móvil, algo menos para que quepa junto a «☰ Menú» */
+  .cabecera .logo img { width: 50px; height: 50px; }
+  .cabecera .logo-nombre { font-size: 1.6rem; }
+  .cabecera .logo-lema { font-size: .62rem; letter-spacing: 1.5px; }
+  .pie-logo img { width: 62px; height: 62px; }
+  .pie-logo .logo-nombre { font-size: 1.8rem; }
+}

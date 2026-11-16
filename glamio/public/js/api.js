@@ -131,7 +131,7 @@ function pintarPie(usuaria) {
       (usuaria ? '<a href="/calculadora.html">Calculadora</a>' : '<a href="/login.html">Entrar</a>');
   document.body.insertAdjacentHTML('beforeend', `
     <footer class="pie"><div class="pie-dentro">
-      <span class="pie-logo"><img src="/img/logo-glamio.jpg" alt="">
+      <span class="pie-logo"><img src="/img/logo-g.png" alt="">
         <span class="logo-texto"><span class="logo-nombre">GLAMIO</span><span class="logo-lema">ACADEMIA DE BELLEZA</span></span></span>
       <nav class="pie-enlaces" aria-label="Enlaces del pie">${enlaces}</nav>
       <p class="pie-nota">GLAMIO · Proyecto final de clase · 2026</p>
