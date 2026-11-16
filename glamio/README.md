@@ -1,11 +1,11 @@
 # GLAMIO 💅
 
-App web de formación en belleza (uñas, cabello y cejas): **academia de cursos**, **comunidad**, **calculadora de precios** y **reseñas verificadas**.
+App web de formación en belleza (uñas, cabello y cejas): **academia de cursos**, **comunidad**, **calculadora de precios**, **reseñas verificadas** y **guías teóricas**.
 
 **Recorrido clave:** aprendo → pregunto → sé cuánto cobrar → muestro mi resultado.
 
 > Proyecto final de clase · Fase 1 (Academia) · Entrega: 25/11/2026
-> GLAMIO es la app; los cursos los publica la **directora académica** de la academia.
+> GLAMIO es la app; los cursos los publica la **administradora** de la academia.
 
 ---
 
@@ -13,49 +13,51 @@ App web de formación en belleza (uñas, cabello y cejas): **academia de cursos*
 
 | Perfil | Qué puede hacer |
 |---|---|
-| **Directora académica** (administradora) | Crea y edita cursos, lecciones y materiales · diseña el certificado · responde dudas y marca la ⭐ destacada · responde reseñas · revisa los reportes |
-| **Alumna** | Se inscribe (gratis o con pago simulado) · ve lecciones y marca su progreso · certificado · pregunta con foto · calculadora · publica sus trabajos · reseña cursos terminados |
+| **Administradora** | Crea, edita y borra cursos, lecciones y materiales · sube guías teóricas en PDF · diseña el certificado · responde dudas y marca la ⭐ destacada · responde reseñas · revisa los reportes · ve las **estadísticas** |
+| **Alumna** | Se inscribe (gratis o con pago simulado) · ve lecciones y marca su progreso · certificado · compra guías · pregunta con foto · calculadora · publica sus trabajos · reseña cursos terminados |
 | **Profesional** | Lo mismo que la alumna · su insignia es «Profesional certificada» |
 | **Clienta** | Solo el **muro** en lectura: trabajos con permiso de su autora (fase 1) |
 
-La cuenta de la directora no se puede crear desde la web: se crea con `db/crear-admin.js`.
+La cuenta de la administradora no se puede crear desde la web: se crea con `db/crear-admin.js`.
 
 ---
 
 ## Qué hace (fase 1)
 
 - **Academia**
-  - Cursos gratis o de pago, con **pago simulado**: no se piden datos de tarjeta.
-  - Lecciones con vídeo de YouTube o vídeo corto propio (máximo 50 MB).
+  - Página **Cursos** con filtros por categoría; cursos gratis o de pago, con **pago simulado** (no se piden datos de tarjeta).
+  - Lecciones con vídeo de YouTube o vídeo corto propio (máximo 50 MB) y botón «Empezar / Continuar curso».
   - Progreso por lección, **certificado** con diseño propio y página «Mis certificados».
+  - **📖 Guías teóricas en PDF** en cada curso: se compran con pago simulado y **solo las descarga quien las compró**.
 - **Calculadora «Calcular mi precio»**
   - Desde un curso carga sus materiales. La alumna pone el coste, los minutos, el valor de su hora y el margen.
   - Fórmula: `(materiales + minutos/60 × precio_hora) × (1 + margen/100)`.
-  - Se pueden guardar y borrar servicios propios («Mis precios»).
-- **Comunidad**
-  - **Dudas**: con foto en cada lección. Tienen respuestas y una **respuesta destacada** que solo marca la directora.
+  - Los servicios se guardan en «Mis servicios» y se pueden borrar.
+- **Comunidad** (pestañas 📷 Trabajos y ❓ Dudas)
+  - **Dudas**: con foto en cada lección. Tienen respuestas y una **respuesta destacada** que solo marca la administradora.
   - **Trabajos**: muro etiquetado por curso. La autora decide si las clientas ven su foto (👁/🔒) y puede borrarla.
 - **Reseñas**
   - Solo de cursos terminados y una por persona, de 1 a 5 ⭐, con foto opcional.
-  - La directora las responde. La autora puede borrarla, pero no editarla.
-- **🔔 Notificaciones**
-  - Directora: dudas sin responder y reseñas de 1 a 3 ⭐ sin respuesta.
+  - La administradora las responde. La autora puede borrarla, pero no editarla.
+- **🔔 Notificaciones** (una sola opción en el menú, con número rojo)
+  - Administradora: dudas sin responder y reseñas de 1 a 3 ⭐ sin respuesta.
   - Alumna y profesional: respuestas nuevas a sus dudas.
-- **⚑ Reportes**
-  - Lo reportado se oculta al momento.
-  - La directora decide en su página si vuelve a publicarse.
-- **Móvil**: menú ☰, botones pensados para el dedo y sin scroll horizontal.
+- **⚑ Reportes**: lo reportado se oculta al momento; la administradora decide en su página si vuelve a publicarse.
+- **Panel de la administradora** con **menú lateral**:
+  - **🏠 Panel principal** con **estadísticas**: cursos, lecciones, alumnas, valoración media, **visitas a la app** y **cursos vendidos por mes** (gráficas y tabla), y los cursos más vendidos;
+  - Mis cursos (editar y **borrar**, con doble confirmación si hay inscritas), Nuevo curso, Nueva lección, Materiales, Certificado, Guías teóricas, Reportes y Notificaciones.
+- **Diseño**: morado y lila, logo de la G dorada, pantalla completa en el PC (letra más grande en monitores grandes) y menú ☰ en el móvil.
 
 ---
 
 ## Stack
 
-- **Frontend:** HTML, CSS y JavaScript (fetch), sin frameworks · diseño para el móvil
+- **Frontend:** HTML, CSS y JavaScript (fetch), sin frameworks · diseño para el móvil y a pantalla completa en el PC
 - **Backend:** Node.js + Express (API REST)
 - **Base de datos:** PostgreSQL con `pg` (consultas parametrizadas `$1, $2`)
 - **Login:** `express-session` + `bcrypt`
-- **Archivos:** `multer` (imágenes y vídeos cortos; los vídeos largos, por YouTube)
-- Todo funciona **en local**: sin servicios externos.
+- **Archivos:** `multer` (imágenes, vídeos cortos y PDF de las guías; los vídeos largos, por YouTube)
+- Todo funciona **en local**: sin servicios externos (las tipografías se cargan de Google Fonts y, sin internet, se usan las del sistema).
 
 ---
 
@@ -63,14 +65,15 @@ La cuenta de la directora no se puede crear desde la web: se crea con `db/crear-
 
 ```
 glamio/
-├── server.js              # Servidor Express, rutas y manejo de errores
+├── server.js              # Servidor Express, contador de visitas, rutas y manejo de errores
 ├── package.json
 ├── .env.example           # Copiar como .env
 ├── db/
 │   ├── pool.js            # Conexión a PostgreSQL
 │   ├── schema.sql         # Tablas, índices y trigger (¡borra todo! ver abajo)
+│   ├── migracion-17-11.sql # Estadísticas y guías para una base que ya existe (no borra nada)
 │   ├── seed.sql           # Categorías, academia y cursos de ejemplo
-│   ├── crear-admin.js     # Crea la cuenta de la directora académica
+│   ├── crear-admin.js     # Crea la cuenta de la administradora
 │   └── cambiar-contrasena.js # Cambia la contraseña de una cuenta (si se olvida)
 ├── middleware/
 │   ├── auth.js            # requiereLogin / requiereAdmin / requierePerfil
@@ -79,8 +82,10 @@ glamio/
 ├── routes/
 │   ├── auth.js            # Registro, login, logout, /yo
 │   ├── categorias.js      # Uñas, Cabello, Cejas…
-│   ├── cursos.js          # Cursos, materiales, inscripción, progreso, certificado
+│   ├── cursos.js          # Cursos (crear, editar, borrar), materiales, inscripción, progreso, certificado
 │   ├── lecciones.js       # Lecciones y «marcar como completada»
+│   ├── guias.js           # Guías teóricas: subir, comprar, descargar
+│   ├── estadisticas.js    # Panel principal: cifras, visitas y ventas por mes
 │   ├── academia.js        # Diseño del certificado
 │   ├── certificados.js    # «Mis certificados»
 │   ├── dudas.js           # Dudas, respuestas, destacada, notificaciones, Comunidad
@@ -89,19 +94,22 @@ glamio/
 │   ├── servicios.js       # Calculadora «Calcular mi precio»
 │   └── reportes.js        # Reportar y moderar
 ├── public/
-│   ├── index.html         # Catálogo de cursos con filtro por categoría
+│   ├── index.html         # Inicio: portada, accesos, cursos y talentos de la comunidad
+│   ├── cursos.html        # Solo cursos, con filtros
 │   ├── login.html · registro.html
-│   ├── curso.html         # Detalle, progreso, materiales y reseñas
+│   ├── curso.html         # Detalle, progreso, lecciones, materiales, guías y reseñas
 │   ├── leccion.html       # Vídeo + dudas de la lección
 │   ├── certificado.html · certificados.html
-│   ├── calculadora.html   # Mis precios
+│   ├── calculadora.html   # Calcular mi precio + Mis servicios
 │   ├── muro.html          # Comunidad: 📷 Trabajos y ❓ Dudas
 │   ├── avisos.html        # 🔔 Notificaciones
-│   ├── admin.html         # Panel de la directora (pestañas)
+│   ├── admin.html         # Panel de la administradora (menú lateral)
 │   ├── reportes.html      # ⚑ Reportes
+│   ├── img/               # Logos, portada e ilustraciones
 │   ├── css/estilos.css
-│   └── js/api.js          # fetch, menú, campana, reportar… (funciones comunes)
-└── uploads/               # Archivos subidos (imagenes/ y videos/), fuera de git
+│   └── js/api.js          # fetch, cabecera, menú lateral, notificaciones, reportar… (funciones comunes)
+├── uploads/               # Fotos y vídeos subidos (imagenes/ y videos/), fuera de git
+└── privado/guias/         # PDF de las guías: NO es pública, fuera de git
 ```
 
 ---
@@ -122,13 +130,15 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
    npm run db:datos
    ```
    > ⚠️ **`db:crear` solo la primera vez.** `schema.sql` empieza con `DROP TABLE`: si se vuelve a ejecutar,
-   > **borra todas las usuarias, cursos y publicaciones**. Para cambios en una base que ya existe, se usa `ALTER TABLE`
-   > (los que se han hecho están al final de `schema.sql`).
+   > **borra todas las usuarias, cursos y publicaciones**.
+   >
+   > **¿Ya tenías la base de antes del 17/11?** No uses `db:crear`: aplica solo lo nuevo (visitas, guías e importe de las ventas):
+   > `psql -U postgres -d glamio -f db/migracion-17-11.sql`
    >
    > En Windows, si `psql` o `createdb` no se encuentran, están en `C:\Program Files\PostgreSQL\18\bin\`.
-4. Crear la cuenta de la directora académica (con una contraseña segura, no la de ejemplo):
+4. Crear la cuenta de la administradora (con una contraseña segura, no la de ejemplo):
    ```bash
-   node db/crear-admin.js "Nombre de la directora" directora@ejemplo.com "UnaContraseñaSegura!"
+   node db/crear-admin.js "Nombre de la administradora" admin@ejemplo.com "UnaContraseñaSegura!"
    ```
 5. Arrancar:
    ```bash
@@ -140,7 +150,7 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
 
 ## Cuentas de prueba
 
-En una instalación nueva no hay cuentas: se crean desde **Registrarme** (`/registro.html`) eligiendo el perfil (alumna, profesional o clienta). La directora se crea con el paso 4.
+En una instalación nueva no hay cuentas: se crean desde **Registrarme** (`/registro.html`) eligiendo el perfil (alumna, profesional o clienta). La administradora se crea con el paso 4.
 
 En la base de la demo existen estas cuentas (solo en local, no son reales):
 
@@ -149,7 +159,7 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 | Alumna | `alumna@glamio.local` | `Demo2026!` |
 | Profesional | `profesional@glamio.local` | `Demo2026!` |
 | Clienta | `clienta@glamio.local` | `Demo2026!` |
-| Directora | `admin@glamio.local` | *(la que se puso al crearla; no se guarda aquí)* |
+| Administradora | `admin@glamio.local` | *(la que se puso al crearla; no se guarda aquí)* |
 
 ¿Se olvidó una contraseña? `node db/cambiar-contrasena.js email "NuevaContraseña"` (mínimo 8 caracteres).
 
@@ -157,12 +167,13 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 
 ## Recorrido de la demo
 
-1. **Aprendo**: como alumna, abrir un curso, inscribirse (pago simulado si es de pago), ver las lecciones y marcarlas como completadas. Al terminar, **🎓 Ver mi certificado**.
-2. **Pregunto**: en una lección, hacer una duda con foto. Como directora, la 🔔 avisa: responder y marcar **⭐ destacada**. La alumna recibe la notificación.
+1. **Aprendo**: como alumna, ir a **Cursos**, abrir uno, inscribirse (pago simulado si es de pago), ver las lecciones y marcarlas como completadas. Al terminar, **🎓 Ver mi certificado**. Comprar una **📖 guía teórica** y descargarla.
+2. **Pregunto**: en una lección, hacer una duda con foto. Como administradora, **🔔 Notificaciones** avisa: responder y marcar **⭐ destacada**. La alumna recibe la notificación.
 3. **Sé cuánto cobrar**: en el curso, **🧮 Calcular mi precio**. Se cargan los materiales; poner los costes, los minutos, el €/h y el margen, y guardar.
 4. **Muestro mi resultado**: en **Comunidad → 📷 Trabajos**, publicar una foto etiquetada con el curso y dar permiso 👁. Como clienta, verla en el muro.
-5. **Reseña**: dejar ⭐ en el curso terminado. La directora responde.
-6. **Moderación**: reportar algo con un motivo. Se oculta, y la directora lo revisa en **⚑ Reportes**.
+5. **Reseña**: dejar ⭐ en el curso terminado. La administradora responde.
+6. **Moderación**: reportar algo con un motivo. Se oculta, y la administradora lo revisa en **⚑ Reportes**.
+7. **Estadísticas**: como administradora, **Panel → 🏠 Panel principal**: visitas y cursos vendidos por mes.
 
 ---
 
@@ -171,16 +182,18 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 | Regla | Dónde |
 |---|---|
 | Dudas solo de inscritas en el curso (RN-14) | `middleware/permisos.js` → `puedeEntrarEnLeccion()` |
-| Solo la directora marca la destacada, y hay **una por duda** (RN-15) | `requiereAdmin` + índice único parcial `una_destacada_por_duda` |
+| Solo la administradora marca la destacada, y hay **una por duda** (RN-15) | `requiereAdmin` + índice único parcial `una_destacada_por_duda` |
 | Reseña solo con el curso terminado (RN-18) | `routes/resenas.js` + trigger `resena_solo_si_terminado` |
 | Una reseña por persona y curso (RN-19) | `UNIQUE (usuaria_id, curso_id)` → responde 409 |
 | De 1 a 5 estrellas (RN-20) | Validación en la ruta + `CHECK` |
-| Las reseñas no las borra la directora: se responden o se ocultan si un reporte lo confirma (RN-21) | `routes/resenas.js` y `routes/reportes.js` |
+| Las reseñas no las borra la administradora: se responden o se ocultan si un reporte lo confirma (RN-21) | `routes/resenas.js` y `routes/reportes.js` |
 | La clienta solo recibe trabajos con permiso y no reportados (RN-22) | Filtro en el servidor, `routes/trabajos.js` |
 | Solo se reporta lo que una misma puede ver | `puedeReportar()` en `routes/reportes.js` |
-| Pago simulado | `routes/cursos.js` (`pago_simulado: true`) |
+| Las guías solo las descarga quien las compró | `privado/guias` (no pública) + comprobación de compra en `routes/guias.js` |
+| Borrar un curso con inscritas pide una segunda confirmación | `DELETE /api/cursos/:id` responde 409 hasta `?confirmar=si` |
+| Pago simulado | `routes/cursos.js` y `routes/guias.js` (`pago_simulado: true`) |
 
-**Seguridad:** contraseñas con `bcrypt`, perfiles comprobados **en el servidor** (no solo ocultando botones), SQL parametrizado, `multer` con tipo y tamaño limitados, textos escapados con `esc()` antes de pintarlos, y RGPD (consentimiento para las fotos y borrar lo propio).
+**Seguridad:** contraseñas con `bcrypt`, perfiles comprobados **en el servidor** (no solo ocultando botones), SQL parametrizado, `multer` con tipo y tamaño limitados, textos escapados con `esc()` antes de pintarlos, y RGPD (consentimiento para las fotos, borrar lo propio y visitas guardadas **sin IP**).
 
 ---
 
