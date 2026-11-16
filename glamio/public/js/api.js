@@ -84,6 +84,7 @@ function seccionActual() {
   if (p.endsWith('/avisos.html')) return 'avisos';
   if (p.endsWith('/admin.html')) return 'panel';
   if (p.endsWith('/reportes.html')) return 'reportes';
+  if (p.endsWith('/mi-estilo.html')) return 'miestilo';
   return 'inicio';
 }
 const NOMBRES_PERFIL = { administradora: 'Administradora', alumna: 'Alumna', profesional: 'Profesional', clienta: 'Clienta' };
@@ -123,7 +124,7 @@ function activarPerfil() {
 function pintarPie(usuaria) {
   if (document.querySelector('.pie') || !document.querySelector('.cabecera')) return;
   const esClienta = usuaria && usuaria.perfil === 'clienta';
-  const enlaces = esClienta ? '<a href="/muro.html">Muro</a>'
+  const enlaces = esClienta ? '<a href="/muro.html">Muro</a><a href="/mi-estilo.html">Mi Estilo</a>'
     : `<a href="/index.html">Inicio</a><a href="/cursos.html">Cursos</a><a href="/muro.html">${usuaria ? 'Comunidad' : 'Muro'}</a>` +
       (usuaria ? '<a href="/calculadora.html">Calculadora</a>' : '<a href="/login.html">Entrar</a>');
   document.body.insertAdjacentHTML('beforeend', `
@@ -185,9 +186,9 @@ function pintarLateral() {
 async function pintarCabecera() {
   const usuaria = await api('/api/auth/yo');
 
-  // La clienta solo puede estar en el muro: si abre otra página, la llevamos allí.
+  // La clienta solo puede estar en el muro y en Mi Estilo (fase 2): si abre otra página, la llevamos al muro.
   // (Es para que la app se vea bien; la seguridad de verdad está en el servidor.)
-  if (usuaria && usuaria.perfil === 'clienta' && !location.pathname.endsWith('/muro.html')) {
+  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo)\.html$/.test(location.pathname)) {
     location.replace('/muro.html');
     return usuaria;
   }
@@ -204,7 +205,9 @@ async function pintarCabecera() {
     `<a href="${href}"${seccion === clave ? ' class="activa" aria-current="page"' : ''}${extra}>${texto}</a>`;
 
   if (usuaria && usuaria.perfil === 'clienta') {
-    menu.innerHTML = opcion('comunidad', '/muro.html', 'Muro') + htmlDerecha(usuaria);
+    // La clienta: el Muro (mirar) y Mi Estilo (fase 2: sus favoritos guardados con ♡)
+    menu.innerHTML = opcion('comunidad', '/muro.html', 'Muro') +
+      opcion('miestilo', '/mi-estilo.html', '💜 Mi Estilo') + htmlDerecha(usuaria);
     activarSalir();
     activarPerfil();
     return usuaria;

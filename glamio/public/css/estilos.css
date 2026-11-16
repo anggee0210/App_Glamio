@@ -771,3 +771,57 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
    sitio que el logo de la cabecera (48 px), también en PC grandes. */
 main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-right: 48px; }
 @media (max-width: 640px) { main.pagina-avisos { padding-left: 16px; padding-right: 16px; } }
+
+/* ===================== FASE 2 · MI ESTILO (catálogo de una foto grande + Mis favoritos) ===================== */
+.estilo-intro { color: var(--gris); font-size: 1.1rem; max-width: 60ch; margin-bottom: 18px; }
+.estilo-catalogo { background: #fff; border: 1px solid var(--borde); border-radius: 24px; box-shadow: var(--sombra);
+  padding: 22px; margin-bottom: 28px; touch-action: pan-y; } /* pan-y: el dedo de lado lo usamos para deslizar */
+/* Flecha · foto · flecha */
+.estilo-visor { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; }
+.estilo-foto { display: block; background: var(--principal-claro); border-radius: 18px; overflow: hidden; }
+.estilo-foto img { display: block; width: 100%; height: min(62vh, 620px); object-fit: contain; }
+.estilo-flecha { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--borde); background: #fff;
+  color: var(--principal-oscuro); font-size: 2.2rem; line-height: 1; cursor: pointer; box-shadow: var(--sombra); }
+.estilo-flecha:hover, .estilo-flecha:focus-visible { background: var(--principal-claro); border-color: var(--principal); }
+/* Debajo de la foto: autora y curso a la izquierda, ♡ y posición a la derecha */
+.estilo-datos { display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap;
+  margin: 16px 72px 0; }
+.estilo-autora { font-family: var(--serif); font-size: 1.5rem; font-weight: 700; color: var(--oscuro); }
+.estilo-curso { color: var(--principal); font-weight: 700; }
+.estilo-descripcion { color: var(--gris); margin-top: 4px; max-width: 60ch; }
+.estilo-acciones { display: flex; align-items: center; gap: 16px; }
+.estilo-posicion { color: var(--gris); font-weight: 700; white-space: nowrap; }
+
+/* Botón ♡ Guardar (también en el muro, en pequeño) */
+.boton-corazon { border: 2px solid var(--principal); background: #fff; color: var(--principal); border-radius: 999px;
+  padding: 12px 28px; font-size: 1.15rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.boton-corazon:hover { background: var(--principal-claro); }
+.boton-corazon.guardado { background: var(--principal); color: #fff; }
+.boton-corazon:disabled { opacity: .6; cursor: wait; }
+.boton-corazon.pequeno { padding: 6px 16px; font-size: 1rem; }
+.fila-clienta { justify-content: space-between; align-items: center; }
+
+/* Mis favoritos: cuadrícula de fotos pequeñas */
+.favoritos-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+.favorito { background: #fff; border: 1px solid var(--borde); border-radius: 18px; overflow: hidden; box-shadow: var(--sombra); }
+.favorito-foto { display: block; width: 100%; padding: 0; border: none; background: none; cursor: pointer; }
+.favorito-foto img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+.favorito-datos { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; }
+.boton-quitar { border: none; background: none; color: var(--principal); font-size: 1.6rem; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 10px; }
+.boton-quitar:hover { background: var(--principal-claro); }
+.favoritos-vacio { grid-column: 1 / -1; }
+
+/* Móvil: las flechas van encima de la foto y los datos ocupan todo el ancho */
+@media (max-width: 640px) {
+  .estilo-catalogo { padding: 12px; }
+  .estilo-visor { grid-template-columns: 1fr; position: relative; }
+  .estilo-flecha { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; font-size: 1.8rem; opacity: .92; }
+  #anterior { left: 6px; } #siguiente { right: 6px; }
+  .estilo-foto img { height: 52vh; }
+  .estilo-datos { margin: 12px 4px 0; }
+  .estilo-acciones { width: 100%; justify-content: space-between; }
+  .favoritos-rejilla { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+}
+/* Nombres de curso largos en las tarjetas pequeñas: partir por sílabas con guion (lang="es"), no a mitad de letra */
+.favorito-datos { overflow-wrap: normal; hyphens: auto; }
+@media (max-width: 640px) { .favorito-datos { padding: 8px 10px; font-size: .92rem; } }
