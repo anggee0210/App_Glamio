@@ -9,56 +9,98 @@
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
-    <!-- Página solo de cursos (la Academia): título, filtros por categoría y las tarjetas -->
-    <h1 class="titulo-icono">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/></svg>
-      Academia: nuestros cursos
-    </h1>
-    <p class="avisos-sub">Elige tu especialidad y empieza a aprender. Cada curso tiene lecciones en vídeo, materiales y certificado.</p>
-    <div class="filtrar" style="margin-top:18px"><strong>Filtrar:</strong><div class="filtros" id="filtros"></div></div>
-    <div class="cursos-inicio" id="lista-cursos"><p>Cargando…</p></div>
+    <!-- Página solo de cursos (la Academia): título, pestañas por categoría y las tarjetas -->
+    <header class="catalogo-cabecera">
+      <p class="catalogo-antetitulo">Academia GLAMIO</p>
+      <h1 class="catalogo-titulo">Nuestros cursos</h1>
+      <p class="catalogo-sub">Formación práctica con lecciones en vídeo, lista de materiales y certificado al terminar.</p>
+    </header>
+
+    <!-- Pestañas: «Todos» y cada categoría que tiene cursos, con cuántos hay -->
+    <nav class="catalogo-pestanas" id="pestanas" role="tablist" aria-label="Categorías"></nav>
+
+    <div class="catalogo-rejilla" id="lista-cursos"><p class="ayuda">Cargando…</p></div>
   </main>
 
   <script src="/js/api.js"></script>
   <script>
+    let todosLosCursos = [];   // se piden una sola vez; al cambiar de pestaña se filtran aquí, sin volver al servidor
+    let categorias = [];
+
     function precioTexto(precio) {
       const n = Number(precio);
       return n === 0 ? 'Gratis' : n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
     }
 
-    // "★ 4,8 (12)" con datos reales de las reseñas, o "Sin reseñas aún"
-    function valoracion(c) {
-      if (!c.num_resenas) return '<span class="ayuda">Sin reseñas aún</span>';
-      return `<span class="estrellas">★</span> <strong>${Number(c.media).toLocaleString('es-ES')}</strong>
-        <span class="ayuda" style="display:inline">(${c.num_resenas})</span>`;
+    // Línea de datos: «4 lecciones · Certificado» y, solo si hay reseñas, «★ 4,8 (12)»
+    function lineaDatos(c) {
+      const partes = [`${c.num_lecciones} ${c.num_lecciones === 1 ? 'lección' : 'lecciones'}`, 'Certificado'];
+      if (c.num_resenas) partes.push(`<span class="catalogo-estrella">★</span> ${Number(c.media).toLocaleString('es-ES')} (${c.num_resenas})`);
+      return partes.join('<span class="catalogo-punto">·</span>');
     }
 
-    // Las mismas tarjetas horizontales que en el Inicio
-    async function cargarCursos(categoria = '') {
-      const caja = document.getElementById('lista-cursos');
-      try {
-        const cursos = await api('/api/cursos' + (categoria ? '?categoria=' + categoria : ''));
-        caja.innerHTML = cursos.map(c => `
-          <a class="curso-horizontal" href="/curso.html?id=${c.id}">
-            ${c.imagen ? `<img src="${c.imagen}" alt="">` : '<span class="sin-foto" aria-hidden="true">💅</span>'}
-            <span class="curso-datos">
-              <span class="etiqueta">${esc(c.categoria)}</span>
-              <strong class="curso-titulo">${esc(c.titulo)}</strong>
-              <span>${valoracion(c)}</span>
-              <span class="curso-pie">
-                <span class="ayuda">▶ ${c.num_lecciones} ${c.num_lecciones === 1 ? 'lección' : 'lecciones'}</span>
-                <span class="precio">${precioTexto(c.precio)}</span>
-              </span>
+    function tarjeta(c) {
+      return `
+        <a class="catalogo-carta" href="/curso.html?id=${c.id}">
+          <span class="catalogo-foto">
+            ${c.imagen ? `<img src="${c.imagen}" alt="" loading="lazy">` : '<span class="catalogo-sin-foto" aria-hidden="true">GLAMIO</span>'}
+          </span>
+          <span class="catalogo-cuerpo">
+            <span class="catalogo-categoria">${esc(c.categoria)}</span>
+            <strong class="catalogo-nombre">${esc(c.titulo)}</strong>
+            <span class="catalogo-datos">${lineaDatos(c)}</span>
+            <span class="catalogo-pie">
+              <span class="catalogo-ver">Ver curso <span aria-hidden="true">→</span></span>
+              <span class="catalogo-precio${Number(c.precio) === 0 ? ' gratis' : ''}">${precioTexto(c.precio)}</span>
             </span>
-          </a>`).join('') || '<p class="ayuda">No hay cursos en esta categoría.</p>';
+          </span>
+        </a>`;
+    }
+
+    function mostrar(categoriaId) {
+      const lista = categoriaId ? todosLosCursos.filter(c => String(c.categoria_id) === categoriaId) : todosLosCursos;
+      // Categoría todavía sin cursos: un aviso de «Próximamente» en vez de una página vacía
+      const cat = categorias.find(c => String(c.id) === categoriaId);
+      document.getElementById('lista-cursos').innerHTML = lista.map(tarjeta).join('') || `
+        <div class="catalogo-vacio">
+          <p class="catalogo-antetitulo">Próximamente</p>
+          <p class="catalogo-vacio-titulo">Cursos de ${esc(cat ? cat.nombre : 'esta categoría')}</p>
+          <p class="catalogo-sub">Estamos preparando nuevas formaciones. Mientras tanto, descubre el resto de cursos de la Academia.</p>
+          <button type="button" class="boton secundario" data-ver-todos>Ver todos los cursos</button>
+        </div>`;
+      document.querySelectorAll('#pestanas button').forEach(b => {
+        const activa = b.dataset.id === categoriaId;
+        b.classList.toggle('activa', activa);
+        b.setAttribute('aria-selected', activa);
+      });
+    }
+
+    async function iniciar() {
+      try {
+        const [cursos, cats] = await Promise.all([api('/api/cursos'), api('/api/categorias')]);
+        todosLosCursos = cursos;
+        categorias = cats;
+        // Todas las categorías, también las que aún no tienen cursos (salen con 0 y «Próximamente»)
+        const cuenta = id => cursos.filter(c => c.categoria_id === id).length;
+        const pestana = (id, nombre, n) =>
+          `<button type="button" role="tab" data-id="${id}">${esc(nombre)}<span class="catalogo-cuenta">${n}</span></button>`;
+        const pestanas = document.getElementById('pestanas');
+        pestanas.innerHTML = pestana('', 'Todos', cursos.length) +
+          categorias.map(cat => pestana(cat.id, cat.nombre, cuenta(cat.id))).join('');
+        pestanas.onclick = (e) => { const b = e.target.closest('button'); if (b) mostrar(b.dataset.id); };
+        mostrar('');
       } catch (err) {
-        caja.innerHTML = `<p class="mensaje error">No se pudieron cargar los cursos: ${esc(err.message)}</p>`;
+        document.getElementById('lista-cursos').innerHTML = `<p class="mensaje error">No se pudieron cargar los cursos: ${esc(err.message)}</p>`;
       }
     }
 
+    // Botón «Ver todos los cursos» del aviso de Próximamente
+    document.getElementById('lista-cursos').addEventListener('click', (e) => {
+      if (e.target.closest('[data-ver-todos]')) mostrar('');
+    });
+
     pintarCabecera();
-    pintarFiltros(document.getElementById('filtros'), cargarCursos);
-    cargarCursos();
+    iniciar();
   </script>
 </body>
 </html>
