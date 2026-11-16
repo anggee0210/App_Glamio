@@ -162,7 +162,7 @@
         accion = `<a class="boton" href="/leccion.html?id=${sig.id}">${texto}</a>`;
       }
       document.getElementById('curso').innerHTML = `
-        <div class="curso-foto">${curso.imagen ? `<img src="${curso.imagen}" alt="Portada del curso ${esc(curso.titulo)}">`
+        <div class="curso-foto">${curso.imagen ? htmlPortada(curso, 'Portada del curso ' + curso.titulo)
           : '<span class="sin-foto" aria-hidden="true">💅</span>'}</div>
         <div class="curso-info">
           <span class="etiqueta">${esc(curso.categoria)}</span>

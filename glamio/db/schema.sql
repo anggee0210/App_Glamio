@@ -50,6 +50,10 @@ CREATE TABLE cursos (
   descripcion   TEXT,
   precio        NUMERIC(8,2) NOT NULL DEFAULT 0, -- 0 = gratis
   imagen        VARCHAR(255),
+  imagen_ajuste VARCHAR(10) NOT NULL DEFAULT 'rellenar'   -- portada: 'rellenar' (recorta) o 'completa' (entera)
+                CHECK (imagen_ajuste IN ('rellenar', 'completa')),
+  imagen_x      NUMERIC(5,2) NOT NULL DEFAULT 50 CHECK (imagen_x BETWEEN 0 AND 100),  -- portada: posición horizontal (%)
+  imagen_y      NUMERIC(5,2) NOT NULL DEFAULT 50 CHECK (imagen_y BETWEEN 0 AND 100),  -- portada: posición vertical (%)
   creado_en     TIMESTAMP DEFAULT NOW()
 );
 

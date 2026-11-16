@@ -20,7 +20,7 @@ function tarjetaCurso(c) {
   return `
     <a class="catalogo-carta" href="/curso.html?id=${c.id}">
       <span class="catalogo-foto">
-        ${c.imagen ? `<img src="${c.imagen}" alt="" loading="lazy">` : '<span class="catalogo-sin-foto" aria-hidden="true">GLAMIO</span>'}
+        ${c.imagen ? htmlPortada(c) : '<span class="catalogo-sin-foto" aria-hidden="true">GLAMIO</span>'}
       </span>
       <span class="catalogo-cuerpo">
         <span class="catalogo-categoria">${esc(c.categoria)}</span>

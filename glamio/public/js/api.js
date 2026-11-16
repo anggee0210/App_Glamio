@@ -430,3 +430,14 @@ document.addEventListener('click', (e) => {
   const img = enlace.querySelector('img');
   abrirVisorFoto(enlace.getAttribute('href'), img ? img.alt : '');
 });
+
+// PORTADA DE UN CURSO según su «Ajuste de la foto» (lo elige la administradora en el Panel):
+// - rellenar: la foto ocupa todo el cuadro (como siempre).
+// - completa: la foto se ve entera; detrás, la misma foto difuminada rellena lo que sobra.
+function htmlPortada(c, alt = '') {
+  // Al rellenar, la posición elegida decide qué parte de la foto se ve (50 % 50 % = centrada)
+  const pos = c.imagen_ajuste === 'completa' ? '' : ` style="object-position:${c.imagen_x ?? 50}% ${c.imagen_y ?? 50}%"`;
+  const img = `<img src="${c.imagen}" alt="${esc(alt)}" loading="lazy"${pos}>`;
+  if (c.imagen_ajuste !== 'completa') return img;
+  return `<span class="portada-completa" style="--foto:url('${c.imagen}')">${img}</span>`;
+}
