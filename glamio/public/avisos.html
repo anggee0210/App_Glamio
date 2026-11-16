@@ -79,6 +79,15 @@
       boton: 'Ir a responder', href: `/leccion.html?id=${d.leccion_id}#duda-${d.id}`
     });
 
+    // Administradora: dudas que YA respondió (últimos 7 días) → botón verde
+    const tarjetaRespondida = (d) => tarjeta({
+      quien: d.nombre, perfil: d.perfil,
+      donde: `${esc(d.curso)} › ${esc(d.leccion)}`,
+      texto: d.texto + (d.foto ? ' 📷' : ''),
+      pie: 'Respondida ' + haceCuanto(d.respondida_en),
+      boton: '✓ Respondida · Ver', href: `/leccion.html?id=${d.leccion_id}#duda-${d.id}`, claseBoton: 'boton-verde'
+    });
+
     // Administradora: reseñas de 1 a 3 ⭐ sin responder (RN-21: las negativas se responden)
     const tarjetaResena = (r) => tarjeta({
       quien: r.nombre,
@@ -106,12 +115,15 @@
         lista.innerHTML = '';
         return avisar('error', err.message);
       }
-      const html = esAdmin
+      // Las respondidas no son "avisos" (no cuentan en la 🔔): se piden aparte y, si fallan, no rompen la página
+      const respondidas = esAdmin ? await api('/api/dudas/respondidas').catch(() => []) : [];
+      const pendientes = esAdmin
         ? apartado('dudas', 'Dudas por responder', avisos.dudas.map(tarjetaDuda)) +
           apartado('resenas', 'Reseñas de 1 a 3 estrellas sin responder', avisos.resenas.map(tarjetaResena))
         : apartado('respuestas', 'Nuevas respuestas a tus dudas', avisos.respuestas.map(tarjetaRespuesta));
-      lista.innerHTML = html || `<div class="todo-al-dia"><span aria-hidden="true">🎉</span>
-        <strong>¡Todo al día!</strong><span>${esAdmin ? 'No hay dudas ni reseñas pendientes.' : 'No tienes notificaciones nuevas.'}</span></div>`;
+      lista.innerHTML = (pendientes || `<div class="todo-al-dia"><span aria-hidden="true">🎉</span>
+        <strong>¡Todo al día!</strong><span>${esAdmin ? 'No hay dudas ni reseñas pendientes.' : 'No tienes notificaciones nuevas.'}</span></div>`) +
+        apartado('dudas', 'Dudas respondidas (últimos 7 días)', respondidas.map(tarjetaRespondida));
       // La administradora no "marca como visto": sus avisos se van solos al responder
       document.getElementById('todo-visto').classList.toggle('oculto', esAdmin || avisos.respuestas.length === 0);
     }
@@ -137,7 +149,7 @@
       document.getElementById('titulo').textContent = 'Notificaciones'; // un solo nombre para todos
       document.title = 'Notificaciones – GLAMIO';
       document.getElementById('explicacion').textContent = esAdmin
-        ? 'Revisa las dudas y reseñas pendientes. Al responder, desaparecen solas de esta lista.'
+        ? 'Revisa las dudas y reseñas pendientes. Al responder una duda, pasa a verde y se queda 7 días.'
         : 'Aquí te avisamos cuando alguien responde a tus dudas. Al abrir la lección, se marcan como vistas.';
       cargar();
     }

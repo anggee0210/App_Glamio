@@ -67,6 +67,31 @@ router.get('/sin-responder', requiereAdmin, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/dudas/respondidas  (solo admin) → apartado verde de Notificaciones
+// Las dudas que la administradora YA respondió en los últimos 7 días, para que no
+// desaparezcan de golpe: se ven en verde una semana y luego salen solas.
+// No suman en la campana 🔔 (ya están hechas). "respondida_en" = su primera respuesta.
+router.get('/respondidas', requiereAdmin, async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT d.id, d.texto, d.foto, d.leccion_id, u.nombre, u.perfil,
+              l.titulo AS leccion, c.titulo AS curso, x.respondida_en
+       FROM dudas d
+       JOIN usuarias u ON u.id = d.usuaria_id
+       JOIN lecciones l ON l.id = d.leccion_id
+       JOIN cursos c ON c.id = l.curso_id
+       JOIN (SELECT r.duda_id, MIN(r.fecha) AS respondida_en
+             FROM respuestas r JOIN usuarias ua ON ua.id = r.usuaria_id
+             WHERE ua.perfil = 'administradora'
+             GROUP BY r.duda_id) x ON x.duda_id = d.id
+       WHERE d.oculta = FALSE
+         AND u.perfil <> 'administradora'
+         AND x.respondida_en >= NOW() - INTERVAL '7 days'
+       ORDER BY x.respondida_en DESC`);
+    res.json(rows);
+  } catch (err) { next(err); }
+});
+
 // GET /api/dudas/comunidad → pestaña "❓ Dudas" de la página Comunidad
 // Las últimas dudas de los cursos en los que estoy inscrita (la directora: de todos).
 // Mismo criterio que la RN-14: solo veo dudas de lecciones en las que puedo entrar.

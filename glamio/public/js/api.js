@@ -136,7 +136,7 @@ function pintarPie(usuaria) {
 }
 
 // ---------- Menú lateral de la administradora (diseños "Panel de Gestión", "Avisos" y "Reportes") ----------
-// Sale en el Panel, en Reportes y en Notificaciones. Las opciones del Panel abren su pestaña.
+// Sale en el Panel y en Reportes (Notificaciones ya está en el menú de arriba). Las opciones del Panel abren su pestaña.
 const OPCIONES_LATERAL = [
   { clave: 'resumen', href: '/admin.html', texto: '🏠 Panel principal' },
   { clave: 'cursos', href: '/admin.html?pestana=cursos', texto: '📚 Mis cursos' },
@@ -146,14 +146,12 @@ const OPCIONES_LATERAL = [
   { clave: 'certificado', href: '/admin.html?pestana=certificado', texto: '🎓 Certificado' },
   { clave: 'guias', href: '/admin.html?pestana=guias', texto: '📖 Guías teóricas' },
   { clave: 'reportes', href: '/reportes.html', texto: '⚑ Reportes', extra: ' id="enlace-reportes" title="Reportes pendientes"', contador: '<span class="contador oculto"></span>' },
-  { clave: 'avisos', href: '/avisos.html', texto: '🔔 Notificaciones', contador: '<span class="contador contador-avisos oculto"></span>' },
 ];
 
 // ¿Qué opción del lateral está abierta? (en el Panel, la pestaña de la URL)
 function claveLateral() {
   const p = location.pathname;
   if (p.endsWith('/reportes.html')) return 'reportes';
-  if (p.endsWith('/avisos.html')) return 'avisos';
   return param('pestana') || 'resumen';
 }
 
@@ -230,7 +228,7 @@ async function pintarCabecera() {
   activarSalir();
   activarPerfil();
   // La administradora tiene además el menú lateral en sus páginas de gestión
-  if (usuaria && usuaria.perfil === 'administradora' && /\/(admin|reportes|avisos)\.html$/.test(location.pathname)) pintarLateral();
+  if (usuaria && usuaria.perfil === 'administradora' && /\/(admin|reportes)\.html$/.test(location.pathname)) pintarLateral();
   if (usuaria) {
     usuariaCampana = usuaria;
     actualizarCampana();

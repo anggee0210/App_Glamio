@@ -595,11 +595,12 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
 .etiqueta-destacada { margin: 0; background: #fdf1d8; color: #8a5a00; }
 .aviso-donde { color: var(--gris); }
 .aviso-texto { font-size: 1.08rem; }
-/* Botones de la derecha: rosa (responder) y lila (ver en la lección), como en el diseño */
-.boton-rosa, .boton-lila { flex-shrink: 0; border-radius: 14px; padding: 13px 26px; font-weight: 700; white-space: nowrap; }
-.boton-rosa { background: linear-gradient(135deg, #e3a0bf, #cf7fa6); color: #fff; box-shadow: 0 4px 14px rgba(207, 127, 166, .35); }
+/* Botones de la derecha: rosa fuerte (por responder), verde (ya respondida) y lila (ver en la lección) */
+.boton-rosa, .boton-lila, .boton-verde { flex-shrink: 0; border-radius: 14px; padding: 13px 26px; font-weight: 700; white-space: nowrap; }
+.boton-rosa { background: linear-gradient(135deg, #d4538c, #b8366f); color: #fff; box-shadow: 0 4px 14px rgba(184, 54, 111, .35); }
+.boton-verde { background: #e3f4ea; color: #1f6b41; border: 2px solid #3f9a66; }
 .boton-lila { background: var(--lila); color: var(--principal-oscuro); }
-.boton-rosa:hover, .boton-lila:hover { filter: brightness(1.05); }
+.boton-rosa:hover, .boton-lila:hover, .boton-verde:hover { filter: brightness(1.05); }
 .todo-al-dia { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 48px 20px;
   background: #fff; border: 1px solid var(--borde); border-radius: 20px; box-shadow: var(--sombra); }
 .todo-al-dia span:first-child { font-size: 2.6rem; }
@@ -609,7 +610,7 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
   .aviso { flex-wrap: wrap; padding: 16px; gap: 14px; }
   .avatar-aviso { width: 48px; height: 48px; }
   .aviso-datos { flex-basis: calc(100% - 64px); }
-  .boton-rosa, .boton-lila { width: 100%; text-align: center; }
+  .boton-rosa, .boton-lila, .boton-verde { width: 100%; text-align: center; }
   .franja-avisos { font-size: 1.1rem; padding: 10px 14px; }
   .boton-visto { width: 100%; }
 }
@@ -713,9 +714,9 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
 .logo-grande img { width: 112px; height: 112px; }
 .logo-grande { gap: 16px; }
 .acceso-form { max-width: 640px; gap: 18px; }
-.campo-icono input { font-size: 1.65rem; padding: 30px 84px; border-width: 2px; } /* letra algo más pequeña, la caja casi igual de alta */
+.campo-icono input { font-size: 1.85rem; padding: 28px 84px; border-width: 2px; } /* letra algo más pequeña, la caja casi igual de alta */
 /* La contraseña, un poco más pequeña aún (por name, porque el 👁 cambia su type a text) */
-.campo-icono input[name=password] { font-size: 1.4rem; padding-top: 34px; padding-bottom: 34px; }
+.campo-icono input[name=password] { font-size: 1.6rem; padding-top: 31px; padding-bottom: 31px; }
 .campo-icono input::placeholder { color: #8a7d90; }
 .campo-icono svg { width: 40px; height: 40px; left: 26px; }
 .ver-contrasena { font-size: 2rem; right: 22px; }
@@ -731,8 +732,8 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
   .logo-grande .logo-nombre { font-size: 3.2rem; }
   .logo-grande .logo-lema { font-size: 1rem; letter-spacing: 2px; }
   .logo-grande img { width: 80px; height: 80px; }
-  .campo-icono input { font-size: 1.35rem; padding: 22px 64px; }
-  .campo-icono input[name=password] { font-size: 1.15rem; padding-top: 25px; padding-bottom: 25px; }
+  .campo-icono input { font-size: 1.5rem; padding: 21px 64px; }
+  .campo-icono input[name=password] { font-size: 1.3rem; padding-top: 23px; padding-bottom: 23px; }
   .campo-icono svg { width: 30px; height: 30px; left: 18px; }
   .ver-contrasena { font-size: 1.6rem; }
   .boton-ancho { font-size: 1.3rem; }
