@@ -13,8 +13,15 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Si falta SESSION_SECRET en .env (o se dejó el de ejemplo), avisamos: con una clave conocida,
+// alguien podría falsificar la cookie de sesión. La app sigue arrancando para no bloquear la clase.
+const secreto = process.env.SESSION_SECRET;
+if (!secreto || secreto.startsWith('CAMBIAR') || secreto === 'cambia-esto-por-algo-secreto') {
+  console.warn('⚠️  Pon un SESSION_SECRET propio en .env (mira .env.example). Ahora se usa uno de prueba.');
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'glamio-secreto',
+  secret: secreto || 'glamio-secreto',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 horas
