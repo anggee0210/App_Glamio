@@ -103,10 +103,7 @@
       msg.classList.remove('oculto');
     };
 
-    // "15 nov, 22:44"
-    function fechaCorta(fecha) {
-      return new Date(fecha).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    }
+    // (fechaCorta() está en api.js: la usan varias páginas)
 
     // Nombre + etiqueta del perfil + fecha. La directora académica se distingue
     // para que la alumna sepa qué respuesta viene de la academia.
@@ -116,10 +113,12 @@
       return `<strong>${esc(x.nombre)}</strong>${etiqueta} <span class="ayuda" style="display:inline">· ${fechaCorta(x.fecha)}</span>`;
     }
 
-    function mostrarErrorDudas(texto) {
+    // Aviso encima de las dudas: rojo si es un error, rosa si es una confirmación
+    function mostrarErrorDudas(texto, esError = true) {
       const p = document.getElementById('error-dudas');
       p.textContent = texto;
       p.classList.toggle('oculto', !texto);
+      p.classList.toggle('error', esError);
       // Si el error viene de una duda de más abajo, llevamos la vista hasta el aviso
       if (texto) p.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -147,14 +146,14 @@
               <div class="fila">
                 ${esAdmin && !r.destacada ? `<button class="chip" onclick="destacar(${r.id})">⭐ Destacar</button>` : ''}
                 ${esAdmin && r.destacada ? `<button class="chip peligro" onclick="quitarDestacada(${r.id})">Quitar destacada</button>` : ''}
-                <button class="chip" onclick="reportar('respuesta', ${r.id})">Reportar</button>
+                ${puedeReportar(r) ? `<button class="chip" onclick="reportar(this, 'respuesta', ${r.id})">⚑ Reportar</button>` : ''}
               </div>
             </div>`).join('')}
           <form class="fila" style="flex-direction:row;margin-top:8px" onsubmit="responder(event, ${d.id})">
             <input name="texto" placeholder="Responder..." required maxlength="1000">
             <button class="boton">Enviar</button>
           </form>
-          <button class="chip" style="margin-top:6px" onclick="reportar('duda', ${d.id})">Reportar</button>
+          ${puedeReportar(d) ? `<div class="fila" style="margin-top:6px"><button class="chip" onclick="reportar(this, 'duda', ${d.id})">⚑ Reportar duda</button></div>` : ''}
         </div>`).join('') || '<p class="ayuda">Nadie ha preguntado todavía. ¡Sé la primera!</p>';
 
       // Si venimos de la campana (…#duda-5), bajamos hasta esa duda. El navegador no lo hace
@@ -229,17 +228,17 @@
       cargarDudas();
     }
 
-    async function reportar(tipo, elementoId) {
-      const motivo = prompt('¿Por qué lo reportas?');
-      if (motivo === null) return;
-      // (Reportar y moderar se repasan a fondo el 23/11; de momento, al menos, se ve si falla)
-      try {
-        await api('/api/reportes', { method: 'POST', body: { tipo, elemento_id: elementoId, motivo } });
-        mostrarErrorDudas('');
-      } catch (err) {
-        mostrarErrorDudas(err.message);
-      }
-      cargarDudas();
+    // Lo propio no se reporta (el servidor tampoco lo deja): para eso no sale el botón
+    function puedeReportar(x) {
+      return usuaria && x.usuaria_id !== usuaria.id;
+    }
+
+    // Abre el menú de motivos (abrirReporte está en api.js, lo comparte con el muro)
+    function reportar(boton, tipo, elementoId) {
+      abrirReporte(boton, tipo, elementoId, (mensaje) => {
+        mostrarErrorDudas('✅ ' + mensaje, false); // confirmación en rosa, no en rojo
+        cargarDudas(); // lo reportado desaparece de la lista
+      });
     }
 
     iniciar();

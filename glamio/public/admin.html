@@ -9,12 +9,25 @@
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
-    <h1>Panel de administradora</h1>
+    <h1>Panel de la directora</h1>
 
-    <h2>Mis cursos</h2>
-    <div id="lista-cursos"><p>Cargando…</p></div>
+    <!-- Pestañas: cada opción enseña solo su parte (decisión del proyecto).
+         La pestaña abierta va en la URL (admin.html?pestana=leccion) para que recargar no la pierda. -->
+    <nav class="pestanas pestanas-panel" id="pestanas-panel">
+      <button class="pestana activa" data-pestana="cursos">📚 Mis cursos</button>
+      <button class="pestana" data-pestana="curso">➕ Nuevo curso</button>
+      <button class="pestana" data-pestana="leccion">🎬 Nueva lección</button>
+      <button class="pestana" data-pestana="material">🧴 Materiales</button>
+      <button class="pestana" data-pestana="certificado">🎓 Certificado</button>
+    </nav>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <section class="pestana-panel" data-pestana="cursos">
+      <p class="ayuda">Pulsa «Editar» o «Opciones» para cambiar algo, o añade lecciones y materiales a cada curso.</p>
+      <p class="mensaje error oculto" id="msg-lista"></p>
+      <div id="lista-cursos"><p>Cargando…</p></div>
+    </section>
+
+    <section class="tarjeta pestana-panel oculto" data-pestana="curso">
       <h2 style="margin-top:0">Nuevo curso</h2>
       <form id="form-curso">
         <input name="titulo" placeholder="Título" required>
@@ -31,7 +44,7 @@
       </form>
     </section>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <section class="tarjeta pestana-panel oculto" data-pestana="leccion">
       <h2 style="margin-top:0">Nueva lección</h2>
       <form id="form-leccion">
         <select name="curso_id" class="sel-curso"></select>
@@ -49,7 +62,7 @@
       </form>
     </section>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <section class="tarjeta pestana-panel oculto" data-pestana="material">
       <h2 style="margin-top:0">Material de un curso</h2>
       <form id="form-material">
         <select name="curso_id" class="sel-curso"></select>
@@ -63,7 +76,8 @@
       </form>
     </section>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <!-- Va en la misma pestaña que "Nuevo curso": se necesita al elegir la categoría del curso -->
+    <section class="tarjeta pestana-panel oculto" data-pestana="curso" style="margin-top:14px">
       <h2 style="margin-top:0">Nueva categoría</h2>
       <form id="form-categoria">
         <div class="fila">
@@ -75,7 +89,7 @@
       </form>
     </section>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <section class="tarjeta pestana-panel oculto" data-pestana="certificado">
       <h2 style="margin-top:0">Diseño del certificado</h2>
       <form id="form-certificado">
         <label>Imagen de fondo (horizontal, por ejemplo 3508 × 2480 px)
@@ -98,8 +112,7 @@
       </form>
     </section>
 
-    <h2>Reportes pendientes</h2>
-    <div id="reportes"></div>
+    <!-- Los reportes tienen ahora su propia página: reportes.html (opción "⚑ Reportes" del menú) -->
   </main>
 
   <script src="/js/api.js"></script>
@@ -117,6 +130,38 @@
     const formCurso = document.getElementById('form-curso');
     const formLeccion = document.getElementById('form-leccion');
     const formMaterial = document.getElementById('form-material');
+
+    // ---------- Pestañas del Panel ----------
+    // Enseña solo las secciones de esa pestaña y la guarda en la URL (?pestana=leccion).
+    const PESTANAS = ['cursos', 'curso', 'leccion', 'material', 'certificado'];
+    function abrirPestanaPanel(nombre) {
+      if (!PESTANAS.includes(nombre)) nombre = 'cursos';
+      document.querySelectorAll('#pestanas-panel .pestana').forEach(b => b.classList.toggle('activa', b.dataset.pestana === nombre));
+      document.querySelectorAll('.pestana-panel').forEach(s => s.classList.toggle('oculto', s.dataset.pestana !== nombre));
+      history.replaceState(null, '', nombre === 'cursos' ? location.pathname : '?pestana=' + nombre);
+    }
+    document.querySelectorAll('#pestanas-panel .pestana').forEach(b => b.onclick = () => abrirPestanaPanel(b.dataset.pestana));
+
+    // Botones rápidos de "Mis cursos": abren la pestaña con ese curso ya elegido
+    function nuevaLeccionEn(cursoId) {
+      modoCrear(formLeccion);
+      formLeccion.curso_id.value = cursoId;
+      proponerOrden();
+      abrirPestanaPanel('leccion');
+    }
+    function nuevoMaterialEn(cursoId) {
+      modoCrear(formMaterial);
+      formMaterial.curso_id.value = cursoId;
+      abrirPestanaPanel('material');
+    }
+
+    // Aviso en rojo encima de "Mis cursos" (quitar vídeo, borrar lección o material). Sustituye a alert().
+    function avisarLista(texto) {
+      const p = document.getElementById('msg-lista');
+      p.textContent = texto;
+      p.classList.toggle('oculto', !texto);
+      if (texto) p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
     // ---------- Mensajes dentro de cada formulario ----------
     function avisar(form, texto, esError = false) {
@@ -139,6 +184,8 @@
       // Al editar no se cambia de curso: el desplegable se bloquea
       const selCurso = form.querySelector('.sel-curso');
       if (selCurso) selCurso.disabled = true;
+      // El formulario está en otra pestaña: la abrimos antes de llevar la vista hasta él
+      abrirPestanaPanel(form.closest('section').dataset.pestana);
       form.scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -178,11 +225,15 @@
               <span class="etiqueta" style="margin:0 0 0 6px">${esc(c.categoria)}</span>
               <span class="precio" style="margin-left:6px">${Number(c.precio) === 0 ? 'Gratis' : c.precio + ' €'}</span>
             </div>
-            <button class="chip" onclick="editarCurso(${c.id})">Editar curso</button>
+            <span class="fila" style="flex-wrap:wrap">
+              <button class="chip" onclick="editarCurso(${c.id})">✏️ Editar curso</button>
+              <button class="chip" onclick="nuevaLeccionEn(${c.id})">🎬 + Lección</button>
+              <button class="chip" onclick="nuevoMaterialEn(${c.id})">🧴 + Material</button>
+            </span>
           </div>
           <p style="margin:10px 0 4px"><strong>Lecciones</strong></p>
           ${c.lecciones.map(l => `
-            <div class="fila" style="justify-content:space-between;margin-bottom:4px">
+            <div class="fila fila-lista" style="justify-content:space-between;margin-bottom:4px">
               <span>${l.orden}. ${esc(l.titulo)}
                 <span class="ayuda">${l.tiene_video_propio ? '🎬 vídeo propio' : l.tiene_youtube ? '▶ YouTube' : 'sin vídeo'}</span>
               </span>
@@ -199,7 +250,7 @@
             </div>`).join('') || '<p class="ayuda">Todavía no tiene lecciones.</p>'}
           <p style="margin:10px 0 4px"><strong>Materiales</strong></p>
           ${c.materiales.map(m => `
-            <div class="fila" style="justify-content:space-between;margin-bottom:4px">
+            <div class="fila fila-lista" style="justify-content:space-between;margin-bottom:4px">
               <span>${esc(m.nombre)}${m.cantidad ? ' (' + esc(m.cantidad) + ')' : ''}</span>
               <span class="fila">
                 <button class="chip" onclick="editarMaterial(${c.id}, ${m.id})">Editar</button>
@@ -294,7 +345,7 @@
         await api(`/api/lecciones/${id}/video`, { method: 'DELETE' });
         soltarSiSeEdita(id);
         await recargar();
-      } catch (err) { alert(err.message); }
+      } catch (err) { avisarLista(err.message); }
     }
 
     async function borrarLeccion(id) {
@@ -303,7 +354,7 @@
         await api('/api/lecciones/' + id, { method: 'DELETE' });
         soltarSiSeEdita(id);
         await recargar();
-      } catch (err) { alert(err.message); }
+      } catch (err) { avisarLista(err.message); }
     }
 
     async function borrarMaterial(id) {
@@ -311,7 +362,7 @@
       try {
         await api('/api/cursos/materiales/' + id, { method: 'DELETE' });
         await recargar();
-      } catch (err) { alert(err.message); }
+      } catch (err) { avisarLista(err.message); }
     }
 
     // ---------- Enviar formularios ----------
@@ -323,7 +374,8 @@
         await api(id ? '/api/cursos/' + id : '/api/cursos', { method: id ? 'PUT' : 'POST', body: new FormData(formCurso) });
         modoCrear(formCurso);
         await recargar();
-        avisar(formCurso, id ? 'Cambios guardados ✅' : 'Curso creado ✅');
+        avisar(formCurso, id ? 'Cambios guardados ✅ (puedes verlo en «📚 Mis cursos»)'
+          : 'Curso creado ✅ Ahora añádele lecciones en «🎬 Nueva lección».');
       } catch (err) { avisar(formCurso, err.message, true); }
     };
 
@@ -403,26 +455,6 @@
       } catch (err) { avisar(formCertificado, err.message, true); }
     };
 
-    // ---------- Reportes ----------
-    async function cargarReportes() {
-      const reportes = await api('/api/reportes');
-      document.getElementById('reportes').innerHTML = reportes.map(r => `
-        <div class="tarjeta" style="margin-bottom:8px">
-          <p><strong>${esc(r.tipo)} #${r.elemento_id}</strong> – ${esc(r.motivo)}</p>
-          <div class="fila">
-            <button class="chip" onclick="revisar(${r.id}, true)">Volver a mostrar</button>
-            <button class="chip" onclick="revisar(${r.id}, false)">Mantener oculto</button>
-          </div>
-        </div>`).join('') || '<p>No hay reportes pendientes.</p>';
-    }
-
-    async function revisar(id, mostrar) {
-      try {
-        await api('/api/reportes/' + id, { method: 'PUT', body: { mostrar } });
-        cargarReportes();
-      } catch (err) { alert(err.message); }
-    }
-
     // ---------- Al abrir la página ----------
     (async () => {
       const usuaria = await pintarCabecera();
@@ -430,9 +462,9 @@
         document.querySelector('main').innerHTML = '<p class="mensaje">Solo la administradora puede ver este panel.</p>';
         return;
       }
+      abrirPestanaPanel(param('pestana') || 'cursos'); // la de la URL, o "Mis cursos"
       await recargar();
       cargarDiseno();
-      cargarReportes();
     })();
   </script>
 </body>

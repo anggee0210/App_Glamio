@@ -18,7 +18,7 @@ img { max-width: 100%; display: block; }
 .cabecera { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;
   background: #fff; border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 10; }
 .logo { font-weight: 800; font-size: 1.3rem; color: var(--rosa); letter-spacing: 1px; }
-.menu { display: flex; gap: 12px; flex-wrap: wrap; font-size: .9rem; }
+.menu { display: flex; gap: 14px 18px; flex-wrap: wrap; font-size: 1.05rem; font-weight: 500; } /* letra más grande: más fácil de leer y de pulsar en el móvil */
 
 main { padding: 16px; max-width: 960px; margin: 0 auto; }
 h1 { font-size: 1.5rem; margin-bottom: 12px; }
@@ -27,7 +27,7 @@ h2 { font-size: 1.15rem; margin: 18px 0 8px; }
 /* Filtros por categoría */
 .filtros { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
 .chip { border: 1px solid var(--borde); background: #fff; border-radius: 999px; padding: 6px 14px;
-  cursor: pointer; white-space: nowrap; font-size: .9rem; }
+  cursor: pointer; white-space: nowrap; font-size: 1rem; }
 .chip.activo { background: var(--rosa); color: #fff; border-color: var(--rosa); }
 
 /* Tarjetas */
@@ -99,3 +99,81 @@ input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var
 /* Al llegar desde un aviso (leccion.html?id=1#duda-5), la duda se ilumina un momento */
 .tarjeta:target { animation: brillo 2s ease-out; }
 @keyframes brillo { from { box-shadow: 0 0 0 4px var(--rosa); } to { box-shadow: 0 0 0 0 transparent; } }
+
+/* Título de sección con su opción a la derecha (Materiales · 🧮 Calcular mi precio, Tu progreso · 🎓 Ver mi certificado) */
+.titulo-con-opcion { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin: 18px 0 8px; }
+.titulo-con-opcion h2 { margin: 0; }
+/* Botón mediano: más grande que un chip, más discreto que .boton */
+.boton-opcion { display: inline-block; background: #fff; color: var(--rosa); border: 1.5px solid var(--rosa); border-radius: 10px;
+  padding: 8px 16px; font-size: 1.05rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.boton-opcion:hover { background: var(--rosa); color: #fff; }
+.boton-opcion.oculto { display: none; } /* va después para ganar a display: inline-block */
+
+/* ⚑ Menú de motivos al reportar (se abre debajo del botón; abrirReporte() en api.js) */
+.caja-reporte { margin-top: 8px; padding: 12px; border: 1px solid var(--borde); border-radius: 10px; background: #fffafc; }
+.opcion-radio { display: flex; align-items: center; gap: 8px; padding: 4px 0; color: inherit; cursor: pointer; }
+.opcion-radio input { width: auto; margin: 0; }
+.caja-reporte input[name=detalle] { margin: 6px 0; }
+
+/* Panel: contenido reportado (foto pequeña + texto al lado) */
+.reporte-contenido { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; }
+.reporte-contenido img { width: 110px; height: 110px; object-fit: cover; margin: 0; }
+@media (max-width: 520px) { .reporte-contenido { flex-direction: column; } .reporte-contenido img { width: 100%; height: auto; } }
+
+/* Pestañas de la Comunidad (📷 Trabajos · ❓ Dudas) */
+.pestanas { display: flex; gap: 6px; border-bottom: 2px solid var(--borde); margin-bottom: 16px; }
+.pestana { background: none; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px;
+  padding: 10px 16px; font-size: 1.05rem; font-weight: 600; color: var(--gris); cursor: pointer; }
+.pestana.activa { color: var(--rosa); border-bottom-color: var(--rosa); }
+.pestanas.oculto { display: none; }
+
+/* ⭐ Estrellas de las reseñas: llenas en dorado, vacías en gris */
+.estrellas { color: #e0a800; letter-spacing: 1px; white-space: nowrap; }
+.estrellas .vacias { color: #d9d2d6; }
+.media-estrellas { font-size: 1.05rem; }
+/* Elegir estrellas en el formulario: botones grandes, fáciles de pulsar en el móvil */
+.elegir-estrellas { display: flex; align-items: center; gap: 2px; margin-bottom: 8px; }
+.elegir-estrellas button { background: none; border: none; font-size: 2rem; line-height: 1; padding: 2px; color: #d9d2d6; cursor: pointer; }
+.elegir-estrellas button.llena { color: #e0a800; }
+.form-respuesta { margin-top: 8px; }
+
+/* Pestañas del Panel: son 5, así que en el móvil pasan a la línea siguiente sin tapar nada */
+.pestanas-panel { flex-wrap: wrap; row-gap: 4px; }
+.pestanas-panel .pestana { padding: 10px 12px; }
+
+/* ===================== Móvil (repaso del 24/11) ===================== */
+/* Botón "☰ Menú": solo existe en pantallas pequeñas (en el ordenador no se ve) */
+.boton-menu { display: none; align-items: center; gap: 6px; background: #fff; color: var(--rosa);
+  border: 1.5px solid var(--rosa); border-radius: 10px; padding: 8px 14px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
+.boton-menu .punto { width: 9px; height: 9px; border-radius: 50%; background: #d33; display: inline-block; }
+.boton-menu .punto.oculto { display: none; }
+
+/* Las filas de botones bajan a la línea siguiente si no caben (en vez de salirse) */
+.fila { flex-wrap: wrap; }
+/* …pero los cuadros de texto dentro de una fila se estiran y encogen, sin empujar al botón abajo */
+.fila > input:not([type=checkbox]):not([type=radio]):not([type=color]), .fila > select { flex: 1 1 140px; min-width: 0; width: auto; }
+
+/* Textos larguísimos (por ejemplo un enlace de YouTube) se parten en vez de salirse */
+body { overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  /* Cabecera en UNA línea: GLAMIO a la izquierda y "☰ Menú" a la derecha */
+  .cabecera { flex-wrap: wrap; padding: 10px 16px; }
+  .boton-menu { display: inline-flex; }
+  .menu { display: none; width: 100%; flex-direction: column; gap: 0; margin-top: 8px; }
+  .cabecera.abierta .menu { display: flex; }
+  /* Opciones grandes, una por línea, fáciles de pulsar con el dedo */
+  .menu a { padding: 12px 4px; border-top: 1px solid var(--borde); font-size: 1.1rem; }
+  /* Botones pequeños un poco más altos para el dedo (mínimo recomendado ≈ 40 px) */
+  .chip { min-height: 40px; }
+  /* iPhone hace zoom al escribir si la letra del cuadro es menor de 16 px */
+  input, select, textarea { font-size: 16px; }
+}
+
+/* Filas de la lista del Panel (lección u material + sus botones): el texto se encoge y
+   los botones se quedan SIEMPRE a la derecha, en vez de bajar unas veces sí y otras no */
+.fila-lista { flex-wrap: nowrap; }
+.fila-lista > :first-child { flex: 1; min-width: 0; }
+.fila-lista > :last-child { flex-shrink: 0; flex-wrap: nowrap; }
+/* El precio no se parte en dos líneas ("24.99" / "€") */
+.precio { white-space: nowrap; }

@@ -74,20 +74,47 @@
         </div>`;
     }
 
+    // (Los reportes ya no salen aquí: tienen su página "⚑ Reportes" con su propio número en el menú)
+
+    // Directora: reseñas de 1 a 3 ⭐ sin responder (RN-21: las negativas se responden)
+    function tarjetaResenaSinResponder(r) {
+      return `
+        <div class="tarjeta aviso-duda">
+          <div>
+            <strong>${esc(r.nombre)}</strong>
+            <span class="estrellas" aria-label="${r.estrellas} de 5 estrellas">${'★'.repeat(r.estrellas)}<span class="vacias">${'★'.repeat(5 - r.estrellas)}</span></span>
+            <p class="ayuda">Reseña de «${esc(r.curso)}» · ${haceCuanto(r.fecha)}</p>
+            ${r.comentario ? `<p class="texto">«${esc(r.comentario)}»</p>` : ''}
+          </div>
+          <a class="boton" href="/curso.html?id=${r.curso_id}#resenas">Responder →</a>
+        </div>`;
+    }
+
     async function cargar() {
       const esAdmin = usuaria.perfil === 'administradora';
       const lista = document.getElementById('lista');
       let avisos;
       try {
-        avisos = await api(rutaAvisos(usuaria)); // rutaAvisos() está en api.js
+        avisos = await cargarAvisos(usuaria); // cargarAvisos() está en api.js (lo usa también la campana)
       } catch (err) {
         lista.innerHTML = '';
         return mostrarError(err.message);
       }
-      lista.innerHTML = avisos.map(esAdmin ? tarjetaDudaSinResponder : tarjetaRespuestaNueva).join('')
-        || `<p class="mensaje">🎉 ¡Todo al día! ${esAdmin ? 'No hay dudas pendientes.' : 'No tienes notificaciones nuevas.'}</p>`;
-      // La directora no "marca como visto": sus avisos se van al responder
-      document.getElementById('todo-visto').classList.toggle('oculto', esAdmin || avisos.length === 0);
+      if (esAdmin) {
+        const { dudas, resenas } = avisos;
+        const bloqueResenas = resenas.length
+          ? `<h2>⭐ Reseñas de 1 a 3 estrellas sin responder (${resenas.length})</h2>` + resenas.map(tarjetaResenaSinResponder).join('') : '';
+        const hayOtros = resenas.length > 0;
+        lista.innerHTML = bloqueResenas +
+          (hayOtros && dudas.length ? `<h2>❓ Dudas sin responder (${dudas.length})</h2>` : '') +
+          (dudas.map(tarjetaDudaSinResponder).join('') ||
+            (hayOtros ? '' : `<p class="mensaje">🎉 ¡Todo al día! No hay nada pendiente.</p>`));
+      } else {
+        lista.innerHTML = avisos.respuestas.map(tarjetaRespuestaNueva).join('')
+          || '<p class="mensaje">🎉 ¡Todo al día! No tienes notificaciones nuevas.</p>';
+      }
+      // La directora no "marca como visto": sus avisos se van al responder o al revisar
+      document.getElementById('todo-visto').classList.toggle('oculto', esAdmin || avisos.respuestas.length === 0);
     }
 
     document.getElementById('todo-visto').onclick = async () => {
@@ -107,10 +134,10 @@
         return;
       }
       const esAdmin = usuaria.perfil === 'administradora';
-      document.getElementById('titulo').textContent = esAdmin ? '🔔 Dudas sin responder' : '🔔 Mis notificaciones';
-      document.title = (esAdmin ? 'Dudas sin responder' : 'Mis notificaciones') + ' – GLAMIO';
+      document.getElementById('titulo').textContent = esAdmin ? '🔔 Avisos de la directora' : '🔔 Mis notificaciones';
+      document.title = (esAdmin ? 'Avisos' : 'Mis notificaciones') + ' – GLAMIO';
       document.getElementById('explicacion').textContent = esAdmin
-        ? 'Dudas de las alumnas y profesionales que todavía no has contestado. Al responder, desaparecen solas de esta lista.'
+        ? 'Reseñas de 1 a 3 ⭐ y dudas que todavía no has contestado. Al responder, desaparecen solas de esta lista. (Los reportes están en «⚑ Reportes».)'
         : 'Aquí te avisamos cuando alguien responde a las dudas que has hecho. Al abrir la lección, se marcan como vistas.';
       cargar();
     }

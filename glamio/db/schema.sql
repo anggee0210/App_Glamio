@@ -201,3 +201,9 @@ CREATE TRIGGER resena_solo_si_terminado
 -- 🔔 Avisos de la alumna (16/11): ¿ha visto ya la autora de la duda esta respuesta?
 -- (En la base que ya existía se añadió con ALTER TABLE ... ADD COLUMN y las antiguas se marcaron como leídas.)
 ALTER TABLE respuestas ADD COLUMN IF NOT EXISTS leida BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- ⚑ Reseñas reportables (16/11, RN-21): una reseña reportada se oculta hasta que la directora la revise.
+-- (En la base que ya existía se aplicó con estos mismos ALTER TABLE.)
+ALTER TABLE resenas_cursos ADD COLUMN IF NOT EXISTS oculta BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE reportes DROP CONSTRAINT IF EXISTS reportes_tipo_check;
+ALTER TABLE reportes ADD CONSTRAINT reportes_tipo_check CHECK (tipo IN ('duda', 'respuesta', 'trabajo', 'resena'));

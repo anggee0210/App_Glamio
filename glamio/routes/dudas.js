@@ -3,6 +3,8 @@ const express = require('express');
 const pool = require('../db/pool');
 const { requiereAdmin, requierePerfil } = require('../middleware/auth');
 const { subir, rutaPublica, rechazar, borrarArchivo } = require('../middleware/subidas');
+// esId y puedeEntrarEnLeccion (RN-14) también los usan los reportes: viven en permisos.js
+const { esId, puedeEntrarEnLeccion } = require('../middleware/permisos');
 const router = express.Router();
 
 // Primer filtro: el perfil. La clienta no entra en las lecciones (fase 1).
@@ -11,31 +13,12 @@ const puedeParticipar = requierePerfil('alumna', 'profesional', 'administradora'
 
 const MAX_TEXTO = 1000;
 
-// ¿Es un id válido? (un número entero positivo que cabe en una columna INT)
-function esId(valor) {
-  return /^\d+$/.test(String(valor)) && Number(valor) > 0 && Number(valor) <= 2147483647;
-}
-
 // Texto limpio y su error (o null si está bien)
 function revisarTexto(texto, que) {
   const limpio = String(texto ?? '').trim();
   if (!limpio) return { error: `Escribe tu ${que}` };
   if (limpio.length > MAX_TEXTO) return { error: `Tu ${que} es demasiado larga (máximo ${MAX_TEXTO} caracteres)` };
   return { limpio };
-}
-
-// RN-14: en una lección solo participan las inscritas en su curso (y la administradora).
-// Devuelve null si puede, o { estado, error } si no.
-async function puedeEntrarEnLeccion(usuaria, leccionId) {
-  const { rows } = await pool.query(
-    `SELECT l.id, (i.id IS NOT NULL) AS inscrita
-     FROM lecciones l
-     LEFT JOIN inscripciones i ON i.curso_id = l.curso_id AND i.usuaria_id = $2
-     WHERE l.id = $1`, [leccionId, usuaria.id]);
-  if (!rows[0]) return { estado: 404, error: 'Lección no encontrada' };
-  if (!rows[0].inscrita && usuaria.perfil !== 'administradora')
-    return { estado: 403, error: 'Inscríbete en el curso para participar en sus dudas' };
-  return null;
 }
 
 // GET /api/dudas?leccion=1  → dudas con sus respuestas (destacada primero)
@@ -80,6 +63,29 @@ router.get('/sin-responder', requiereAdmin, async (req, res, next) => {
          AND NOT EXISTS (SELECT 1 FROM respuestas r JOIN usuarias ua ON ua.id = r.usuaria_id
                          WHERE r.duda_id = d.id AND ua.perfil = 'administradora')
        ORDER BY d.fecha DESC`);
+    res.json(rows);
+  } catch (err) { next(err); }
+});
+
+// GET /api/dudas/comunidad → pestaña "❓ Dudas" de la página Comunidad
+// Las últimas dudas de los cursos en los que estoy inscrita (la directora: de todos).
+// Mismo criterio que la RN-14: solo veo dudas de lecciones en las que puedo entrar.
+router.get('/comunidad', puedeParticipar, async (req, res, next) => {
+  try {
+    const esAdmin = req.session.usuaria.perfil === 'administradora';
+    const { rows } = await pool.query(
+      `SELECT d.id, d.texto, d.foto, d.fecha, d.leccion_id, u.nombre, u.perfil,
+              l.titulo AS leccion, c.titulo AS curso,
+              (SELECT count(*) FROM respuestas r WHERE r.duda_id = d.id AND r.oculta = FALSE)::int AS respuestas,
+              EXISTS (SELECT 1 FROM respuestas r WHERE r.duda_id = d.id AND r.destacada AND r.oculta = FALSE) AS tiene_destacada
+       FROM dudas d
+       JOIN usuarias u ON u.id = d.usuaria_id
+       JOIN lecciones l ON l.id = d.leccion_id
+       JOIN cursos c ON c.id = l.curso_id
+       WHERE d.oculta = FALSE
+         AND ($2 OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.curso_id = c.id AND i.usuaria_id = $1))
+       ORDER BY d.fecha DESC
+       LIMIT 50`, [req.session.usuaria.id, esAdmin]);
     res.json(rows);
   } catch (err) { next(err); }
 });
