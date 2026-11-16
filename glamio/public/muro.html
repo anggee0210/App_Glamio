@@ -135,7 +135,7 @@
           <a class="ver-foto" href="${t.foto}" target="_blank" title="Ver la foto en grande"><img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}"></a>
           <div class="trabajo-datos">
             <div class="trabajo-cabeza">
-              <strong>${esc(t.nombre)}${esMio(t) ? ' <span class="ayuda" style="display:inline">(tú)</span>' : ''}</strong>
+              <strong><a class="enlace-autora" href="/perfil.html?id=${t.usuaria_id}" title="Ver su perfil">${esc(t.nombre)}</a>${esMio(t) ? ' <span class="ayuda" style="display:inline">(tú)</span>' : ''}</strong>
               ${etiquetaPermiso(t)}
             </div>
             <p class="trabajo-curso">${t.curso ? esc(t.curso) : 'Sin curso'}</p>

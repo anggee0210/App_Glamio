@@ -22,7 +22,7 @@ const VISIBLE = 't.permiso_mi_estilo = TRUE AND t.oculto = FALSE';
 router.get('/', soloClienta, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT t.id, t.foto, t.descripcion, t.fecha, u.nombre, c.titulo AS curso, f.fecha AS guardado
+      `SELECT t.id, t.foto, t.descripcion, t.fecha, t.usuaria_id, u.nombre, c.titulo AS curso, f.fecha AS guardado
        FROM favoritos f
        JOIN trabajos t ON t.id = f.trabajo_id
        JOIN usuarias u ON u.id = t.usuaria_id

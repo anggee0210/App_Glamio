@@ -34,3 +34,10 @@ DROP TRIGGER IF EXISTS favorito_solo_clienta ON favoritos;
 CREATE TRIGGER favorito_solo_clienta
   BEFORE INSERT ON favoritos
   FOR EACH ROW EXECUTE FUNCTION comprobar_favorito();
+
+-- =========================================
+-- 18/11 · Fase 2 · Perfil público: ¿sale este servicio en el perfil de su autora?
+-- =========================================
+-- Por defecto NO: los servicios de la calculadora son privados hasta que ella lo marque
+-- (es su precio de trabajo: decide ella si lo enseña).
+ALTER TABLE servicios ADD COLUMN IF NOT EXISTS publico BOOLEAN NOT NULL DEFAULT FALSE;

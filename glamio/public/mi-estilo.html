@@ -58,7 +58,7 @@
         </div>
         <div class="estilo-datos">
           <div>
-            <p class="estilo-autora">${esc(t.nombre)}</p>
+            <p class="estilo-autora"><a class="enlace-autora" href="/perfil.html?id=${t.usuaria_id}" title="Ver su perfil">${esc(t.nombre)}</a></p>
             <p class="estilo-curso">${t.curso ? esc(t.curso) : 'Trabajo propio'}</p>
             ${t.descripcion ? `<p class="estilo-descripcion">${esc(t.descripcion)}</p>` : ''}
           </div>
@@ -126,7 +126,7 @@
             <img src="${esc(f.foto)}" alt="Trabajo de ${esc(f.nombre)}">
           </button>
           <div class="favorito-datos">
-            <span><strong>${esc(f.nombre)}</strong><br><span class="ayuda">${f.curso ? esc(f.curso) : 'Trabajo propio'}</span></span>
+            <span><a class="enlace-autora" href="/perfil.html?id=${f.usuaria_id}" title="Ver su perfil"><strong>${esc(f.nombre)}</strong></a><br><span class="ayuda">${f.curso ? esc(f.curso) : 'Trabajo propio'}</span></span>
             <button class="boton-quitar" onclick="alternarFavorito(this, ${f.id})" aria-label="Quitar de Mis favoritos" title="Quitar">♥</button>
           </div>
         </div>`).join('') ||

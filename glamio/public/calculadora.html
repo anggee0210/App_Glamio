@@ -137,6 +137,8 @@
             <strong>${esc(s.nombre)}</strong>
             <span class="servicio-precio">${euros(s.precio_sugerido)}</span>
             <span class="ayuda">${s.minutos} min · ${s.materiales.length} ${s.materiales.length === 1 ? 'material' : 'materiales'} · ${Number(s.precio_hora)} €/h · margen ${Number(s.margen)} %</span>
+            ${conPerfil ? `<label class="casilla-perfil" title="En tu perfil sale el nombre, los minutos y el precio (no los costes)">
+              <input type="checkbox" data-publico="${s.id}" ${s.publico ? 'checked' : ''}> 👁 Mostrar en mi perfil</label>` : ''}
           </div>
           <details class="opciones">
             <summary class="boton-puntos" title="Opciones" aria-label="Opciones de ${esc(s.nombre)}">⋮</summary>
@@ -147,6 +149,25 @@
         </div>`).join('') || '<p class="ayuda">Aún no has guardado servicios. Calcula uno y pulsa «Guardar servicio».</p>';
 
       caja.querySelectorAll('[data-borrar]').forEach(b => b.onclick = () => borrarServicio(b.dataset.borrar));
+      caja.querySelectorAll('[data-publico]').forEach(c => c.onchange = () => cambiarPublico(c));
+    }
+
+    // Fase 2 · Perfil público: la alumna y la profesional tienen perfil (la administradora no)
+    let conPerfil = false;
+
+    // 👁 Mostrar en mi perfil: se guarda al momento; si falla, la casilla vuelve a como estaba
+    async function cambiarPublico(casilla) {
+      casilla.disabled = true;
+      try {
+        const r = await api(`/api/servicios/${casilla.dataset.publico}/publico`, { method: 'PUT', body: { publico: casilla.checked } });
+        mostrar('error-servicios', '');
+        casilla.closest('.casilla-perfil').title = r.mensaje;
+      } catch (err) {
+        casilla.checked = !casilla.checked;
+        mostrar('error-servicios', err.message);
+      } finally {
+        casilla.disabled = false;
+      }
     }
 
     async function borrarServicio(idServicio) {
@@ -161,7 +182,8 @@
     }
 
     async function iniciar() {
-      await pintarCabecera();
+      const usuaria = await pintarCabecera();
+      conPerfil = !!usuaria && ['alumna', 'profesional'].includes(usuaria.perfil);
       const categorias = await api('/api/categorias');
       document.getElementById('categoria').innerHTML =
         categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');

@@ -59,6 +59,7 @@ app.use('/api/certificados', require('./routes/certificados'));
 app.use('/api/estadisticas', require('./routes/estadisticas'));
 app.use('/api/guias', require('./routes/guias'));
 app.use('/api/mi-estilo', require('./routes/mi-estilo')); // fase 2: favoritos de la clienta
+app.use('/api/perfil', require('./routes/perfil'));       // fase 2: perfil público de alumna y profesional
 
 // --- Ruta no encontrada en la API ---
 app.use('/api', (req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
