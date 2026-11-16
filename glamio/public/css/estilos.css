@@ -616,7 +616,7 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
 
 
 /* ===================== MENÚ LATERAL de la administradora ===================== */
-.con-lateral { display: grid; grid-template-columns: 290px 1fr; flex: 1; width: 100%; }
+.con-lateral { display: grid; grid-template-columns: 290px minmax(0, 1fr); flex: 1; width: 100%; } /* minmax(0,…): el contenido nunca ensancha la página */
 .con-lateral > main { max-width: none; margin: 0; }
 .lateral { background: linear-gradient(180deg, #f7eef9, #f1e3f5); border-right: 1px solid var(--borde); padding: 28px 16px; }
 .lateral nav { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 6px; }
@@ -627,7 +627,8 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
 /* En el Panel, el menú lateral sustituye a las pestañas de arriba */
 .con-lateral #pestanas-panel { display: none; }
 @media (max-width: 1000px) {
-  .con-lateral { grid-template-columns: 1fr; }
+  .con-lateral { grid-template-columns: minmax(0, 1fr); }
+  .lateral { min-width: 0; }
   .lateral { border-right: none; border-bottom: 1px solid var(--borde); padding: 10px 12px; }
   .lateral nav { position: static; flex-direction: row; overflow-x: auto; gap: 6px; }
   .lateral a { white-space: nowrap; padding: 10px 14px; font-size: .95rem; }
