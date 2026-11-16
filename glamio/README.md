@@ -1,4 +1,4 @@
-# GLAMIO 💅
+# GLAMIO 
 
 App web de formación en belleza (uñas, cabello y cejas): **academia de cursos**, **comunidad**, **calculadora de precios**, **reseñas verificadas** y **guías teóricas**.
 
