@@ -980,3 +980,94 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .talento-compartir .mas { width: 46px; height: 46px; font-size: 1.4rem; }
   .talento-compartir small { font-size: .8rem; }
 }
+
+/* =====================================================================
+   REGISTRO · elegir perfil: tarjetas con icono de línea;
+   la elegida en morado oscuro con detalles dorados y una marca ✓
+   ===================================================================== */
+.elegir-perfil { gap: 12px; padding: 0; margin: 0; }
+.elegir-perfil legend { font-size: .85rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--principal); margin-bottom: 12px; }
+.opcion-perfil span { position: relative; align-items: center; text-align: center; gap: 6px; padding: 20px 12px 18px;
+  border-radius: 18px; border: 1px solid var(--borde); background: rgba(255, 255, 255, .75);
+  transition: transform .25s, box-shadow .25s, background .25s, border-color .25s; }
+.opcion-perfil:hover span { transform: translateY(-3px); border-color: #d6bfe0; box-shadow: 0 10px 24px rgba(61, 23, 71, .10); }
+.perfil-icono { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  margin-bottom: 6px; color: var(--principal); background: var(--principal-claro); transition: background .25s, color .25s; }
+.perfil-icono svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round; }
+.opcion-perfil strong { font-family: var(--serif); font-size: 1.2rem; color: var(--principal-oscuro); transition: color .25s; }
+.opcion-perfil small { font-size: .9rem; line-height: 1.35; color: #7d7083; transition: color .25s; }
+/* Marca ✓ en la esquina (solo se ve en la elegida) */
+.perfil-check { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%;
+  background: #e3c27f; opacity: 0; transform: scale(.6); transition: opacity .25s, transform .25s; }
+.perfil-check::after { content: ''; position: absolute; left: 8px; top: 4px; width: 5px; height: 10px;
+  border: solid #2a0d33; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+/* La elegida */
+.opcion-perfil input:checked + span { background: linear-gradient(150deg, #3d1747 0%, #24092c 100%); border-color: transparent;
+  box-shadow: 0 14px 30px rgba(42, 13, 51, .28); }
+.opcion-perfil input:checked + span .perfil-icono { background: rgba(255, 255, 255, .06); color: #e3c27f;
+  box-shadow: inset 0 0 0 1px rgba(227, 194, 127, .55); }
+.opcion-perfil input:checked + span strong { color: #fff; }
+.opcion-perfil input:checked + span small { color: rgba(255, 255, 255, .72); }
+.opcion-perfil input:checked + span .perfil-check { opacity: 1; transform: scale(1); }
+.opcion-perfil input:focus-visible + span { outline: 2px solid var(--principal); outline-offset: 3px; }
+@media (max-width: 760px) {
+  /* En el móvil: una tarjeta por fila, con el icono a la izquierda */
+  .opcion-perfil span { display: grid; grid-template-columns: 44px 1fr; column-gap: 14px; row-gap: 0;
+    text-align: left; align-items: center; padding: 14px 16px; }
+  .perfil-icono { grid-row: span 2; margin: 0; width: 44px; height: 44px; }
+  .opcion-perfil strong { align-self: end; }
+  .opcion-perfil small { align-self: start; }
+}
+
+/* =====================================================================
+   COMUNIDAD (muro.html): pestañas y filtros como botones limpios,
+   interruptor de permiso, papelera discreta y «Reportar» con icono
+   ===================================================================== */
+.icono-linea { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round;
+  stroke-linejoin: round; flex-shrink: 0; }
+.comunidad-pestanas { margin: 4px 0 24px; }
+.comunidad-pestanas.oculto { display: none; }
+.comunidad-filtros { margin: 8px 0 26px; }
+.comunidad-filtros button { padding: 10px 22px; font-size: 1.02rem; }
+
+/* Estado del permiso en fotos de otras: punto de color + texto */
+.estado-permiso { display: inline-flex; align-items: center; gap: 7px; font-size: .82rem; font-weight: 600; color: #8a7d90; }
+.estado-permiso::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #c9bccd; }
+.estado-permiso.si { color: #2f7a4f; }
+.estado-permiso.si::before { background: #3bb36a; box-shadow: 0 0 0 3px rgba(59, 179, 106, .18); }
+
+/* Fila de acciones de la autora: interruptor a la izquierda, papelera a la derecha */
+.trabajo-acciones { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: auto;
+  padding-top: 14px; border-top: 1px solid var(--borde); }
+
+/* Interruptor (un checkbox con forma de interruptor) */
+.interruptor { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: .95rem; font-weight: 600;
+  color: var(--principal-oscuro); margin: 0; }
+.interruptor input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.interruptor-pista { position: relative; width: 44px; height: 24px; border-radius: 999px; background: #d9cfdd;
+  transition: background .2s; flex-shrink: 0; }
+.interruptor-pista::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); transition: transform .2s; }
+.interruptor input:checked + .interruptor-pista { background: var(--principal); }
+.interruptor input:checked + .interruptor-pista::after { transform: translateX(20px); }
+.interruptor input:focus-visible + .interruptor-pista { outline: 2px solid var(--principal); outline-offset: 2px; }
+.interruptor input:disabled + .interruptor-pista { opacity: .6; }
+
+/* Botón de icono (papelera): redondo y discreto; al pulsar una vez, se abre con el texto «¿Borrar?» */
+.boton-icono { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 40px; height: 40px;
+  padding: 0 10px; border-radius: 999px; border: 1px solid var(--borde); background: #fff; color: #8a7d90; cursor: pointer;
+  font: inherit; font-size: .88rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;
+  transition: color .2s, border-color .2s, background .2s; }
+.boton-icono:hover { color: #a12622; border-color: #f0c4c4; }
+.boton-icono.seguro { color: #fff; background: #b3261e; border-color: #b3261e; padding: 0 14px; }
+.boton-icono .icono-linea { width: 18px; height: 18px; }
+
+/* Reportar: discreto, con bandera */
+.boton-reportar { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer;
+  font: inherit; font-size: .88rem; font-weight: 600; color: #8a7d90; padding: 6px 0; }
+.boton-reportar:hover { color: #a12622; }
+.boton-reportar .icono-linea { width: 16px; height: 16px; }
+.fila-reportar { padding-top: 12px; border-top: 1px solid var(--borde); }
+.con-foto { color: #8a7d90; font-size: .9em; }
