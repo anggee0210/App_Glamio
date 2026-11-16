@@ -750,3 +750,16 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
   .curso-cabecera { grid-template-columns: minmax(320px, 680px) 1fr; }
   .curso-info h1 { font-size: 2.8rem; }
 }
+
+/* ===================== Comunidad: cada tarjeta con su propia altura ===================== */
+/* Al abrir "Reportar" solo crece esa tarjeta; antes la fila entera se estiraba y parecía que la de al lado también se desplegaba */
+.galeria { align-items: start; }
+
+/* ===================== Visor de fotos (ver en grande con ✕) ===================== */
+.visor-foto { position: fixed; inset: 0; z-index: 1000; background: rgba(30, 10, 38, .88);
+  display: flex; align-items: center; justify-content: center; padding: 64px 24px 24px; }
+.visor-foto img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+.visor-cerrar { position: absolute; top: 16px; right: 20px; width: 52px; height: 52px; border-radius: 50%;
+  border: none; background: #fff; color: var(--principal-oscuro); font-size: 1.6rem; line-height: 1; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.visor-cerrar:hover, .visor-cerrar:focus-visible { background: var(--principal-claro); outline: 3px solid #fff; }

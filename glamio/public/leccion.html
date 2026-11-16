@@ -160,7 +160,7 @@
               ${puedeReportar(d) ? `<button class="enlace-reportar" onclick="reportar(this, 'duda', ${d.id})">Reportar</button>` : ''}
             </div>
             <p class="duda-texto">${esc(d.texto)}</p>
-            ${d.foto ? `<a href="${d.foto}" target="_blank" title="Ver la foto en grande"><img class="duda-foto" src="${d.foto}" alt="Foto de la duda"></a>` : ''}
+            ${d.foto ? `<a class="ver-foto" href="${d.foto}" target="_blank" title="Ver la foto en grande"><img class="duda-foto" src="${d.foto}" alt="Foto de la duda"></a>` : ''}
             ${d.respuestas.length ? '' : '<p class="ayuda">Aún sin respuestas. ¿Sabes la solución? ¡Ayuda a tu compañera!</p>'}
             ${d.respuestas.map(r => `
               <div class="respuesta ${r.destacada ? 'destacada' : ''}">

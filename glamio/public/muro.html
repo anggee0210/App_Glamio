@@ -103,7 +103,7 @@
       // Tarjeta del diseño: foto grande · nombre (serif) + permiso a la derecha · curso · descripción · Reportar
       caja.innerHTML = trabajos.map(t => `
         <div class="trabajo">
-          <a href="${t.foto}" target="_blank" title="Ver la foto en grande"><img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}"></a>
+          <a class="ver-foto" href="${t.foto}" target="_blank" title="Ver la foto en grande"><img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}"></a>
           <div class="trabajo-datos">
             <div class="trabajo-cabeza">
               <strong>${esc(t.nombre)}${esMio(t) ? ' <span class="ayuda" style="display:inline">(tú)</span>' : ''}</strong>

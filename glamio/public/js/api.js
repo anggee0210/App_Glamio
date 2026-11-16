@@ -389,3 +389,41 @@ function esc(texto) {
   div.textContent = texto ?? '';
   return div.innerHTML;
 }
+
+/* ---------- Ver una foto en grande, con una ✕ para cerrar ----------
+   Los enlaces <a class="ver-foto"> abrían la foto en otra pestaña. Ahora se ve
+   encima de la página (visor) y se cierra con la ✕, haciendo clic fuera o con Esc.
+   El enlace sigue teniendo href: si el JavaScript fallara, se abriría como antes. */
+function abrirVisorFoto(ruta, descripcion) {
+  const visor = document.createElement('div');
+  visor.className = 'visor-foto';
+  visor.setAttribute('role', 'dialog');
+  visor.setAttribute('aria-modal', 'true');
+  visor.innerHTML = `
+    <button type="button" class="visor-cerrar" aria-label="Cerrar la foto" title="Cerrar">✕</button>
+    <img src="${esc(ruta)}" alt="${esc(descripcion)}">`;
+
+  const cerrar = () => {
+    visor.remove();
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', conTecla);
+  };
+  const conTecla = (e) => { if (e.key === 'Escape') cerrar(); };
+
+  visor.querySelector('.visor-cerrar').onclick = cerrar;
+  visor.onclick = (e) => { if (e.target === visor) cerrar(); }; // clic en el fondo oscuro, no en la foto
+  document.addEventListener('keydown', conTecla);
+
+  document.body.style.overflow = 'hidden'; // que la página de detrás no se mueva
+  document.body.appendChild(visor);
+  visor.querySelector('.visor-cerrar').focus();
+}
+
+// Un solo "escuchador" para toda la página: sirve también para las tarjetas que se pintan después
+document.addEventListener('click', (e) => {
+  const enlace = e.target.closest('a.ver-foto');
+  if (!enlace) return;
+  e.preventDefault(); // no abrir otra pestaña
+  const img = enlace.querySelector('img');
+  abrirVisorFoto(enlace.getAttribute('href'), img ? img.alt : '');
+});

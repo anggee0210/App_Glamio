@@ -349,7 +349,7 @@
             · ${estrellasTexto(r.estrellas)}</p>
           <p class="ayuda">${fechaCorta(r.fecha)}</p>
           ${r.comentario ? `<p style="margin:6px 0">${esc(r.comentario)}</p>` : ''}
-          ${r.foto ? `<a href="${r.foto}" target="_blank" title="Ver la foto en grande"><img src="${r.foto}" alt="Foto de la reseña" style="max-width:200px"></a>` : ''}
+          ${r.foto ? `<a class="ver-foto" href="${r.foto}" target="_blank" title="Ver la foto en grande"><img src="${r.foto}" alt="Foto de la reseña" style="max-width:200px"></a>` : ''}
           ${respuesta}${controlesAdmin}${acciones}
         </div>`;
     }

@@ -42,7 +42,7 @@
             <span class="ayuda">${r.veces} ${r.veces === 1 ? 'reporte' : 'reportes'} · desde ${fechaCorta(r.fecha)}</span>
           </div>
           <div class="reporte-contenido">
-            ${c.foto ? `<a href="${c.foto}" target="_blank" title="Ver en grande"><img src="${c.foto}" alt=""></a>` : ''}
+            ${c.foto ? `<a class="ver-foto" href="${c.foto}" target="_blank" title="Ver en grande"><img src="${c.foto}" alt=""></a>` : ''}
             <div>
               <p style="margin:0"><strong>${esc(c.nombre)}</strong> · <span class="ayuda" style="display:inline">${donde}</span></p>
               ${c.duda ? `<p class="ayuda">En respuesta a: «${esc(c.duda)}»</p>` : ''}
