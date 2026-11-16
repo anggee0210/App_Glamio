@@ -85,6 +85,7 @@ function seccionActual() {
   if (p.endsWith('/admin.html')) return 'panel';
   if (p.endsWith('/reportes.html')) return 'reportes';
   if (p.endsWith('/mi-estilo.html')) return 'miestilo';
+  if (p.endsWith('/perfil.html')) return 'perfil'; // ninguna opción del menú se resalta
   return 'inicio';
 }
 const NOMBRES_PERFIL = { administradora: 'Administradora', alumna: 'Alumna', profesional: 'Profesional', clienta: 'Clienta' };
@@ -96,8 +97,9 @@ function htmlDerecha(usuaria) {
     return `<span class="menu-derecha"><a href="/registro.html">Registrarme</a><a href="/login.html" class="boton-entrar">Entrar</a></span>`;
   }
   // (La 🔔 suelta ya no está: «Avisos» y la campana eran lo mismo. Ahora hay una sola opción, «Notificaciones», en el menú.)
+  // Alumna y profesional: sus certificados y su perfil público (fase 2), tal como lo ven las demás
   const certificados = ['alumna', 'profesional'].includes(usuaria.perfil)
-    ? '<a href="/certificados.html">🎓 Mis certificados</a>' : '';
+    ? `<a href="/perfil.html?id=${usuaria.id}">👤 Mi perfil público</a><a href="/certificados.html">🎓 Mis certificados</a>` : '';
   return `<span class="menu-derecha">
     <span class="perfil" id="perfil">
       <button type="button" class="boton-perfil" aria-haspopup="true" aria-expanded="false">
@@ -186,9 +188,9 @@ function pintarLateral() {
 async function pintarCabecera() {
   const usuaria = await api('/api/auth/yo');
 
-  // La clienta solo puede estar en el muro y en Mi Estilo (fase 2): si abre otra página, la llevamos al muro.
-  // (Es para que la app se vea bien; la seguridad de verdad está en el servidor.)
-  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo)\.html$/.test(location.pathname)) {
+  // La clienta solo puede estar en el muro, en Mi Estilo y en los perfiles públicos (fase 2):
+  // si abre otra página, la llevamos al muro. (Es para que la app se vea bien; la seguridad de verdad está en el servidor.)
+  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo|perfil)\.html$/.test(location.pathname)) {
     location.replace('/muro.html');
     return usuaria;
   }

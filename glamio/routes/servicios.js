@@ -109,4 +109,20 @@ router.delete('/:id', requiereCalculadora, async (req, res, next) => {
   }
 });
 
+// PUT /api/servicios/:id/publico  { publico: true | false }
+// Fase 2 · Perfil público: ella decide si el servicio sale en su perfil (nombre, duración y precio).
+router.put('/:id/publico', requiereCalculadora, async (req, res, next) => {
+  try {
+    if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Ese servicio no existe o no es tuyo' });
+    const { publico } = req.body;
+    if (typeof publico !== 'boolean') return res.status(400).json({ error: 'Indica si se muestra en tu perfil (sí o no)' });
+    // usuaria_id en el WHERE: nadie puede publicar el precio de otra persona
+    const { rows } = await pool.query(
+      'UPDATE servicios SET publico = $1 WHERE id = $2 AND usuaria_id = $3 RETURNING id, publico',
+      [publico, req.params.id, req.session.usuaria.id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Ese servicio no existe o no es tuyo' });
+    res.json({ ...rows[0], mensaje: publico ? '👁 Ahora sale en tu perfil público' : '🔒 Ya no sale en tu perfil' });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
