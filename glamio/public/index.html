@@ -36,68 +36,54 @@
   <main>
     <!-- 2. ¿Qué quieres hacer hoy? (las tres partes que existen en la fase 1) -->
     <h2 class="titulo-linea" id="que-hacer">¿Qué quieres hacer hoy?</h2>
-    <div class="accesos">
-      <a class="acceso acceso-academia" href="/cursos.html">
-        <span class="acceso-texto"><strong>🎓 Academia</strong><span>Cursos y formación profesional</span></span>
-        <img class="acceso-dibujo" src="/img/ilus-libros.jpg" alt="">
+    <p class="destinos-sub">Tres herramientas pensadas para tu crecimiento profesional.</p>
+    <div class="destinos">
+      <a class="destino destino-academia" href="/cursos.html">
+        <span class="destino-arriba">
+          <span class="destino-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/></svg></span>
+          <span class="destino-numero">01</span>
+        </span>
+        <strong class="destino-titulo">Academia</strong>
+        <span class="destino-texto">Cursos con lecciones en vídeo, materiales y certificado al terminar.</span>
+        <span class="destino-accion">Ver cursos <span aria-hidden="true">→</span></span>
       </a>
-      <a class="acceso acceso-calculadora" id="acceso-calculadora" href="/calculadora.html">
-        <span class="acceso-texto"><strong>🧮 Calculadora</strong><span>Costes, materiales y precios por servicio</span></span>
-        <img class="acceso-dibujo" src="/img/ilus-calculadora.jpg" alt="">
+      <a class="destino destino-calculadora" href="/calculadora.html" id="acceso-calculadora">
+        <span class="destino-arriba">
+          <span class="destino-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8 6.5h8"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.5"/></svg></span>
+          <span class="destino-numero">02</span>
+        </span>
+        <strong class="destino-titulo">Calculadora de precios</strong>
+        <span class="destino-texto">Suma materiales, tiempo y margen: descubre cuánto cobrar por cada servicio.</span>
+        <span class="destino-accion">Calcular mi precio <span aria-hidden="true">→</span></span>
       </a>
-      <a class="acceso acceso-comunidad" href="/muro.html">
-        <span class="acceso-texto"><strong>👥 Comunidad</strong><span>Comparte tu talento, inspírate y pregunta</span></span>
-        <img class="acceso-dibujo" src="/img/ilus-comunidad.jpg" alt="">
+      <a class="destino destino-comunidad" href="/muro.html">
+        <span class="destino-arriba">
+          <span class="destino-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.3c.5-.2 1-.3 1.5-.3 2.5 0 4.5 2 4.5 4.5"/></svg></span>
+          <span class="destino-numero">03</span>
+        </span>
+        <strong class="destino-titulo">Comunidad</strong>
+        <span class="destino-texto">Comparte tus trabajos, inspírate y resuelve dudas con otras profesionales.</span>
+        <span class="destino-accion">Ir a la comunidad <span aria-hidden="true">→</span></span>
       </a>
     </div>
 
     <!-- 3. Explora tu especialidad: filtros + cursos -->
     <h2 class="titulo-linea" id="cursos">Explora tu especialidad</h2>
-    <div class="filtros filtros-centrados" id="filtros"></div>
-    <div class="cursos-inicio" id="lista-cursos"><p>Cargando…</p></div>
+    <!-- Los mismos botones y tarjetas que la página Cursos (/js/catalogo.js) -->
+    <nav class="catalogo-pestanas centradas" id="filtros" role="tablist" aria-label="Categorías"></nav>
+    <div class="catalogo-rejilla" id="lista-cursos"><p class="ayuda">Cargando…</p></div>
 
     <!-- 4. Talentos de la comunidad: trabajos del muro (el servidor solo da los que se pueden ver) -->
     <h2 class="titulo-linea">Talentos de la comunidad</h2>
+    <p class="talentos-sub">Trabajos reales de nuestras alumnas y profesionales.</p>
     <div class="talentos" id="talentos"></div>
+    <p class="talentos-mas"><a class="boton secundario" href="/muro.html">Ver toda la comunidad →</a></p>
   </main>
 
   <script src="/js/api.js"></script>
+  <script src="/js/catalogo.js"></script>
   <script>
     let usuaria = null;
-
-    function precioTexto(precio) {
-      const n = Number(precio);
-      return n === 0 ? 'Gratis' : n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-    }
-
-    // "★ 4,8 (12)" con datos reales de las reseñas, o "Sin reseñas aún"
-    function valoracion(c) {
-      if (!c.num_resenas) return '<span class="ayuda">Sin reseñas aún</span>';
-      return `<span class="estrellas">★</span> <strong>${Number(c.media).toLocaleString('es-ES')}</strong>
-        <span class="ayuda" style="display:inline">(${c.num_resenas})</span>`;
-    }
-
-    async function cargarCursos(categoria = '') {
-      const caja = document.getElementById('lista-cursos');
-      try {
-        const cursos = await api('/api/cursos' + (categoria ? '?categoria=' + categoria : ''));
-        caja.innerHTML = cursos.map(c => `
-          <a class="curso-horizontal" href="/curso.html?id=${c.id}">
-            ${c.imagen ? `<img src="${c.imagen}" alt="">` : '<span class="sin-foto" aria-hidden="true">💅</span>'}
-            <span class="curso-datos">
-              <span class="etiqueta">${esc(c.categoria)}</span>
-              <strong class="curso-titulo">${esc(c.titulo)}</strong>
-              <span>${valoracion(c)}</span>
-              <span class="curso-pie">
-                <span class="ayuda">▶ ${c.num_lecciones} ${c.num_lecciones === 1 ? 'lección' : 'lecciones'}</span>
-                <span class="precio">${precioTexto(c.precio)}</span>
-              </span>
-            </span>
-          </a>`).join('') || '<p class="ayuda">No hay cursos en esta categoría.</p>';
-      } catch (err) {
-        caja.innerHTML = `<p class="mensaje error">No se pudieron cargar los cursos: ${esc(err.message)}</p>`;
-      }
-    }
 
     // Últimos 6 trabajos + "Comparte tu trabajo" (sin cuenta, lleva a Entrar)
     async function cargarTalentos() {
@@ -107,18 +93,18 @@
       document.getElementById('talentos').innerHTML = trabajos.map(t => `
         <a class="talento" href="/muro.html" title="${esc(t.nombre)}${t.curso ? ' · ' + esc(t.curso) : ''}">
           <img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}">
-          <span class="talento-autora">${esc(t.nombre)}</span>
+          <span class="talento-autora">${t.curso ? `<small>${esc(t.curso)}</small>` : ''}<strong>${esc(t.nombre)}</strong></span>
         </a>`).join('') + `
         <a class="talento talento-compartir" href="${puedePublicar ? '/muro.html' : usuaria ? '/muro.html' : '/login.html'}">
-          <span class="mas" aria-hidden="true">＋</span>${puedePublicar ? 'Comparte tu trabajo' : usuaria ? 'Ver la comunidad' : 'Entra y comparte tu trabajo'}</a>`;
+          <span class="mas" aria-hidden="true">+</span>${puedePublicar ? 'Comparte tu trabajo' : usuaria ? 'Ver la comunidad' : 'Comparte tu trabajo'}
+          <small>${puedePublicar ? 'Sube una foto de tu resultado' : usuaria ? 'Inspírate con otras profesionales' : 'Entra con tu cuenta para publicar'}</small></a>`;
     }
 
     async function iniciar() {
       usuaria = await pintarCabecera();
       // Sin cuenta, la calculadora pide entrar primero
       if (!usuaria) document.getElementById('acceso-calculadora').href = '/login.html';
-      pintarFiltros(document.getElementById('filtros'), cargarCursos);
-      cargarCursos();
+      pintarCatalogo(document.getElementById('filtros'), document.getElementById('lista-cursos'));
       cargarTalentos();
     }
 

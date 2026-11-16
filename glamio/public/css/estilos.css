@@ -283,18 +283,7 @@ body { overflow-wrap: anywhere; }
 .titulo-linea::before, .titulo-linea::after { content: ''; flex: 1; height: 1px; background: var(--borde); }
 
 /* 2. ¿Qué quieres hacer hoy? */
-.accesos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-.acceso { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 22px 24px; border-radius: 20px;
-  color: var(--oscuro); box-shadow: var(--sombra); border: 1px solid rgba(255,255,255,.7); transition: transform .15s; }
-.acceso:hover { transform: translateY(-3px); }
-.acceso-academia { background: linear-gradient(135deg, #fbe3ee, #f6d3e4); }
-.acceso-calculadora { background: linear-gradient(135deg, #fcebe0, #f8dccd); }
-.acceso-comunidad { background: linear-gradient(135deg, #efe2f8, #e3d0f2); }
-.acceso-texto { display: flex; flex-direction: column; gap: 6px; }
-.acceso-texto strong { font-size: 1.35rem; color: var(--principal-oscuro); }
-.acceso-texto span { color: var(--gris); }
-/* Ilustración recortada del diseño: se funde con el fondo de la tarjeta */
-.acceso-dibujo { width: 92px; height: 82px; object-fit: cover; border-radius: 14px; mix-blend-mode: multiply; flex-shrink: 0; }
+/* (estilos en el bloque «INICIO · ¿Qué quieres hacer hoy?» al final del archivo) */
 
 /* 3. Explora tu especialidad */
 .filtros-centrados { justify-content: center; }
@@ -311,16 +300,29 @@ body { overflow-wrap: anywhere; }
 .curso-pie .precio { font-size: 1.2rem; color: var(--principal); }
 .curso-pie .ayuda { white-space: nowrap; }
 
-/* 4. Talentos de la comunidad: fila de fotos + "Comparte tu trabajo" */
-.talentos { display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; }
-.talento { position: relative; aspect-ratio: 1 / .78; border-radius: 16px; overflow: hidden; box-shadow: var(--sombra); }
-.talento img { width: 100%; height: 100%; object-fit: cover; }
-.talento-autora { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 10px 8px; color: #fff; font-size: .85rem; font-weight: 700;
-  background: linear-gradient(transparent, rgba(40, 10, 50, .65)); }
-.talento-compartir { background: var(--lila); color: var(--principal-oscuro); display: flex; flex-direction: column; align-items: center;
-  justify-content: center; text-align: center; gap: 6px; font-weight: 700; padding: 10px; }
-.talento-compartir .mas { width: 34px; height: 34px; border: 2px solid var(--principal); border-radius: 50%; display: inline-flex;
-  align-items: center; justify-content: center; color: var(--principal); font-size: 1.2rem; }
+/* 4. Talentos de la comunidad: fotos GRANDES que llenan todo el ancho + "Comparte tu trabajo".
+   auto-fit: se reparten el ancho entre las que haya (con 3, cada una ocupa un tercio);
+   si hay muchas, pasan a la fila siguiente (como mínimo 260 px cada una). */
+.talentos-sub { text-align: center; color: #6f6275; font-size: 1.12rem; margin: -6px 0 28px; }
+/* Cada foto, entre 220 y 300 px; el grupo va centrado */
+.talentos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 300px)); justify-content: center; gap: 20px; }
+.talento { position: relative; aspect-ratio: 1; border-radius: 20px; overflow: hidden; box-shadow: var(--sombra);
+  color: #fff; text-decoration: none; transition: transform .3s, box-shadow .3s; }
+.talento:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(42, 13, 51, .2); }
+.talento img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s; }
+.talento:hover img { transform: scale(1.05); }
+.talento-autora { position: absolute; left: 0; right: 0; bottom: 0; padding: 60px 22px 20px; display: flex; flex-direction: column; gap: 4px;
+  background: linear-gradient(transparent, rgba(30, 8, 38, .82)); }
+.talento-autora strong { font-family: var(--serif); font-size: 1.3rem; }
+.talento-autora small { font-size: .82rem; letter-spacing: .14em; text-transform: uppercase; color: #e3c27f; }
+.talento-compartir { background: #fff; border: 1.5px dashed #d6bfe0; box-shadow: none; color: var(--principal-oscuro);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px;
+  padding: 24px; font-family: var(--serif); font-size: 1.35rem; font-weight: 700; }
+.talento-compartir:hover { border-color: var(--principal); }
+.talento-compartir .mas { width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--principal-oscuro); color: #fff; font-family: inherit; font-size: 1.8rem; font-weight: 400; }
+.talento-compartir small { font-family: 'Nunito Sans', sans-serif; font-size: .95rem; font-weight: 400; color: #7d7083; }
+.talentos-mas { text-align: center; margin: 28px 0 40px; }
 
 /* Inicio en pantallas medianas y móvil */
 @media (max-width: 1100px) {
@@ -330,14 +332,12 @@ body { overflow-wrap: anywhere; }
   .portada-derecha { grid-column: 1 / -1; padding: 18px 16px 26px; }
   .portada-derecha .portada-botones { flex-direction: row; justify-content: center; align-self: center; }
   .cursos-inicio { grid-template-columns: repeat(2, 1fr); }
-  .talentos { grid-template-columns: repeat(4, 1fr); }
 }
 @media (max-width: 760px) {
   .portada-inicio { grid-template-columns: 1fr; }
   .portada-texto { padding: 28px 16px 8px; }
   .portada-foto img { min-height: 220px; max-height: 260px; -webkit-mask-image: none; mask-image: none; }
-  .accesos, .cursos-inicio { grid-template-columns: 1fr; }
-  .talentos { grid-template-columns: repeat(2, 1fr); }
+  .cursos-inicio { grid-template-columns: 1fr; }
   /* Si los filtros no caben, se deslizan desde la izquierda (centrados cortarían "Todas") */
   .filtros-centrados { justify-content: flex-start; }
   /* Tarjeta de curso en el móvil: foto más estrecha para que el precio no toque el borde */
@@ -929,3 +929,54 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   border-radius: 18px; background: #fff; }
 .catalogo-vacio .catalogo-sub { max-width: 460px; margin: 0 auto 22px; }
 .catalogo-vacio-titulo { font-family: var(--serif); font-size: 1.85rem; font-weight: 700; color: var(--principal-oscuro); margin: 0 0 10px; }
+/* En el Inicio, los botones de categoría van centrados bajo el título */
+.catalogo-pestanas.centradas { justify-content: center; }
+
+/* =====================================================================
+   INICIO · ¿Qué quieres hacer hoy?: tarjetas oscuras con detalles dorados
+   ===================================================================== */
+.destinos-sub { text-align: center; color: #6f6275; font-size: 1.12rem; margin: -6px 0 28px; }
+.destinos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.destino { --brillo: rgba(217, 70, 180, .35); position: relative; isolation: isolate; overflow: hidden;
+  display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 22px 24px 22px; border-radius: 20px;
+  color: #fff; text-decoration: none; background: #2a0d33;
+  box-shadow: 0 14px 34px rgba(42, 13, 51, .22); transition: transform .3s, box-shadow .3s; }
+/* Brillo suave de color en una esquina (crece al pasar el ratón) */
+.destino::before { content: ''; position: absolute; z-index: -1; width: 340px; height: 340px; right: -120px; top: -140px;
+  border-radius: 50%; background: radial-gradient(circle, var(--brillo) 0%, transparent 70%); transition: transform .5s; }
+/* Línea dorada fina arriba */
+.destino::after { content: ''; position: absolute; left: 24px; right: 24px; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, #d9b26a, transparent); opacity: .7; }
+.destino:hover { transform: translateY(-6px); box-shadow: 0 24px 48px rgba(42, 13, 51, .32); }
+.destino:hover::before { transform: scale(1.35); }
+.destino-academia { background: linear-gradient(150deg, #3d1747 0%, #24092c 100%); }
+.destino-calculadora { --brillo: rgba(236, 90, 140, .34); background: linear-gradient(150deg, #4a1638 0%, #26081d 100%); }
+.destino-comunidad { --brillo: rgba(150, 100, 230, .36); background: linear-gradient(150deg, #33195a 0%, #1b0b31 100%); }
+.destino-arriba { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.destino-icono { width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(217, 178, 106, .55);
+  display: flex; align-items: center; justify-content: center; color: #e3c27f; background: rgba(255, 255, 255, .04); }
+.destino-icono svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.4;
+  stroke-linecap: round; stroke-linejoin: round; }
+.destino-numero { font-family: var(--serif); font-size: 2rem; line-height: 1; color: transparent;
+  -webkit-text-stroke: 1px rgba(227, 194, 127, .6); } /* número solo con el contorno en dorado */
+.destino-titulo { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+.destino-texto { color: rgba(255, 255, 255, .72); font-size: .95rem; line-height: 1.55; }
+.destino-accion { margin-top: auto; padding-top: 10px; font-weight: 700; font-size: .95rem; letter-spacing: .02em; color: #e3c27f; }
+.destino-accion span { display: inline-block; transition: transform .25s; }
+.destino:hover .destino-accion span { transform: translateX(5px); }
+@media (max-width: 900px) {
+  .destinos { grid-template-columns: 1fr; gap: 16px; }
+  .destino { padding: 20px; }
+  .destino-arriba { margin-bottom: 8px; }
+}
+/* Talentos en el móvil: dos fotos por fila (una sola ocuparía toda la pantalla) */
+@media (max-width: 640px) {
+  .talentos { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .talento { border-radius: 16px; }
+  .talento-autora { padding: 40px 12px 12px; }
+  .talento-autora strong { font-size: 1rem; }
+  .talento-autora small { font-size: .62rem; letter-spacing: .08em; }
+  .talento-compartir { font-size: 1.05rem; gap: 8px; padding: 14px; }
+  .talento-compartir .mas { width: 46px; height: 46px; font-size: 1.4rem; }
+  .talento-compartir small { font-size: .8rem; }
+}
