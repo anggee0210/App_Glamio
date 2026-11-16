@@ -34,6 +34,10 @@ CREATE TABLE academias (
   -- Diseño del certificado (lo cambia la administradora desde el Panel)
   cert_fondo        VARCHAR(255),                 -- imagen de fondo (horizontal)
   cert_firma        VARCHAR(255),                 -- firma escaneada (opcional)
+  cert_logo         VARCHAR(255),                 -- logo arriba del certificado (opcional)
+  cert_logo_forma   VARCHAR(12) NOT NULL DEFAULT 'desvanecido'  -- cuadrado, redondo o desvanecido
+                    CHECK (cert_logo_forma IN ('cuadrado', 'redondo', 'desvanecido')),
+  cert_posiciones   JSONB,                        -- dónde va cada dato sobre el fondo (NULL = por defecto)
   cert_directora    VARCHAR(100),                 -- nombre bajo la firma
   cert_color_texto  VARCHAR(7) DEFAULT '#3a2f36'  -- color de los textos, p. ej. #3a2f36
 );

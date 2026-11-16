@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel de administradora – GLAMIO</title>
   <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="stylesheet" href="/css/certificado-plantilla.css">
 </head>
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
@@ -134,13 +135,23 @@
     <section class="tarjeta pestana-panel oculto" data-pestana="certificado">
       <h2 style="margin-top:0">Diseño del certificado</h2>
       <form id="form-certificado">
-        <label>Imagen de fondo (horizontal, por ejemplo 3508 × 2480 px)
+        <label>Imagen de fondo (tamaño carta horizontal, por ejemplo 3300 × 2550 px)
           <input type="file" name="fondo" accept="image/*"></label>
         <div id="cert-fondo-actual" class="ayuda"></div>
 
         <label>Firma escaneada (opcional, mejor PNG con fondo transparente)
           <input type="file" name="firma" accept="image/*"></label>
         <div id="cert-firma-actual" class="ayuda"></div>
+
+        <label>Logo (opcional; mejor PNG con fondo transparente)
+          <input type="file" name="logo" accept="image/*"></label>
+        <div id="cert-logo-actual" class="ayuda"></div>
+        <label>Forma del logo
+          <select name="logo_forma">
+            <option value="cuadrado">⬛ Cuadrado (tal cual)</option>
+            <option value="redondo">⚫ Redondo</option>
+            <option value="desvanecido">🌫️ Desvanecido (redondo con bordes suaves)</option>
+          </select></label>
 
         <input name="directora" placeholder="Nombre de la administradora">
         <label class="fila">Color del texto
@@ -152,12 +163,36 @@
         </div>
         <p class="mensaje oculto"></p>
       </form>
+
+      <!-- EDITOR DE POSICIONES: la administradora arrastra cada dato a su hueco de la plantilla -->
+      <div id="editor-posiciones" class="oculto">
+        <h3>Colocar los datos en tu plantilla</h3>
+        <p class="mensaje" id="editor-sin-fondo">📄 Aún no has subido una imagen de fondo: el certificado sale <strong>en blanco</strong>, solo con los datos.
+          Sube arriba el certificado que prefieras y luego coloca aquí los datos.</p>
+        <p class="ayuda">Arrastra cada dato a su sitio (o elígelo abajo y muévelo con las flechas del teclado).
+          Así cualquier certificado que subas queda bien. Los cambios no se ven en los certificados hasta que pulses «Guardar posiciones».</p>
+        <div class="certificado editor-cert" id="editor-cert"></div>
+        <div class="editor-chips" id="editor-chips"></div>
+        <div class="editor-controles">
+          <strong id="editor-nombre-dato"></strong>
+          <label class="fila" style="margin:0">Tamaño <input type="range" id="editor-tamano" step="0.05"></label>
+          <button type="button" class="boton secundario" id="editor-borrar">🗑 Borrar del certificado</button>
+          <span class="ayuda" id="editor-fijo">El nombre y el curso siempre salen.</span>
+        </div>
+        <div class="fila">
+          <button type="button" class="boton" id="editor-guardar">Guardar posiciones</button>
+          <button type="button" class="boton secundario" id="editor-restablecer">Restablecer</button>
+          <a class="boton secundario" href="/certificado.html?vista_previa=1" target="_blank">Vista previa</a>
+        </div>
+        <p class="mensaje oculto" id="editor-mensaje"></p>
+      </div>
     </section>
 
     <!-- Los reportes tienen ahora su propia página: reportes.html (opción "⚑ Reportes" del menú) -->
   </main>
 
   <script src="/js/api.js"></script>
+  <script src="/js/certificado-plantilla.js"></script>
   <script>
     // Aquí guardamos cada curso con sus lecciones y materiales (por id),
     // para rellenar los formularios al pulsar "Editar" sin volver a pedirlos.
@@ -499,13 +534,39 @@
     // ---------- Diseño del certificado ----------
     const formCertificado = document.getElementById('form-certificado');
 
-    // Enseña la imagen que hay ahora y una casilla para quitarla
-    function pintarImagenActual(contenedor, ruta, nombreCasilla) {
+    // Enseña la imagen que hay ahora y un botón para borrarla
+    function pintarImagenActual(contenedor, ruta, campoQuitar) {
       document.getElementById(contenedor).innerHTML = ruta
-        ? `<img src="${ruta}" alt="" style="max-height:70px;border-radius:6px;margin:4px 0">
-           <label class="fila"><input type="checkbox" name="${nombreCasilla}" style="width:auto"> Quitar esta imagen</label>`
+        ? `<div class="fila" style="align-items:center">
+             <img src="${ruta}" alt="" style="flex:none;width:auto;height:70px;max-width:200px;object-fit:contain;border-radius:6px;margin:4px 0;background:#f4eaf8">
+             <button type="button" class="boton secundario" data-quitar="${campoQuitar}">🗑 Borrar</button>
+           </div>`
         : 'Ahora no hay ninguna.';
     }
+
+    // BORRAR una imagen (fondo, firma o logo). Para no borrar sin querer, hay que pulsar dos veces:
+    // la primera el botón pregunta «¿Seguro?», y si no se confirma en 4 segundos vuelve a la normalidad.
+    formCertificado.addEventListener('click', async (e) => {
+      const boton = e.target.closest('[data-quitar]');
+      if (!boton) return;
+      if (!boton.dataset.seguro) {
+        boton.dataset.seguro = 'si';
+        boton.textContent = '¿Seguro? Pulsa otra vez para borrar';
+        setTimeout(() => { if (boton.isConnected) { delete boton.dataset.seguro; boton.textContent = '🗑 Borrar'; } }, 4000);
+        return;
+      }
+      // Se envían también el nombre, el color y la forma del logo actuales, para que no cambien
+      const datos = new FormData();
+      datos.append('directora', formCertificado.directora.value);
+      datos.append('color_texto', formCertificado.color_texto.value);
+      datos.append('logo_forma', formCertificado.logo_forma.value);
+      datos.append(boton.dataset.quitar, 'on');
+      try {
+        await api('/api/academia/certificado', { method: 'PUT', body: datos });
+        await cargarDiseno();
+        avisar(formCertificado, 'Imagen borrada ✅');
+      } catch (err) { avisar(formCertificado, err.message, true); }
+    });
 
     async function cargarDiseno() {
       const d = await api('/api/academia/certificado');
@@ -513,16 +574,151 @@
       formCertificado.color_texto.value = d.color_texto;
       pintarImagenActual('cert-fondo-actual', d.fondo, 'quitar_fondo');
       pintarImagenActual('cert-firma-actual', d.firma, 'quitar_firma');
+      pintarImagenActual('cert-logo-actual', d.logo, 'quitar_logo');
+      formCertificado.logo_forma.value = d.logo_forma;
+      pintarEditor(d);
     }
 
     formCertificado.onsubmit = async (e) => {
       e.preventDefault();
       try {
         await api('/api/academia/certificado', { method: 'PUT', body: new FormData(formCertificado) });
-        formCertificado.fondo.value = ''; formCertificado.firma.value = '';
+        formCertificado.fondo.value = ''; formCertificado.firma.value = ''; formCertificado.logo.value = '';
         await cargarDiseno();
         avisar(formCertificado, 'Diseño guardado ✅ Pulsa «Vista previa» para verlo.');
       } catch (err) { avisar(formCertificado, err.message, true); }
+    };
+
+    // ---------- Editor de posiciones del certificado ----------
+    // Datos de ejemplo (los mismos que la vista previa) para ver cómo queda
+    const EJEMPLO_CERT = { nombre: 'Nombre de la alumna', titulo: 'Manicura básica', numero: 0, fecha: new Date().toISOString() };
+    const editorCert = document.getElementById('editor-cert');
+    const editorTamano = document.getElementById('editor-tamano');
+    const editorBorrar = document.getElementById('editor-borrar');
+    let disenoEditor = null;   // el diseño cargado (fondo, logo, firma...)
+    let posEditor = null;      // las posiciones mientras se editan (aún sin guardar)
+    let elegido = 'nombre';    // el dato que se está moviendo
+
+    function pintarEditor(d) {
+      disenoEditor = d;
+      document.getElementById('editor-posiciones').classList.remove('oculto');
+      document.getElementById('editor-sin-fondo').classList.toggle('oculto', !!d.fondo);
+      posEditor = mezclarPosiciones(d.posiciones);
+      editorCert.style.backgroundImage = d.fondo ? `url("${d.fondo}")` : 'none';
+      editorCert.style.setProperty('--texto', d.color_texto);
+      // Botones para elegir cada dato (útiles en el móvil y para los datos ocultos)
+      if ((elegido === 'logo' && !d.logo) || (elegido === 'firma' && !d.firma)) elegido = 'nombre';
+      document.getElementById('editor-chips').innerHTML = Object.keys(ELEMENTOS_CERT)
+        .filter(clave => (clave !== 'logo' || d.logo) && (clave !== 'firma' || d.firma)).map(clave =>
+        `<button type="button" class="chip" data-el="${clave}">${ELEMENTOS_CERT[clave].etiqueta}</button>`).join('');
+      redibujarEditor();
+    }
+
+    function redibujarEditor() {
+      editorCert.innerHTML = htmlPlantilla(EJEMPLO_CERT, disenoEditor, posEditor);
+      elegir(elegido);
+    }
+
+    // Marca un dato como elegido y prepara la barra de tamaño y el botón Borrar / Restaurar
+    function elegir(clave) {
+      elegido = clave;
+      const info = ELEMENTOS_CERT[clave], p = posEditor[clave];
+      editorCert.querySelectorAll('.cert-el').forEach(el => el.classList.toggle('elegido', el.dataset.el === clave));
+      // En los botones de abajo, los datos borrados salen tachados
+      document.querySelectorAll('#editor-chips .chip').forEach(b => {
+        b.classList.toggle('activo', b.dataset.el === clave);
+        b.style.textDecoration = posEditor[b.dataset.el].ver ? '' : 'line-through';
+      });
+      document.getElementById('editor-nombre-dato').textContent = info.etiqueta + (p.ver ? '' : ' (borrado: no aparece en el certificado)');
+      editorTamano.min = info.min; editorTamano.max = info.max; editorTamano.value = p.t;
+      editorTamano.closest('label').classList.toggle('oculto', !p.ver);   // borrado: no hay tamaño que cambiar
+      editorBorrar.textContent = p.ver ? '🗑 Borrar del certificado' : '↺ Restaurar';
+      editorBorrar.classList.toggle('oculto', !info.ocultable);
+      document.getElementById('editor-fijo').classList.toggle('oculto', info.ocultable);
+    }
+
+    // Borrar (o recuperar) el dato elegido. No se pierde su sitio: al restaurarlo, sale donde estaba.
+    function alternarBorrado() {
+      if (!ELEMENTOS_CERT[elegido].ocultable) return;
+      posEditor[elegido].ver = !posEditor[elegido].ver;
+      redibujarEditor();
+      mensajeEditor(posEditor[elegido].ver
+        ? `«${ELEMENTOS_CERT[elegido].etiqueta}» se ha restaurado. Pulsa «Guardar posiciones» para aplicarlo.`
+        : `«${ELEMENTOS_CERT[elegido].etiqueta}» borrado. Pulsa «Guardar posiciones» para que se quite de los certificados.`);
+    }
+
+    // Cambia el estilo del dato en pantalla sin volver a pintarlo todo (va más fluido al arrastrar)
+    function moverEnPantalla(clave) {
+      const el = editorCert.querySelector(`[data-el="${clave}"]`);
+      if (el) el.setAttribute('style', estiloDato(clave, posEditor[clave]));
+    }
+
+    document.getElementById('editor-chips').onclick = (e) => {
+      const b = e.target.closest('[data-el]');
+      if (b) elegir(b.dataset.el);
+    };
+    editorTamano.oninput = () => { posEditor[elegido].t = Number(editorTamano.value); moverEnPantalla(elegido); };
+    editorBorrar.onclick = alternarBorrado;
+
+    // ARRASTRAR: con "pointer events" funciona igual con ratón, dedo o lápiz.
+    // Guardamos la distancia entre el dedo y el centro del dato para que no "salte" al empezar.
+    let arrastre = null;
+    editorCert.addEventListener('pointerdown', (e) => {
+      const el = e.target.closest('.cert-el');
+      if (!el) return;
+      e.preventDefault();
+      elegir(el.dataset.el);
+      const hoja = editorCert.getBoundingClientRect(), p = posEditor[el.dataset.el];
+      arrastre = { dx: e.clientX - (hoja.left + hoja.width * p.x / 100), dy: e.clientY - (hoja.top + hoja.height * p.y / 100) };
+      editorCert.setPointerCapture(e.pointerId);   // seguimos recibiendo el movimiento aunque el dedo salga del dato
+      el.classList.add('arrastrando');
+    });
+    editorCert.addEventListener('pointermove', (e) => {
+      if (!arrastre) return;
+      const hoja = editorCert.getBoundingClientRect();
+      const limitar = n => Math.min(100, Math.max(0, n));
+      posEditor[elegido].x = limitar((e.clientX - arrastre.dx - hoja.left) / hoja.width * 100);
+      posEditor[elegido].y = limitar((e.clientY - arrastre.dy - hoja.top) / hoja.height * 100);
+      moverEnPantalla(elegido);
+    });
+    const soltar = () => {
+      if (!arrastre) return;
+      arrastre = null;
+      editorCert.querySelectorAll('.arrastrando').forEach(el => el.classList.remove('arrastrando'));
+    };
+    editorCert.addEventListener('pointerup', soltar);
+    editorCert.addEventListener('pointercancel', soltar);
+
+    // Flechas del teclado: mueven el dato elegido medio punto (con Mayúsculas, 2 puntos).
+    // Solo si el editor está a la vista y no se está escribiendo en un campo.
+    // Tecla Supr: borra (o restaura) el dato elegido.
+    document.addEventListener('keydown', (e) => {
+      const movs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      if (!posEditor || editorCert.offsetParent === null) return;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if (e.key === 'Delete') { e.preventDefault(); return alternarBorrado(); }
+      if (!movs[e.key]) return;
+      e.preventDefault();
+      const paso = e.shiftKey ? 2 : 0.5, p = posEditor[elegido];
+      p.x = Math.min(100, Math.max(0, p.x + movs[e.key][0] * paso));
+      p.y = Math.min(100, Math.max(0, p.y + movs[e.key][1] * paso));
+      moverEnPantalla(elegido);
+    });
+
+    const mensajeEditor = (texto, error = false) => {
+      const m = document.getElementById('editor-mensaje');
+      m.textContent = texto; m.classList.remove('oculto'); m.classList.toggle('error', error);
+    };
+    document.getElementById('editor-guardar').onclick = async () => {
+      try {
+        disenoEditor = await api('/api/academia/certificado/posiciones', { method: 'PUT', body: { posiciones: posEditor } });
+        mensajeEditor('Posiciones guardadas ✅ Ya se ven así en todos los certificados.');
+      } catch (err) { mensajeEditor(err.message, true); }
+    };
+    document.getElementById('editor-restablecer').onclick = () => {
+      posEditor = mezclarPosiciones(null);
+      redibujarEditor();
+      mensajeEditor('Vuelven las posiciones de por defecto. Pulsa «Guardar posiciones» para quedarte con ellas.');
     };
 
     // ---------- Panel principal: estadísticas ----------
