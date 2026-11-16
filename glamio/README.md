@@ -25,17 +25,19 @@ La cuenta de la administradora no se puede crear desde la web: se crea con `db/c
 ## Qué hace (fase 1)
 
 - **Academia**
-  - Página **Cursos** con filtros por categoría; cursos gratis o de pago, con **pago simulado** (no se piden datos de tarjeta).
+  - Página **Cursos** con botones por categoría (con cuántos cursos hay; «Próximamente» si una aún no tiene); cursos gratis o de pago, con **pago simulado** (no se piden datos de tarjeta).
+  - **Portada de cada curso**: la administradora elige «Rellenar» (ocupa todo el cuadro) o «Completa» (la foto entera, con la misma foto difuminada detrás) y la encuadra arrastrándola en una vista previa pequeña.
   - Lecciones con vídeo de YouTube o vídeo corto propio (máximo 50 MB) y botón «Empezar / Continuar curso».
-  - Progreso por lección, **certificado** con diseño propio y página «Mis certificados».
+  - Progreso por lección y página «Mis certificados».
+  - **Certificado con la plantilla de la administradora**: sube su fondo, su firma y su logo (cuadrado, redondo o desvanecido) y, en un editor, **arrastra** el nombre, el curso, la firma, el logo y la fecha/Nº a su sitio, les cambia el tamaño o los borra. Hoja **carta** horizontal en pantalla, al imprimir y en PDF. Los nombres largos se encogen para caber en una línea.
   - **📖 Guías teóricas en PDF** en cada curso: se compran con pago simulado y **solo las descarga quien las compró**.
 - **Calculadora «Calcular mi precio»**
   - Desde un curso carga sus materiales. La alumna pone el coste, los minutos, el valor de su hora y el margen.
   - Fórmula: `(materiales + minutos/60 × precio_hora) × (1 + margen/100)`.
   - Los servicios se guardan en «Mis servicios» y se pueden borrar.
-- **Comunidad** (pestañas 📷 Trabajos y ❓ Dudas)
+- **Comunidad** (pestañas Trabajos y Dudas)
   - **Dudas**: con foto en cada lección. Tienen respuestas y una **respuesta destacada** que solo marca la administradora.
-  - **Trabajos**: muro etiquetado por curso. La autora decide si las clientas ven su foto (👁/🔒) y puede borrarla.
+  - **Trabajos**: muro etiquetado por curso. La autora decide con un **interruptor** «Visible para clientas» si las clientas ven su foto, y puede borrarla (la papelera pide pulsar dos veces).
 - **Reseñas**
   - Solo de cursos terminados y una por persona, de 1 a 5 ⭐, con foto opcional.
   - La administradora las responde. La autora puede borrarla, pero no editarla.
@@ -45,8 +47,8 @@ La cuenta de la administradora no se puede crear desde la web: se crea con `db/c
 - **⚑ Reportes**: lo reportado se oculta al momento; la administradora decide en su página si vuelve a publicarse.
 - **Panel de la administradora** con **menú lateral**:
   - **🏠 Panel principal** con **estadísticas**: cursos, lecciones, alumnas, valoración media, **visitas a la app** y **cursos vendidos por mes** (gráficas y tabla), y los cursos más vendidos;
-  - Mis cursos (editar y **borrar**, con doble confirmación si hay inscritas), Nuevo curso, Nueva lección, Materiales, Certificado, Guías teóricas, Reportes y Notificaciones.
-- **Diseño**: morado y lila, logo de la G dorada, pantalla completa en el PC (letra más grande en monitores grandes) y menú ☰ en el móvil.
+  - Mis cursos (editar y **borrar**, con doble confirmación si hay inscritas), Nuevo curso (con el ajuste de la portada), Nueva lección, Materiales, Certificado (con el editor de posiciones), Guías teóricas, Reportes y Notificaciones.
+- **Diseño**: morado y lila con detalles dorados, logo de la G dorada (en la cabecera y en el pie), botones limpios sin emojis, pantalla completa en el PC (letra más grande en monitores grandes) y menú ☰ en el móvil.
 
 ## Fase 2 empezada: 💜 Mi Estilo (clienta)
 
@@ -87,6 +89,8 @@ glamio/
 │   ├── schema.sql         # Tablas, índices y trigger (¡borra todo! ver abajo)
 │   ├── migracion-17-11.sql # Estadísticas y guías para una base que ya existe (no borra nada)
 │   ├── migracion-18-11.sql # Fase 2: tabla favoritos y su trigger + servicios.publico (no borra nada)
+│   ├── migracion-logo-certificado.sql # Certificado: logo, forma del logo y posiciones de los datos (no borra nada)
+│   ├── migracion-portadas.sql # Portadas: ajuste Rellenar/Completa y posición de la foto (no borra nada)
 │   ├── seed.sql           # Categorías, academia y cursos de ejemplo
 │   ├── crear-admin.js     # Crea la cuenta de la administradora
 │   └── cambiar-contrasena.js # Cambia la contraseña de una cuenta (si se olvida)
@@ -101,7 +105,7 @@ glamio/
 │   ├── lecciones.js       # Lecciones y «marcar como completada»
 │   ├── guias.js           # Guías teóricas: subir, comprar, descargar
 │   ├── estadisticas.js    # Panel principal: cifras, visitas y ventas por mes
-│   ├── academia.js        # Diseño del certificado
+│   ├── academia.js        # Diseño del certificado (fondo, firma, logo y posiciones)
 │   ├── certificados.js    # «Mis certificados»
 │   ├── dudas.js           # Dudas, respuestas, destacada, notificaciones, Comunidad
 │   ├── trabajos.js        # Muro: publicar, permiso 👁/🔒, borrar
@@ -111,14 +115,14 @@ glamio/
 │   ├── mi-estilo.js       # Fase 2 · Mi Estilo: favoritos de la clienta
 │   └── perfil.js          # Fase 2 · Perfil público de alumna y profesional
 ├── public/
-│   ├── index.html         # Inicio: portada, accesos, cursos y talentos de la comunidad
-│   ├── cursos.html        # Solo cursos, con filtros
+│   ├── index.html         # Inicio: portada, ¿Qué quieres hacer hoy?, cursos y talentos de la comunidad
+│   ├── cursos.html        # Solo cursos, con botones por categoría
 │   ├── login.html · registro.html
 │   ├── curso.html         # Detalle, progreso, lecciones, materiales, guías y reseñas
 │   ├── leccion.html       # Vídeo + dudas de la lección
 │   ├── certificado.html · certificados.html
 │   ├── calculadora.html   # Calcular mi precio + Mis servicios
-│   ├── muro.html          # Comunidad: 📷 Trabajos y ❓ Dudas
+│   ├── muro.html          # Comunidad: Trabajos y Dudas
 │   ├── avisos.html        # 🔔 Notificaciones
 │   ├── admin.html         # Panel de la administradora (menú lateral)
 │   ├── reportes.html      # ⚑ Reportes
@@ -126,7 +130,10 @@ glamio/
 │   ├── perfil.html        # 👤 Perfil público (?id=N)
 │   ├── img/               # Logos, portada e ilustraciones
 │   ├── css/estilos.css
-│   └── js/api.js          # fetch, cabecera, menú lateral, notificaciones, reportar… (funciones comunes)
+│   ├── css/certificado-plantilla.css # La hoja del certificado y su editor
+│   ├── js/api.js          # fetch, cabecera, menú lateral, notificaciones, reportar, portadas… (funciones comunes)
+│   ├── js/catalogo.js     # Botones de categoría y tarjetas de curso (Cursos e Inicio)
+│   └── js/certificado-plantilla.js # Dónde va cada dato del certificado (certificado y editor del Panel)
 ├── uploads/               # Fotos y vídeos subidos (imagenes/ y videos/), fuera de git
 └── privado/guias/         # PDF de las guías: NO es pública, fuera de git
 ```
@@ -154,6 +161,10 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
    > **¿Ya tenías la base de antes?** No uses `db:crear`: aplica solo lo nuevo, en orden (ninguno borra nada):
    > - de antes del 17/11 (visitas, guías e importe de las ventas): `psql -U postgres -d glamio -f db/migracion-17-11.sql`
    > - de antes del 18/11 (Mi Estilo y perfil público): `psql -U postgres -d glamio -f db/migracion-18-11.sql`
+   > - certificado con plantilla (logo y posiciones): `psql -U postgres -d glamio -f db/migracion-logo-certificado.sql`
+   > - ajuste de las portadas de los cursos: `psql -U postgres -d glamio -f db/migracion-portadas.sql`
+   >
+   > Si falta alguna, el certificado o las portadas darán error. Se pueden ejecutar más de una vez sin problema.
    >
    > En Windows, si `psql` o `createdb` no se encuentran, están en `C:\Program Files\PostgreSQL\18\bin\`.
 4. Crear la cuenta de la administradora (con una contraseña segura, no la de ejemplo):
