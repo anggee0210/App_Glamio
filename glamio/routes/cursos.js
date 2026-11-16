@@ -9,8 +9,13 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
   try {
     const { categoria } = req.query;
+    if (categoria && !/^\d+$/.test(categoria)) return res.status(400).json({ error: 'Categoría no válida' });
+    // Media y número de reseñas visibles (las ocultas por un reporte no cuentan) y número de lecciones:
+    // las tarjetas del inicio enseñan "★ 4,8 (12)".
     let sql = `SELECT c.*, cat.nombre AS categoria,
-                 (SELECT ROUND(AVG(estrellas),1) FROM resenas_cursos r WHERE r.curso_id = c.id) AS media
+                 (SELECT ROUND(AVG(estrellas),1) FROM resenas_cursos r WHERE r.curso_id = c.id AND NOT r.oculta) AS media,
+                 (SELECT COUNT(*) FROM resenas_cursos r WHERE r.curso_id = c.id AND NOT r.oculta)::int AS num_resenas,
+                 (SELECT COUNT(*) FROM lecciones l WHERE l.curso_id = c.id)::int AS num_lecciones
                FROM cursos c JOIN categorias cat ON cat.id = c.categoria_id`;
     const params = [];
     if (categoria) { sql += ' WHERE c.categoria_id = $1'; params.push(categoria); }
@@ -141,9 +146,10 @@ router.post('/:id/inscribirse', requierePerfil('alumna', 'profesional'), async (
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO inscripciones (usuaria_id, curso_id, pagado) VALUES ($1, $2, TRUE)
+      // importe = lo que costaba al comprarlo (las estadísticas de ventas usan esta cifra)
+      `INSERT INTO inscripciones (usuaria_id, curso_id, pagado, importe) VALUES ($1, $2, TRUE, $3)
        ON CONFLICT (usuaria_id, curso_id) DO NOTHING RETURNING *`,
-      [req.session.usuaria.id, req.params.id]
+      [req.session.usuaria.id, req.params.id, Number(curso.precio)]
     );
     if (!rows[0]) return res.json({ mensaje: 'Ya estabas inscrita' });
     res.status(201).json(rows[0]);
@@ -188,6 +194,37 @@ router.get('/:id/certificado', requiereLogin, async (req, res, next) => {
     );
     if (!rows[0]) return res.status(403).json({ error: 'Aún no has terminado este curso' });
     res.json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/cursos/:id  (solo admin) → borra el curso entero
+// En cascada se borran sus lecciones, materiales, inscripciones (y con ellas el progreso y el certificado),
+// dudas, reseñas y guías. Los trabajos del muro y los servicios de la calculadora se quedan "sin curso".
+// Protección: si tiene alumnas inscritas, la primera vez responde 409 con cuántas son, y solo se borra
+// si se repite con ?confirmar=si (la pantalla pide una segunda confirmación).
+router.delete('/:id', requiereAdmin, async (req, res, next) => {
+  try {
+    if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Curso no encontrado' });
+    const curso = (await pool.query('SELECT titulo, imagen FROM cursos WHERE id = $1', [req.params.id])).rows[0];
+    if (!curso) return res.status(404).json({ error: 'Curso no encontrado' });
+
+    const inscritas = (await pool.query('SELECT COUNT(*)::int AS n FROM inscripciones WHERE curso_id = $1', [req.params.id])).rows[0].n;
+    if (inscritas > 0 && req.query.confirmar !== 'si') {
+      return res.status(409).json({ inscritas,
+        error: `«${curso.titulo}» tiene ${inscritas} ${inscritas === 1 ? 'persona inscrita' : 'personas inscritas'}: perderían su progreso, su certificado y sus reseñas de este curso.` });
+    }
+
+    // Archivos que hay que borrar del disco después (la base solo guarda sus rutas)
+    const videos = (await pool.query('SELECT video_local FROM lecciones WHERE curso_id = $1 AND video_local IS NOT NULL', [req.params.id])).rows;
+    const guias = (await pool.query('SELECT archivo FROM guias WHERE curso_id = $1', [req.params.id])).rows;
+
+    await pool.query('DELETE FROM cursos WHERE id = $1', [req.params.id]);
+
+    borrarArchivo(curso.imagen);
+    videos.forEach(v => borrarArchivo(v.video_local));
+    const carpetaGuias = require('path').join(__dirname, '..', 'privado', 'guias');
+    guias.forEach(g => require('fs').unlink(require('path').join(carpetaGuias, require('path').basename(g.archivo)), () => {}));
+    res.json({ ok: true, borrado: curso.titulo });
   } catch (err) { next(err); }
 });
 

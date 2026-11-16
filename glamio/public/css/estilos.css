@@ -1,28 +1,89 @@
-/* GLAMIO – estilos base (diseño móvil primero) */
+/* GLAMIO – estilos base (diseño móvil primero)
+   Rediseño del 16/11 con los diseños de la autora: morado y lila, títulos con remates (serif). */
+
+/* Tipografías de Google Fonts. Si no hay internet, se usan Georgia y la letra del sistema. */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito+Sans:wght@400;600;700&family=Great+Vibes&display=swap');
+
 :root {
-  --rosa: #d9467a;
-  --rosa-claro: #fbe4ec;
-  --oscuro: #2b2230;
-  --gris: #6f6874;
-  --fondo: #fffafb;
-  --borde: #eadde2;
-  --radio: 14px;
+  /* Colores del rediseño */
+  --principal: #7a2a8c;         /* morado de los botones y enlaces */
+  --principal-oscuro: #3d1747;  /* morado muy oscuro: pie y títulos */
+  --principal-claro: #f4eaf8;   /* lila suave: fondos de tarjetas y etiquetas */
+  --lila: #e9d7f1;              /* lila medio: opción activa del menú */
+  --rosa-suave: #e79bbf;        /* rosa de acento (detalles) */
+  --oscuro: #2a1530;            /* texto */
+  --gris: #6b5f70;              /* texto secundario */
+  --fondo: #fcf8fc;             /* fondo de la página */
+  --borde: #ebddf0;
+  --radio: 18px;
+  --sombra: 0 6px 22px rgba(90, 30, 110, .08);
+  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+
+  /* Nombres antiguos: el resto del CSS los usa. Ahora apuntan a los colores nuevos,
+     así toda la app cambia de color sin tocar cada regla. */
+  --rosa: var(--principal);
+  --rosa-claro: var(--principal-claro);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: var(--fondo); color: var(--oscuro); line-height: 1.5; }
-a { color: var(--rosa); text-decoration: none; }
+/* Letra base más grande (20 px en vez de 16): todo lo que está en rem crece a la vez */
+html { font-size: 125%; }
+@media (max-width: 640px) { html { font-size: 112.5%; } } /* 18 px en el móvil */
+body { font-family: 'Nunito Sans', system-ui, sans-serif; background: var(--fondo); color: var(--oscuro); line-height: 1.5;
+  min-height: 100vh; display: flex; flex-direction: column; }
+a { color: var(--principal); text-decoration: none; }
 img { max-width: 100%; display: block; }
 
-/* Cabecera */
-.cabecera { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;
-  background: #fff; border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 10; }
-.logo { font-weight: 800; font-size: 1.3rem; color: var(--rosa); letter-spacing: 1px; }
-.menu { display: flex; gap: 14px 18px; flex-wrap: wrap; font-size: 1.05rem; font-weight: 500; } /* letra más grande: más fácil de leer y de pulsar en el móvil */
+/* ---------- Cabecera ---------- */
+.cabecera { display: flex; align-items: center; gap: 24px; padding: 12px 48px;
+  background: #fff; border-bottom: 1px solid var(--borde); box-shadow: 0 2px 12px rgba(90, 30, 110, .05);
+  position: sticky; top: 0; z-index: 10; }
+/* Logo: sello redondo con la G dorada + "GLAMIO / ACADEMIA DE BELLEZA" */
+.logo { display: flex; align-items: center; gap: 10px; color: var(--principal-oscuro); }
+.logo img { width: 46px; height: 46px; border-radius: 50%; }
+.logo-texto { display: flex; flex-direction: column; line-height: 1; }
+.logo-nombre { font-family: var(--serif); font-weight: 700; font-size: 1.55rem; letter-spacing: .5px; }
+.logo-lema { font-size: .62rem; font-weight: 700; letter-spacing: 1.6px; color: var(--principal); margin-top: 3px; }
 
-main { padding: 16px; max-width: 960px; margin: 0 auto; }
-h1 { font-size: 1.5rem; margin-bottom: 12px; }
-h2 { font-size: 1.15rem; margin: 18px 0 8px; }
+.menu { display: flex; align-items: center; gap: 6px; flex: 1; font-size: 1.05rem; font-weight: 600; }
+.menu > a { color: var(--oscuro); padding: 8px 14px; border-radius: 12px; white-space: nowrap; } /* las opciones nunca se parten */
+.menu > a:hover { background: var(--principal-claro); }
+.menu > a.activa { background: var(--lila); color: var(--principal-oscuro); } /* la página en la que estás */
+/* Lo de la derecha: 🔔 y el perfil */
+.menu-derecha { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.icono-campana { display: inline-flex; align-items: center; color: var(--principal-oscuro); padding: 6px; }
+.icono-campana svg { width: 26px; height: 26px; }
+.boton-entrar { background: linear-gradient(135deg, #8e3aa6, var(--principal)); color: #fff !important; padding: 9px 20px !important; border-radius: 12px; }
+
+/* Perfil: círculo con la inicial + nombre + ▾, que abre un menú pequeño */
+.perfil { position: relative; }
+.boton-perfil { display: flex; align-items: center; gap: 10px; background: none; border: none; font: inherit; font-weight: 600;
+  color: var(--oscuro); cursor: pointer; padding: 4px; }
+.inicial { width: 42px; height: 42px; border-radius: 50%; background: var(--lila); color: var(--principal-oscuro);
+  display: inline-flex; align-items: center; justify-content: center; font-family: var(--serif); font-weight: 700; font-size: 1.2rem; }
+.nombre-perfil { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.nombre-perfil small { font-size: .78rem; font-weight: 400; color: var(--gris); }
+.menu-perfil { position: absolute; right: 0; top: 115%; display: none; flex-direction: column; min-width: 210px;
+  background: #fff; border: 1px solid var(--borde); border-radius: 14px; box-shadow: var(--sombra); padding: 8px; z-index: 20; }
+.perfil.abierto .menu-perfil { display: flex; }
+.menu-perfil a { color: var(--oscuro); padding: 10px 12px; border-radius: 10px; }
+.menu-perfil a:hover { background: var(--principal-claro); }
+
+/* ---------- Pie morado ---------- */
+.pie { margin-top: auto; background: var(--principal-oscuro); color: #eadcf0; padding: 28px 48px; }
+.pie-dentro { max-width: 1344px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.pie-logo { display: flex; align-items: center; gap: 12px; color: #fff; }
+.pie-logo img { width: 56px; height: 56px; border-radius: 12px; }
+.pie-logo .logo-lema { color: #e3c3ec; }
+.pie-enlaces { display: flex; gap: 8px 22px; flex-wrap: wrap; font-size: .95rem; }
+.pie-enlaces a { color: #eadcf0; }
+.pie-enlaces a:hover { color: #fff; }
+.pie-nota { width: 100%; text-align: center; font-size: .82rem; color: #bfa6c8; margin-top: 6px; }
+
+/* Pantalla completa, como una app web: el contenido llega hasta 1440 px con márgenes a los lados */
+main { padding: 28px 48px; max-width: 1440px; width: 100%; margin: 0 auto; }
+h1 { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; color: var(--principal-oscuro); margin-bottom: 12px; line-height: 1.2; }
+h2 { font-family: var(--serif); font-size: 1.35rem; font-weight: 700; color: var(--principal-oscuro); margin: 22px 0 10px; line-height: 1.25; }
 
 /* Filtros por categoría */
 .filtros { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
@@ -32,7 +93,7 @@ h2 { font-size: 1.15rem; margin: 18px 0 8px; }
 
 /* Tarjetas */
 .rejilla { display: grid; grid-template-columns: 1fr; gap: 14px; }
-.tarjeta { background: #fff; border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; }
+.tarjeta { background: #fff; border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; box-shadow: var(--sombra); }
 .tarjeta img { border-radius: 10px; margin-bottom: 8px; aspect-ratio: 1; object-fit: cover; width: 100%; }
 .etiqueta { display: inline-block; background: var(--rosa-claro); color: var(--rosa); font-size: .75rem;
   padding: 2px 10px; border-radius: 999px; margin-bottom: 6px; }
@@ -44,9 +105,11 @@ form { display: flex; flex-direction: column; gap: 10px; }
 label { font-size: .9rem; color: var(--gris); }
 input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--borde);
   border-radius: 10px; font: inherit; background: #fff; }
-.boton { background: var(--rosa); color: #fff; border: none; border-radius: 10px; padding: 11px 16px;
-  font: inherit; font-weight: 600; cursor: pointer; text-align: center; }
-.boton.secundario { background: #fff; color: var(--rosa); border: 1px solid var(--rosa); }
+/* Botón principal: degradado morado, como en los diseños */
+.boton { background: linear-gradient(135deg, #8e3aa6, var(--principal)); color: #fff; border: none; border-radius: 12px; padding: 12px 20px;
+  font: inherit; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 14px rgba(122, 42, 140, .25); }
+.boton:hover { filter: brightness(1.08); }
+.boton.secundario { background: #fff; color: var(--principal); border: 1.5px solid var(--principal); box-shadow: none; }
 .fila { display: flex; gap: 8px; align-items: center; }
 
 /* Progreso */
@@ -156,14 +219,27 @@ input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var
 /* Textos larguísimos (por ejemplo un enlace de YouTube) se parten en vez de salirse */
 body { overflow-wrap: anywhere; }
 
-@media (max-width: 640px) {
-  /* Cabecera en UNA línea: GLAMIO a la izquierda y "☰ Menú" a la derecha */
-  .cabecera { flex-wrap: wrap; padding: 10px 16px; }
+/* Pantallas medianas: el círculo del perfil sin el nombre al lado, para que quepa el menú */
+@media (max-width: 1500px) { .nombre-perfil { display: none; } }
+@media (max-width: 1180px) {
+  /* Cabecera en UNA línea: el logo a la izquierda y "☰ Menú" a la derecha */
+  .cabecera { flex-wrap: wrap; padding: 10px 16px; gap: 8px; justify-content: space-between; }
   .boton-menu { display: inline-flex; }
-  .menu { display: none; width: 100%; flex-direction: column; gap: 0; margin-top: 8px; }
+  .menu { display: none; width: 100%; flex: none; flex-direction: column; align-items: stretch; gap: 0; margin-top: 8px; }
   .cabecera.abierta .menu { display: flex; }
   /* Opciones grandes, una por línea, fáciles de pulsar con el dedo */
-  .menu a { padding: 12px 4px; border-top: 1px solid var(--borde); font-size: 1.1rem; }
+  .menu a { padding: 12px 6px; border-top: 1px solid var(--borde); font-size: 1.1rem; border-radius: 0; }
+  /* En el móvil, la derecha (🔔 y perfil) va dentro de la lista: el menú del perfil se ve siempre */
+  .menu-derecha { margin: 0; flex-direction: column; align-items: stretch; gap: 0; }
+  .icono-campana { display: none; } /* en el móvil ya está "Avisos" en la lista */
+  .boton-perfil { display: none; }
+  .menu-perfil { display: flex; position: static; border: none; box-shadow: none; padding: 0; min-width: 0; }
+  .menu-perfil a { border-radius: 0; }
+  .boton-entrar { text-align: center; margin-top: 8px; }
+}
+@media (max-width: 640px) {
+  main { padding: 20px 16px; }
+  .pie { padding: 24px 16px; }
   /* Botones pequeños un poco más altos para el dedo (mínimo recomendado ≈ 40 px) */
   .chip { min-height: 40px; }
   /* iPhone hace zoom al escribir si la letra del cuadro es menor de 16 px */
@@ -177,3 +253,496 @@ body { overflow-wrap: anywhere; }
 .fila-lista > :last-child { flex-shrink: 0; flex-wrap: nowrap; }
 /* El precio no se parte en dos líneas ("24.99" / "€") */
 .precio { white-space: nowrap; }
+
+/* ===================== INICIO (diseño "Academia GLAMIO: Belleza y Talento") ===================== */
+/* 1. Portada grande: texto · foto · lista en letra manuscrita */
+.portada-inicio { display: grid; grid-template-columns: 1.05fr 1.1fr .75fr; align-items: center;
+  background: linear-gradient(100deg, #fbeef5 0%, #f6dcea 45%, #f3d3e5 100%); min-height: 380px; overflow: hidden; }
+.portada-texto { padding: 32px 8px 32px 48px; display: flex; flex-direction: column; gap: 18px; }
+.portada-titulo { font-family: var(--serif); text-transform: uppercase; font-size: clamp(2.3rem, 4.4vw, 4.1rem);
+  line-height: 1.02; color: #4a2357; margin: 0; letter-spacing: .5px; }
+.portada-titulo em { font-style: italic; background: linear-gradient(90deg, #8e3aa6, #c0569a);
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.portada-sub { font-size: 1.15rem; color: var(--oscuro); max-width: 460px; }
+.portada-botones { display: flex; gap: 14px; flex-wrap: wrap; }
+.portada-botones .boton { border-radius: 999px; padding: 12px 22px; white-space: nowrap; font-size: .95rem; }
+.portada-foto { align-self: stretch; }
+/* La foto se funde con el fondo por la izquierda */
+.portada-foto img { width: 100%; height: 100%; min-height: 380px; object-fit: cover;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22%, #000 80%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 22%, #000 80%, transparent 100%); }
+.portada-derecha { display: flex; flex-direction: column; gap: 22px; padding: 24px 40px 24px 28px; }
+.portada-derecha .portada-botones { flex-direction: column; align-items: flex-start; }
+.portada-lista { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.portada-lista li { font-family: 'Great Vibes', 'Brush Script MT', cursive; font-size: 1.85rem; color: var(--principal);
+  display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.portada-lista li::before { content: '✓'; font-family: 'Nunito Sans', sans-serif; font-size: 1rem; font-weight: 700; color: var(--principal);
+  width: 30px; height: 30px; border: 2px solid var(--principal); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* Título centrado con una línea a cada lado: "—— ¿Qué quieres hacer hoy? ——" */
+.titulo-linea { display: flex; align-items: center; gap: 22px; text-align: center; font-size: 1.85rem; margin: 30px 0 18px; scroll-margin-top: 90px; }
+.titulo-linea::before, .titulo-linea::after { content: ''; flex: 1; height: 1px; background: var(--borde); }
+
+/* 2. ¿Qué quieres hacer hoy? */
+.accesos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.acceso { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 22px 24px; border-radius: 20px;
+  color: var(--oscuro); box-shadow: var(--sombra); border: 1px solid rgba(255,255,255,.7); transition: transform .15s; }
+.acceso:hover { transform: translateY(-3px); }
+.acceso-academia { background: linear-gradient(135deg, #fbe3ee, #f6d3e4); }
+.acceso-calculadora { background: linear-gradient(135deg, #fcebe0, #f8dccd); }
+.acceso-comunidad { background: linear-gradient(135deg, #efe2f8, #e3d0f2); }
+.acceso-texto { display: flex; flex-direction: column; gap: 6px; }
+.acceso-texto strong { font-size: 1.35rem; color: var(--principal-oscuro); }
+.acceso-texto span { color: var(--gris); }
+/* Ilustración recortada del diseño: se funde con el fondo de la tarjeta */
+.acceso-dibujo { width: 92px; height: 82px; object-fit: cover; border-radius: 14px; mix-blend-mode: multiply; flex-shrink: 0; }
+
+/* 3. Explora tu especialidad */
+.filtros-centrados { justify-content: center; }
+.cursos-inicio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.curso-horizontal { display: flex; gap: 16px; background: #fff; border-radius: 20px; padding: 12px; box-shadow: var(--sombra);
+  border: 1px solid var(--borde); color: var(--oscuro); transition: transform .15s; }
+.curso-horizontal:hover { transform: translateY(-3px); }
+.curso-horizontal img, .curso-horizontal .sin-foto { width: 46%; aspect-ratio: 4 / 3.2; object-fit: cover; border-radius: 14px; flex-shrink: 0; }
+.curso-horizontal .sin-foto { background: var(--principal-claro); display: flex; align-items: center; justify-content: center; font-size: 2.6rem; }
+.curso-datos { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; padding: 4px 4px 4px 0; }
+.curso-datos .etiqueta { align-self: flex-start; margin: 0; background: var(--lila); color: var(--principal-oscuro); }
+.curso-titulo { font-size: 1.12rem; color: var(--principal-oscuro); line-height: 1.25; }
+.curso-pie { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+.curso-pie .precio { font-size: 1.2rem; color: var(--principal); }
+.curso-pie .ayuda { white-space: nowrap; }
+
+/* 4. Talentos de la comunidad: fila de fotos + "Comparte tu trabajo" */
+.talentos { display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; }
+.talento { position: relative; aspect-ratio: 1 / .78; border-radius: 16px; overflow: hidden; box-shadow: var(--sombra); }
+.talento img { width: 100%; height: 100%; object-fit: cover; }
+.talento-autora { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 10px 8px; color: #fff; font-size: .85rem; font-weight: 700;
+  background: linear-gradient(transparent, rgba(40, 10, 50, .65)); }
+.talento-compartir { background: var(--lila); color: var(--principal-oscuro); display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; gap: 6px; font-weight: 700; padding: 10px; }
+.talento-compartir .mas { width: 34px; height: 34px; border: 2px solid var(--principal); border-radius: 50%; display: inline-flex;
+  align-items: center; justify-content: center; color: var(--principal); font-size: 1.2rem; }
+
+/* Inicio en pantallas medianas y móvil */
+@media (max-width: 1100px) {
+  .portada-inicio { grid-template-columns: 1fr 1fr; }
+  .portada-lista { display: none; }
+  /* Sin la lista, los botones bajan debajo del título y de la foto, centrados */
+  .portada-derecha { grid-column: 1 / -1; padding: 18px 16px 26px; }
+  .portada-derecha .portada-botones { flex-direction: row; justify-content: center; align-self: center; }
+  .cursos-inicio { grid-template-columns: repeat(2, 1fr); }
+  .talentos { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 760px) {
+  .portada-inicio { grid-template-columns: 1fr; }
+  .portada-texto { padding: 28px 16px 8px; }
+  .portada-foto img { min-height: 220px; max-height: 260px; -webkit-mask-image: none; mask-image: none; }
+  .accesos, .cursos-inicio { grid-template-columns: 1fr; }
+  .talentos { grid-template-columns: repeat(2, 1fr); }
+  /* Si los filtros no caben, se deslizan desde la izquierda (centrados cortarían "Todas") */
+  .filtros-centrados { justify-content: flex-start; }
+  /* Tarjeta de curso en el móvil: foto más estrecha para que el precio no toque el borde */
+  .curso-horizontal img, .curso-horizontal .sin-foto { width: 38%; }
+  .curso-pie { flex-wrap: wrap; }
+  .titulo-linea { font-size: 1.45rem; gap: 12px; }
+}
+
+/* ===================== ENTRAR y REGISTRARME (diseño "Inicia sesión en GLAMIO") ===================== */
+/* Texto solo para lectores de pantalla (la etiqueta del campo existe, pero no se ve) */
+.visualmente-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.cuerpo-acceso { background: #f7e6f0; }
+/* Pantalla partida: foto a la izquierda, panel rosa a la derecha, a pantalla completa */
+.pantalla-acceso { display: grid; grid-template-columns: 1.1fr 1fr; min-height: 100vh; }
+.acceso-foto { position: relative; overflow: hidden; }
+.acceso-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+/* Lado del logo: fondo morado oscuro como el del logo, y el logo centrado entero (sin recortar) */
+.acceso-logo { background: radial-gradient(circle at 50% 45%, #4a1a57 0%, #2a0d33 60%, #1c0823 100%); display: flex; align-items: center; justify-content: center; padding-right: 60px; } /* 60 px = lo que tapa la curva del panel */
+.acceso-logo img { position: static; width: min(94%, 88vh, 820px); height: auto; aspect-ratio: 1; object-fit: contain; border-radius: 50%; box-shadow: 0 0 60px rgba(217, 70, 180, .35); }
+/* El panel entra sobre la foto con una curva suave, como en el diseño */
+.acceso-panel { position: relative; margin-left: -60px; border-radius: 60px 0 0 60px;
+  background: linear-gradient(160deg, #fdf3f8 0%, #f6e1ee 55%, #f1d6e8 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 40px 56px; }
+.logo-grande img { width: 68px; height: 68px; }
+.logo-grande .logo-nombre { font-size: 2.4rem; }
+.logo-grande .logo-lema { font-size: .8rem; }
+.acceso-titulo { font-size: 3.3rem; margin: 6px 0 0; text-align: center; }
+.acceso-sub { font-size: 1.15rem; text-align: center; color: var(--oscuro); margin-top: -8px; }
+.acceso-form { width: 100%; max-width: 470px; gap: 14px; }
+
+/* Campos redondeados con icono a la izquierda */
+.campo-icono { position: relative; display: block; }
+.campo-icono svg { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px;
+  fill: none; stroke: var(--principal-oscuro); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.campo-icono input { border-radius: 999px; padding: 15px 52px; border: 1.5px solid #dcc4e3; background: rgba(255,255,255,.75); font-size: 1.05rem; }
+.campo-icono input:focus { outline: none; border-color: var(--principal); box-shadow: 0 0 0 3px rgba(122,42,140,.15); }
+.ver-contrasena { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none;
+  font-size: 1.2rem; cursor: pointer; opacity: .55; padding: 4px 6px; }
+.ver-contrasena.activo { opacity: 1; }
+
+.boton-ancho { width: 100%; border-radius: 999px; padding: 15px; font-size: 1.2rem; margin-top: 4px; }
+.boton-contorno { width: 100%; max-width: 470px; text-align: center; border: 1.5px solid #c99bd6; border-radius: 999px;
+  padding: 13px; color: var(--oscuro); background: rgba(255,255,255,.4); }
+.boton-contorno strong { color: var(--principal); }
+.boton-contorno:hover { background: #fff; }
+.volver-inicio { font-size: .95rem; color: var(--gris); }
+
+/* Registrarme: elegir perfil con tarjetas */
+.elegir-perfil { border: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.elegir-perfil legend { font-weight: 700; color: var(--principal-oscuro); margin-bottom: 8px; }
+.opcion-perfil { cursor: pointer; position: relative; }
+.opcion-perfil input { position: absolute; opacity: 0; width: 1px; height: 1px; } /* el input general mide 100 %: aquí no */ /* el círculo no se ve: se marca la tarjeta entera */
+.opcion-perfil span { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: 12px; border-radius: 16px;
+  border: 1.5px solid #dcc4e3; background: rgba(255,255,255,.65); color: var(--oscuro); }
+.opcion-perfil small { color: var(--gris); font-size: .82rem; }
+.opcion-perfil input:checked + span { border-color: var(--principal); background: #fff; box-shadow: 0 0 0 3px rgba(122,42,140,.15); }
+.opcion-perfil input:focus-visible + span { outline: 2px solid var(--principal); outline-offset: 2px; }
+
+/* Móvil: la foto arriba en una franja y el formulario debajo */
+@media (max-width: 860px) {
+  .pantalla-acceso { grid-template-columns: 1fr; }
+  .acceso-foto { height: 240px; }
+  .acceso-logo { height: 360px; padding-right: 0; }
+  .acceso-logo img { width: 320px; }
+  .acceso-panel { margin: -40px 0 0; border-radius: 32px 32px 0 0; padding: 28px 20px 36px; justify-content: flex-start; }
+  .logo-grande img { width: 54px; height: 54px; }
+  .logo-grande .logo-nombre { font-size: 1.9rem; }
+  .acceso-titulo { font-size: 2.5rem; }
+  .elegir-perfil { grid-template-columns: 1fr; }
+}
+
+/* ===================== CURSO (diseño "Curso de Uñas Acrílicas desde Cero") ===================== */
+/* Cabecera: foto a la izquierda, datos a la derecha */
+.curso-cabecera { display: grid; grid-template-columns: minmax(280px, 460px) 1fr; gap: 40px; align-items: center; margin-bottom: 26px; }
+.curso-foto img, .curso-foto .sin-foto { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: var(--sombra); }
+.curso-foto .sin-foto { background: var(--principal-claro); display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+.curso-info { display: flex; flex-direction: column; gap: 12px; }
+.curso-info .etiqueta { align-self: flex-start; margin: 0; background: var(--lila); color: var(--principal-oscuro); font-size: .9rem; padding: 4px 14px; }
+.curso-info h1 { font-size: 2.5rem; margin: 0; }
+.curso-descripcion { color: var(--gris); font-size: 1.08rem; max-width: 780px; }
+.curso-meta { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; color: var(--oscuro); }
+.curso-meta .precio { color: var(--principal); font-size: 1.15rem; }
+.curso-accion { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 6px; }
+.curso-accion .boton { padding: 14px 30px; font-size: 1.08rem; }
+
+/* Tarjeta de progreso: barra con el % dentro · "3 de 6 lecciones" · certificado */
+.progreso-tarjeta { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 22px; }
+.progreso-barra { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 10px; }
+.progreso-barra h2 { margin: 0; }
+.barra-grande { height: 26px; background: var(--principal-claro); }
+.barra-grande > div { display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+  background: linear-gradient(90deg, #8e3aa6, var(--principal)); border-radius: 999px; }
+#porcentaje { color: #fff; font-size: .85rem; font-weight: 700; white-space: nowrap; }
+.barra-grande > div { min-width: 52px; } /* que siempre quepa "0%" */
+#texto-progreso { font-size: 1.08rem; }
+
+/* Dos columnas: lecciones | materiales + reseñas */
+.curso-columnas { display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; align-items: start; }
+.curso-columnas h2 { margin-top: 0; }
+.curso-lateral { display: flex; flex-direction: column; gap: 24px; }
+.lista-lecciones { list-style: none; }
+.lista-lecciones li + li { border-top: 1px solid var(--borde); }
+.fila-leccion { display: flex; align-items: center; gap: 14px; padding: 13px 6px; color: var(--oscuro); }
+a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; }
+.fila-leccion .leccion-nombre { flex: 1; min-width: 0; }
+.fila-leccion .flecha { color: var(--gris); font-size: 1.4rem; line-height: 1; }
+.circulo { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c9b3d2; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; font-size: .9rem; font-weight: 700; }
+.circulo.hecha { background: var(--principal); border-color: var(--principal); color: #fff; }
+.fila-leccion.bloqueada { color: var(--gris); }
+.fila-leccion.bloqueada .circulo { border: none; }
+.lista-materiales { padding-left: 22px; line-height: 1.9; margin-bottom: 14px; }
+.curso-lateral .boton-opcion { float: right; }
+.resumen-resenas { display: grid; grid-template-columns: 1fr auto; align-items: center; row-gap: 4px; color: var(--oscuro); }
+.resumen-resenas h2 { grid-column: 1; }
+.resumen-resenas .media-estrellas { grid-column: 1; font-size: 1.15rem; }
+.resumen-resenas .flecha { grid-column: 2; grid-row: 1 / span 2; font-size: 2rem; color: var(--gris); }
+.resumen-resenas:hover { background: var(--principal-claro); }
+
+@media (max-width: 900px) {
+  .curso-cabecera { grid-template-columns: 1fr; gap: 18px; }
+  .curso-info h1 { font-size: 2rem; }
+  .curso-columnas { grid-template-columns: 1fr; }
+}
+
+/* ===================== LECCIÓN (diseño "Lección de acrílico en Glamio") ===================== */
+.volver { display: inline-block; text-decoration: underline; margin-bottom: 6px; }
+#leccion h1 { font-size: 2.1rem; margin: 2px 0 18px; }
+/* Vídeo a la izquierda, explicación y botones a la derecha */
+.leccion-columnas { display: grid; grid-template-columns: 1.15fr 1fr; gap: 40px; align-items: start; }
+#video-zona .video { border-radius: 18px; box-shadow: var(--sombra); }
+.sin-video { display: flex; align-items: center; justify-content: center; }
+.sin-video span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #e9d7f1; }
+.leccion-lado { display: flex; flex-direction: column; gap: 22px; padding-top: 4px; }
+.leccion-texto { font-size: 1.12rem; line-height: 1.6; white-space: pre-line; }
+#completar { align-self: flex-start; padding: 14px 32px; font-size: 1.08rem; }
+#completar.secundario { background: #fff; }
+.navegacion { margin: 0; }
+.lecciones-de { font-weight: 600; color: var(--oscuro); }
+.separador { border: none; border-top: 1px solid var(--borde); margin: 34px 0 6px; }
+.titulo-dudas { font-family: 'Nunito Sans', sans-serif; font-size: 1.7rem; font-weight: 700; }
+
+/* Formulario de duda en una fila: texto · foto · Preguntar */
+.form-duda-fila { display: grid; grid-template-columns: 1fr 340px auto; gap: 18px; align-items: end; margin-bottom: 8px; }
+.form-duda-fila textarea { min-height: 84px; }
+.campo-foto { display: flex; flex-direction: column; gap: 6px; color: var(--oscuro); }
+.form-duda-fila .boton { padding: 14px 30px; }
+
+/* Cada duda: círculo con la inicial + cuerpo; respuestas con sangría y fondo lila */
+.duda { display: flex; gap: 16px; padding: 20px 0; border-top: 1px solid var(--borde); }
+.avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--lila); color: var(--principal-oscuro); flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; font-family: var(--serif); font-weight: 700; font-size: 1.3rem; }
+.avatar-directora { background: #efe1f6; font-size: 1.4rem; }
+.duda-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.duda-cabeza { justify-content: space-between; flex-wrap: nowrap; }
+.duda-texto { font-size: 1.08rem; }
+.duda-foto { max-width: 240px; border-radius: 12px; }
+.respuesta { display: flex; gap: 14px; background: var(--principal-claro); border-radius: 16px; padding: 14px 16px; margin-top: 8px; }
+.respuesta.destacada { border-left: 4px solid var(--principal); }
+.respuesta .avatar { width: 44px; height: 44px; font-size: 1.1rem; }
+.enlace-reportar { background: none; border: none; color: var(--principal); text-decoration: underline; cursor: pointer; font: inherit; font-size: .92rem; }
+.form-responder { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; margin-top: 10px; }
+.form-responder .boton { padding: 12px 30px; }
+
+@media (max-width: 900px) {
+  .leccion-columnas { grid-template-columns: 1fr; gap: 20px; }
+  .form-duda-fila { grid-template-columns: 1fr; align-items: stretch; }
+  #completar { align-self: stretch; }
+}
+@media (max-width: 520px) {
+  .avatar { width: 40px; height: 40px; font-size: 1rem; }
+  .respuesta { padding: 12px; }
+  .form-responder { grid-template-columns: 1fr; }
+}
+
+/* ===================== CALCULADORA (diseño "Calculadora de precios para belleza") ===================== */
+.calc-columnas { display: grid; grid-template-columns: 1.6fr 1fr; gap: 0; align-items: start; }
+.calc-form { padding-right: 44px; border-right: 1px solid var(--borde); }
+.calc-servicios { padding-left: 44px; }
+.calc-servicios h2 { font-family: 'Nunito Sans', sans-serif; font-size: 1.7rem; margin-top: 8px; }
+.titulo-icono { display: flex; align-items: center; gap: 16px; font-family: 'Nunito Sans', sans-serif; font-size: 2.3rem; }
+.titulo-icono svg { width: 46px; height: 46px; fill: none; stroke: var(--principal-oscuro); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#form label { color: var(--oscuro); display: flex; flex-direction: column; gap: 6px; }
+.calc-fila-dos { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
+.calc-fila-tres { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 18px; }
+
+/* Recuadro con cabecera lila */
+.recuadro { border: 1px solid var(--borde); border-radius: 16px; overflow: hidden; background: #fff; box-shadow: var(--sombra); }
+.recuadro-titulo { margin: 0; padding: 12px 20px; background: linear-gradient(90deg, #f1e3f7, #f7eef9);
+  font-family: 'Nunito Sans', sans-serif; font-size: 1.25rem; color: var(--principal-oscuro); }
+.recuadro-cuerpo { padding: 16px 22px 20px; display: flex; flex-direction: column; gap: 10px; }
+.recuadro-cuerpo.calc-fila-tres { display: grid; }
+
+/* Fila de material: nombre | coste € | papelera */
+.material { display: flex; flex-direction: column; gap: 2px; }
+.fila-material { display: grid; grid-template-columns: 1fr 150px auto; gap: 14px; align-items: center; }
+.campo-euros { position: relative; }
+.campo-euros input { padding-right: 34px; }
+.campo-euros span { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--oscuro); }
+.boton-papelera { background: none; border: none; cursor: pointer; padding: 6px; color: var(--principal-oscuro); }
+.boton-papelera svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.boton-papelera:hover { color: #a12622; }
+.boton-pequeno { align-self: flex-start; padding: 7px 16px; font-size: 1rem; cursor: pointer; }
+
+/* Franja "Precio sugerido" */
+.precio-sugerido { background: linear-gradient(90deg, #f1e3f7, #f7eef9); border-radius: 14px; padding: 18px 24px;
+  display: flex; align-items: baseline; gap: 18px; color: var(--principal-oscuro); font-weight: 700; font-size: 1.25rem; }
+.precio-sugerido strong { font-size: 1.9rem; white-space: nowrap; }
+.precio-sugerido { flex-wrap: wrap; }
+.calc-guardar { align-self: flex-start; padding: 13px 44px; }
+
+/* Tarjetas de "Mis servicios" con menú ⋮ */
+.servicio { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+.servicio-datos { display: flex; flex-direction: column; gap: 4px; }
+.servicio-datos strong { font-size: 1.2rem; }
+.servicio-precio { color: var(--principal); font-weight: 700; font-size: 1.3rem; }
+.boton-puntos { cursor: pointer; font-size: 1.6rem; line-height: 1; padding: 2px 10px; border-radius: 10px; color: var(--oscuro); }
+.boton-puntos:hover { background: var(--principal-claro); }
+
+@media (max-width: 960px) {
+  .calc-columnas { grid-template-columns: 1fr; }
+  .calc-form { padding-right: 0; border-right: none; }
+  .calc-servicios { padding-left: 0; margin-top: 28px; border-top: 1px solid var(--borde); padding-top: 12px; }
+}
+@media (max-width: 640px) {
+  .calc-fila-dos, .calc-fila-tres, .recuadro-cuerpo.calc-fila-tres { grid-template-columns: 1fr; }
+  .fila-material { grid-template-columns: 1fr 92px auto; gap: 6px; }
+  .campo-euros input { padding-left: 8px; padding-right: 24px; }
+  .campo-euros span { right: 8px; }
+  .boton-papelera { padding: 2px; }
+  .titulo-icono { font-size: 1.8rem; }
+  .calc-guardar { align-self: stretch; }
+}
+
+
+/* ===================== AVISOS y NOTIFICACIONES (diseño "Panel de avisos GLAMIO") ===================== */
+.pagina-avisos { max-width: 1240px; }
+.avisos-cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
+.avisos-cabecera .titulo-icono { font-family: var(--serif); margin-bottom: 4px; }
+.avisos-cabecera .titulo-icono svg { width: 48px; height: 48px; }
+.avisos-sub { color: var(--gris); font-size: 1.05rem; }
+.boton-visto { width: auto; max-width: none; padding: 11px 24px; cursor: pointer; font: inherit; font-weight: 600; color: var(--oscuro); }
+.apartado-avisos { margin-bottom: 26px; }
+.franja-avisos { display: flex; align-items: center; gap: 14px; margin: 0 0 12px; padding: 12px 22px; border-radius: 14px;
+  background: linear-gradient(90deg, #f3e6f7, #f9f1fa); font-size: 1.35rem; }
+.franja-avisos svg { width: 30px; height: 30px; fill: none; stroke: var(--principal-oscuro); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.aviso { display: flex; align-items: center; gap: 20px; background: #fff; border: 1px solid var(--borde); border-radius: 18px;
+  box-shadow: var(--sombra); padding: 20px 24px; margin-bottom: 12px; }
+.avatar-aviso { width: 62px; height: 62px; background: var(--principal-claro); }
+.avatar-aviso svg { width: 30px; height: 30px; fill: none; stroke: var(--principal-oscuro); stroke-width: 1.6; }
+.aviso-datos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.aviso-cabeza { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; font-size: 1.1rem; }
+.etiqueta-perfil { margin: 0; background: var(--lila); color: var(--principal-oscuro); padding: 3px 14px; font-size: .85rem; }
+.etiqueta-destacada { margin: 0; background: #fdf1d8; color: #8a5a00; }
+.aviso-donde { color: var(--gris); }
+.aviso-texto { font-size: 1.08rem; }
+/* Botones de la derecha: rosa (responder) y lila (ver en la lección), como en el diseño */
+.boton-rosa, .boton-lila { flex-shrink: 0; border-radius: 14px; padding: 13px 26px; font-weight: 700; white-space: nowrap; }
+.boton-rosa { background: linear-gradient(135deg, #e3a0bf, #cf7fa6); color: #fff; box-shadow: 0 4px 14px rgba(207, 127, 166, .35); }
+.boton-lila { background: var(--lila); color: var(--principal-oscuro); }
+.boton-rosa:hover, .boton-lila:hover { filter: brightness(1.05); }
+.todo-al-dia { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 48px 20px;
+  background: #fff; border: 1px solid var(--borde); border-radius: 20px; box-shadow: var(--sombra); }
+.todo-al-dia span:first-child { font-size: 2.6rem; }
+.todo-al-dia strong { font-size: 1.4rem; color: var(--principal-oscuro); }
+.todo-al-dia span:last-child { color: var(--gris); }
+@media (max-width: 760px) {
+  .aviso { flex-wrap: wrap; padding: 16px; gap: 14px; }
+  .avatar-aviso { width: 48px; height: 48px; }
+  .aviso-datos { flex-basis: calc(100% - 64px); }
+  .boton-rosa, .boton-lila { width: 100%; text-align: center; }
+  .franja-avisos { font-size: 1.1rem; padding: 10px 14px; }
+  .boton-visto { width: 100%; }
+}
+
+
+/* ===================== MENÚ LATERAL de la administradora ===================== */
+.con-lateral { display: grid; grid-template-columns: 290px 1fr; flex: 1; width: 100%; }
+.con-lateral > main { max-width: none; margin: 0; }
+.lateral { background: linear-gradient(180deg, #f7eef9, #f1e3f5); border-right: 1px solid var(--borde); padding: 28px 16px; }
+.lateral nav { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 6px; }
+.lateral a { display: flex; align-items: center; gap: 10px; padding: 13px 18px; border-radius: 14px; color: var(--oscuro); font-weight: 600; font-size: 1.05rem; }
+.lateral a:hover { background: rgba(255,255,255,.7); }
+.lateral a.activa { background: linear-gradient(135deg, #b57cc6, var(--principal)); color: #fff; box-shadow: 0 4px 14px rgba(122,42,140,.25); }
+.lateral .contador { margin-left: auto; }
+/* En el Panel, el menú lateral sustituye a las pestañas de arriba */
+.con-lateral #pestanas-panel { display: none; }
+@media (max-width: 1000px) {
+  .con-lateral { grid-template-columns: 1fr; }
+  .lateral { border-right: none; border-bottom: 1px solid var(--borde); padding: 10px 12px; }
+  .lateral nav { position: static; flex-direction: row; overflow-x: auto; gap: 6px; }
+  .lateral a { white-space: nowrap; padding: 10px 14px; font-size: .95rem; }
+}
+
+
+/* ===================== COMUNIDAD · MURO (diseño "Galería de trabajos de uñas") ===================== */
+.form-publicar { background: linear-gradient(135deg, #faf3fb, #f4e8f7); border: 1px solid #e3cdea; border-radius: 20px;
+  padding: 22px 28px; margin-bottom: 24px; gap: 14px; }
+.form-publicar h2 { margin: 0; font-size: 1.5rem; }
+.form-publicar label { color: var(--oscuro); display: flex; flex-direction: column; gap: 6px; }
+.publicar-campos { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 22px; align-items: start; }
+.publicar-campos textarea { min-height: 78px; }
+.publicar-pie { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+.permiso-casilla { flex-direction: row !important; align-items: center; gap: 12px !important; flex: 1; }
+.permiso-casilla input { width: 22px; height: 22px; flex-shrink: 0; }
+#publicar { padding: 13px 40px; }
+.filtrar { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.filtrar strong { font-family: var(--serif); font-size: 1.25rem; color: var(--principal-oscuro); }
+.filtrar .filtros { margin: 0; padding: 0; min-width: 0; max-width: 100%; } /* si no caben, se deslizan dentro de la pantalla */
+/* Galería: 3 columnas de tarjetas con foto grande */
+.galeria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+.trabajo { background: #fff; border: 1px solid var(--borde); border-radius: 20px; overflow: hidden; box-shadow: var(--sombra); display: flex; flex-direction: column; }
+.trabajo > a img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+.trabajo-datos { padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.trabajo-cabeza { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.trabajo-cabeza strong { font-family: var(--serif); font-size: 1.3rem; color: var(--oscuro); }
+.trabajo-cabeza .etiqueta { margin: 0; }
+.permiso-si { background: #e6f4ea; color: #2c6b3f; border: 1px solid #cfe8d6; }
+.permiso-no { background: #f3f0f4; color: var(--gris); border: 1px solid #e4dde6; }
+.trabajo-curso { color: var(--oscuro); font-weight: 600; }
+.fila-reportar { justify-content: flex-end; margin-top: auto; }
+@media (max-width: 1100px) { .galeria { grid-template-columns: repeat(2, 1fr); } .publicar-campos { grid-template-columns: 1fr 1fr; } .publicar-campos label:last-child { grid-column: 1 / -1; } }
+@media (max-width: 640px) {
+  .galeria, .publicar-campos { grid-template-columns: 1fr; }
+  .form-publicar { padding: 18px; }
+  #publicar { width: 100%; }
+  .filtrar { flex-direction: column; align-items: stretch; gap: 6px; }
+}
+
+
+/* ===================== PANEL PRINCIPAL: cifras y gráficas ===================== */
+.cifras-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 22px; }
+.cifra-panel { display: flex; align-items: center; gap: 16px; background: #fff; border: 1px solid var(--borde); border-radius: 18px; padding: 18px 22px; box-shadow: var(--sombra); }
+.cifra-icono { font-size: 2rem; width: 58px; height: 58px; border-radius: 50%; background: var(--principal-claro); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cifra-panel strong { display: block; font-family: var(--serif); font-size: 1.9rem; color: var(--principal-oscuro); line-height: 1.1; }
+.graficas { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 22px; }
+.grafica { margin: 0; }
+.grafica figcaption { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+.grafica figcaption strong { font-size: 1.15rem; color: var(--principal-oscuro); }
+/* Barras: una por mes, de la base hacia arriba; línea base suave y valores en tinta de texto */
+.barras { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; height: 220px; align-items: end; border-bottom: 1px solid var(--borde); padding-bottom: 0; }
+.barra-mes { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; outline: none; }
+.barra-relleno { width: 62%; max-width: 54px; background: linear-gradient(180deg, #a565bb, var(--principal)); border-radius: 6px 6px 0 0; transition: filter .15s; }
+.barra-mes:hover .barra-relleno, .barra-mes:focus .barra-relleno { filter: brightness(1.15); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--lila); }
+.barra-valor { font-size: .9rem; font-weight: 700; color: var(--oscuro); margin-bottom: 4px; }
+.barra-mes-nombre { position: absolute; bottom: -1.7em; font-size: .82rem; color: var(--gris); white-space: nowrap; }
+.grafica .barras { margin-bottom: 2em; }
+.tabla-datos { margin-bottom: 22px; }
+.tabla-datos summary { cursor: pointer; font-weight: 700; color: var(--principal); }
+.tabla { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: .95rem; }
+.tabla th, .tabla td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--borde); }
+.tabla th { color: var(--principal-oscuro); }
+.top-cursos { padding-left: 24px; line-height: 2; }
+@media (max-width: 1100px) { .cifras-panel { grid-template-columns: repeat(2, 1fr); } .graficas { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .cifras-panel { grid-template-columns: 1fr; } .barras { gap: 6px; } .tabla { font-size: .8rem; } }
+
+/* ===================== GUÍAS TEÓRICAS en la página del curso ===================== */
+.lista-guias { display: flex; flex-direction: column; gap: 12px; }
+.guia { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--borde); }
+.guia:first-child { border-top: none; }
+.guia-datos { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 2px; }
+.guia-precio { color: var(--principal); font-weight: 700; }
+
+
+/* Entrar y Registrarme con letras más grandes (petición de la autora) */
+.acceso-panel { gap: 22px; }
+.acceso-titulo { font-size: 2.9rem; } /* título más pequeño (petición de la autora) */
+.acceso-sub { font-size: 1.45rem; }
+.logo-grande .logo-nombre { font-size: 4.4rem; } /* GLAMIO más grande (petición de la autora) */
+.logo-grande .logo-lema { font-size: 1.25rem; letter-spacing: 3px; }
+.logo-grande img { width: 112px; height: 112px; }
+.logo-grande { gap: 16px; }
+.acceso-form { max-width: 640px; gap: 18px; }
+.campo-icono input { font-size: 2.05rem; padding: 26px 84px; border-width: 2px; }
+.campo-icono input::placeholder { color: #8a7d90; }
+.campo-icono svg { width: 40px; height: 40px; left: 26px; }
+.ver-contrasena { font-size: 2rem; right: 22px; }
+.boton-ancho { font-size: 1.45rem; padding: 18px; }
+.boton-contorno { max-width: 640px; font-size: 1.25rem; padding: 16px; }
+.volver-inicio { font-size: 1.15rem; }
+.opcion-perfil strong { font-size: 1.15rem; }
+.opcion-perfil small { font-size: .95rem; }
+.elegir-perfil legend { font-size: 1.2rem; }
+@media (max-width: 860px) {
+  .acceso-titulo { font-size: 2.3rem; }
+  .acceso-sub { font-size: 1.2rem; }
+  .logo-grande .logo-nombre { font-size: 3.2rem; }
+  .logo-grande .logo-lema { font-size: 1rem; letter-spacing: 2px; }
+  .logo-grande img { width: 80px; height: 80px; }
+  .campo-icono input { font-size: 1.6rem; padding: 20px 64px; }
+  .campo-icono svg { width: 30px; height: 30px; left: 18px; }
+  .ver-contrasena { font-size: 1.6rem; }
+  .boton-ancho { font-size: 1.3rem; }
+}
+
+/* ===== Pantallas grandes de PC (monitores de 1920 px): letra de 22 px y contenido casi a todo el ancho =====
+   Va al FINAL del archivo para ganar a las reglas normales (en CSS, a igualdad, gana la última). */
+@media (min-width: 1600px) {
+  html { font-size: 137.5%; }
+  main { max-width: 1800px; padding-left: 64px; padding-right: 64px; }
+  .cabecera, .pie { padding-left: 64px; padding-right: 64px; }
+  .pie-dentro { max-width: 1800px; }
+  .portada-texto { padding-left: 64px; }
+  .portada-inicio, .portada-foto img { min-height: 480px; }
+  .curso-cabecera { grid-template-columns: minmax(320px, 680px) 1fr; }
+  .curso-info h1 { font-size: 2.8rem; }
+}

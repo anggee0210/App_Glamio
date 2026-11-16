@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cursos – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main>
+    <!-- Página solo de cursos (la Academia): título, filtros por categoría y las tarjetas -->
+    <h1 class="titulo-icono">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/></svg>
+      Academia: nuestros cursos
+    </h1>
+    <p class="avisos-sub">Elige tu especialidad y empieza a aprender. Cada curso tiene lecciones en vídeo, materiales y certificado.</p>
+    <div class="filtrar" style="margin-top:18px"><strong>Filtrar:</strong><div class="filtros" id="filtros"></div></div>
+    <div class="cursos-inicio" id="lista-cursos"><p>Cargando…</p></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    function precioTexto(precio) {
+      const n = Number(precio);
+      return n === 0 ? 'Gratis' : n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+    }
+
+    // "★ 4,8 (12)" con datos reales de las reseñas, o "Sin reseñas aún"
+    function valoracion(c) {
+      if (!c.num_resenas) return '<span class="ayuda">Sin reseñas aún</span>';
+      return `<span class="estrellas">★</span> <strong>${Number(c.media).toLocaleString('es-ES')}</strong>
+        <span class="ayuda" style="display:inline">(${c.num_resenas})</span>`;
+    }
+
+    // Las mismas tarjetas horizontales que en el Inicio
+    async function cargarCursos(categoria = '') {
+      const caja = document.getElementById('lista-cursos');
+      try {
+        const cursos = await api('/api/cursos' + (categoria ? '?categoria=' + categoria : ''));
+        caja.innerHTML = cursos.map(c => `
+          <a class="curso-horizontal" href="/curso.html?id=${c.id}">
+            ${c.imagen ? `<img src="${c.imagen}" alt="">` : '<span class="sin-foto" aria-hidden="true">💅</span>'}
+            <span class="curso-datos">
+              <span class="etiqueta">${esc(c.categoria)}</span>
+              <strong class="curso-titulo">${esc(c.titulo)}</strong>
+              <span>${valoracion(c)}</span>
+              <span class="curso-pie">
+                <span class="ayuda">▶ ${c.num_lecciones} ${c.num_lecciones === 1 ? 'lección' : 'lecciones'}</span>
+                <span class="precio">${precioTexto(c.precio)}</span>
+              </span>
+            </span>
+          </a>`).join('') || '<p class="ayuda">No hay cursos en esta categoría.</p>';
+      } catch (err) {
+        caja.innerHTML = `<p class="mensaje error">No se pudieron cargar los cursos: ${esc(err.message)}</p>`;
+      }
+    }
+
+    pintarCabecera();
+    pintarFiltros(document.getElementById('filtros'), cargarCursos);
+    cargarCursos();
+  </script>
+</body>
+</html>

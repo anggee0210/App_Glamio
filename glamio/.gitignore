@@ -3,3 +3,7 @@ node_modules/
 uploads/videos/*
 uploads/imagenes/*
 !uploads/**/.gitkeep
+
+# Guías teóricas compradas: privadas, nunca en git
+privado/guias/*
+!privado/guias/.gitkeep

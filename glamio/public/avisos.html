@@ -3,92 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Avisos – GLAMIO</title>
+  <title>Notificaciones – GLAMIO</title>
   <link rel="stylesheet" href="/css/estilos.css">
 </head>
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
-  <main style="max-width:720px">
-    <h1 id="titulo">🔔 Avisos</h1>
-    <p class="ayuda" id="explicacion"></p>
+  <main class="pagina-avisos">
+    <!-- Diseño "Panel de avisos": título con campana a la izquierda, "Marcar todo como visto" a la derecha -->
+    <div class="avisos-cabecera">
+      <div>
+        <h1 class="titulo-icono">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span id="titulo">Notificaciones</span>
+        </h1>
+        <p class="avisos-sub" id="explicacion"></p>
+      </div>
+      <button class="boton-contorno boton-visto oculto" id="todo-visto">✓ Marcar todo como visto</button>
+    </div>
     <p class="mensaje error oculto" id="error"></p>
-    <button class="chip oculto" id="todo-visto" style="margin-top:10px">✓ Marcar todo como visto</button>
-    <div id="lista" style="margin-top:12px"><p>Cargando…</p></div>
+    <p class="mensaje oculto" id="exito"></p>
+    <div id="lista"><p>Cargando…</p></div>
   </main>
 
   <script src="/js/api.js"></script>
   <script>
-    const PERFILES = { alumna: 'Alumna', profesional: 'Profesional', administradora: '🎓 Directora académica' };
+    // (haceCuanto() y fechaCorta() están en api.js)
+    const PERFILES = { alumna: 'Alumna', profesional: 'Profesional', administradora: '🎓 Administradora' };
+    const ICONO_PERSONA = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+    const ICONOS = {
+      dudas: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><circle cx="12" cy="17" r=".6"/></svg>',
+      resenas: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+      respuestas: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>'
+    };
     let usuaria = null;
 
-    // "hace 5 min", "hace 3 h", "ayer 18:20" o "12 nov"
-    function haceCuanto(fecha) {
-      const d = new Date(fecha);
-      const minutos = Math.round((Date.now() - d) / 60000);
-      if (minutos < 1) return 'ahora mismo';
-      if (minutos < 60) return `hace ${minutos} min`;
-      if (minutos < 24 * 60) return `hace ${Math.round(minutos / 60)} h`;
-      const hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-      if (minutos < 48 * 60) return 'ayer ' + hora;
-      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-    }
-
     function etiqueta(perfil) {
-      const clase = perfil === 'administradora' ? 'etiqueta' : 'etiqueta gris';
-      return `<span class="${clase}">${PERFILES[perfil] || esc(perfil)}</span>`;
+      return `<span class="etiqueta etiqueta-perfil">${PERFILES[perfil] || esc(perfil)}</span>`;
     }
-
-    function mostrarError(texto) {
-      const p = document.getElementById('error');
+    function avisar(id, texto) {
+      const p = document.getElementById(id);
       p.textContent = texto;
       p.classList.toggle('oculto', !texto);
     }
 
-    // Directora: una tarjeta por duda que aún no ha contestado
-    function tarjetaDudaSinResponder(d) {
+    // Una tarjeta del diseño: círculo · datos · botón a la derecha
+    function tarjeta({ quien, perfil, extraCabeza = '', donde, texto, pie, boton, href, claseBoton = 'boton-rosa' }) {
       return `
-        <div class="tarjeta aviso-duda">
-          <div>
-            <strong>${esc(d.nombre)}</strong> ${etiqueta(d.perfil)}
-            <p class="ayuda">${esc(d.curso)} › ${esc(d.leccion)}</p>
-            <p class="texto">«${esc(d.texto)}» ${d.foto ? '📷' : ''}</p>
-            <p class="ayuda">${haceCuanto(d.fecha)}${d.respuestas
-              ? ` · ${d.respuestas} ${d.respuestas === 1 ? 'respuesta' : 'respuestas'} de compañeras` : ''}</p>
+        <div class="aviso">
+          <span class="avatar avatar-aviso">${ICONO_PERSONA}</span>
+          <div class="aviso-datos">
+            <p class="aviso-cabeza"><strong>${esc(quien)}</strong> ${perfil ? etiqueta(perfil) : ''} ${extraCabeza}</p>
+            <p class="aviso-donde">${donde}</p>
+            ${texto ? `<p class="aviso-texto">«${esc(texto)}»</p>` : ''}
+            <p class="ayuda">${pie}</p>
           </div>
-          <a class="boton" href="/leccion.html?id=${d.leccion_id}#duda-${d.id}">Ir a responder →</a>
+          <a class="${claseBoton}" href="${href}">${boton} →</a>
         </div>`;
     }
 
-    // Alumna / profesional: una tarjeta por respuesta nueva a una de sus dudas
-    function tarjetaRespuestaNueva(r) {
-      return `
-        <div class="tarjeta aviso-duda ${r.destacada ? 'destacada' : ''}">
-          <div>
-            <strong>${esc(r.nombre)}</strong> ${etiqueta(r.perfil)} respondió a tu duda
-            ${r.destacada ? '<span class="etiqueta">⭐ Destacada</span>' : ''}
-            <p class="ayuda">${esc(r.curso)} › ${esc(r.leccion)} · Tu duda: «${esc(r.duda)}»</p>
-            <p class="texto">${esc(r.texto)}</p>
-            <p class="ayuda">${haceCuanto(r.fecha)}</p>
-          </div>
-          <a class="boton" href="/leccion.html?id=${r.leccion_id}#duda-${r.duda_id}">Ver en la lección →</a>
-        </div>`;
+    // Apartado con franja lila: icono + título (número) + sus tarjetas
+    function apartado(icono, titulo, tarjetas) {
+      if (!tarjetas.length) return '';
+      return `<section class="apartado-avisos">
+        <h2 class="franja-avisos">${ICONOS[icono]} ${titulo} (${tarjetas.length})</h2>
+        ${tarjetas.join('')}
+      </section>`;
     }
 
-    // (Los reportes ya no salen aquí: tienen su página "⚑ Reportes" con su propio número en el menú)
+    // Administradora: dudas que aún no ha contestado
+    const tarjetaDuda = (d) => tarjeta({
+      quien: d.nombre, perfil: d.perfil,
+      donde: `${esc(d.curso)} › ${esc(d.leccion)}`,
+      texto: d.texto + (d.foto ? ' 📷' : ''),
+      pie: haceCuanto(d.fecha) + (d.respuestas ? ` · ${d.respuestas} ${d.respuestas === 1 ? 'respuesta' : 'respuestas'} de compañeras` : ''),
+      boton: 'Ir a responder', href: `/leccion.html?id=${d.leccion_id}#duda-${d.id}`
+    });
 
-    // Directora: reseñas de 1 a 3 ⭐ sin responder (RN-21: las negativas se responden)
-    function tarjetaResenaSinResponder(r) {
-      return `
-        <div class="tarjeta aviso-duda">
-          <div>
-            <strong>${esc(r.nombre)}</strong>
-            <span class="estrellas" aria-label="${r.estrellas} de 5 estrellas">${'★'.repeat(r.estrellas)}<span class="vacias">${'★'.repeat(5 - r.estrellas)}</span></span>
-            <p class="ayuda">Reseña de «${esc(r.curso)}» · ${haceCuanto(r.fecha)}</p>
-            ${r.comentario ? `<p class="texto">«${esc(r.comentario)}»</p>` : ''}
-          </div>
-          <a class="boton" href="/curso.html?id=${r.curso_id}#resenas">Responder →</a>
-        </div>`;
-    }
+    // Administradora: reseñas de 1 a 3 ⭐ sin responder (RN-21: las negativas se responden)
+    const tarjetaResena = (r) => tarjeta({
+      quien: r.nombre,
+      extraCabeza: `<span class="estrellas" aria-label="${r.estrellas} de 5 estrellas">${'★'.repeat(r.estrellas)}<span class="vacias">${'★'.repeat(5 - r.estrellas)}</span></span>`,
+      donde: esc(r.curso), texto: r.comentario, pie: haceCuanto(r.fecha),
+      boton: 'Responder', href: `/curso.html?id=${r.curso_id}#resenas`
+    });
+
+    // Alumna / profesional: respuestas nuevas a sus dudas
+    const tarjetaRespuesta = (r) => tarjeta({
+      quien: r.nombre, perfil: r.perfil,
+      extraCabeza: 'respondió a tu duda' + (r.destacada ? ' <span class="etiqueta etiqueta-destacada">⭐ Destacada</span>' : ''),
+      donde: `${esc(r.curso)} › ${esc(r.leccion)}`, texto: r.texto,
+      pie: haceCuanto(r.fecha) + ` · Tu duda: «${esc(r.duda)}»`,
+      boton: 'Ver en la lección', href: `/leccion.html?id=${r.leccion_id}#duda-${r.duda_id}`, claseBoton: 'boton-lila'
+    });
 
     async function cargar() {
       const esAdmin = usuaria.perfil === 'administradora';
@@ -98,47 +104,41 @@
         avisos = await cargarAvisos(usuaria); // cargarAvisos() está en api.js (lo usa también la campana)
       } catch (err) {
         lista.innerHTML = '';
-        return mostrarError(err.message);
+        return avisar('error', err.message);
       }
-      if (esAdmin) {
-        const { dudas, resenas } = avisos;
-        const bloqueResenas = resenas.length
-          ? `<h2>⭐ Reseñas de 1 a 3 estrellas sin responder (${resenas.length})</h2>` + resenas.map(tarjetaResenaSinResponder).join('') : '';
-        const hayOtros = resenas.length > 0;
-        lista.innerHTML = bloqueResenas +
-          (hayOtros && dudas.length ? `<h2>❓ Dudas sin responder (${dudas.length})</h2>` : '') +
-          (dudas.map(tarjetaDudaSinResponder).join('') ||
-            (hayOtros ? '' : `<p class="mensaje">🎉 ¡Todo al día! No hay nada pendiente.</p>`));
-      } else {
-        lista.innerHTML = avisos.respuestas.map(tarjetaRespuestaNueva).join('')
-          || '<p class="mensaje">🎉 ¡Todo al día! No tienes notificaciones nuevas.</p>';
-      }
-      // La directora no "marca como visto": sus avisos se van al responder o al revisar
+      const html = esAdmin
+        ? apartado('dudas', 'Dudas por responder', avisos.dudas.map(tarjetaDuda)) +
+          apartado('resenas', 'Reseñas de 1 a 3 estrellas sin responder', avisos.resenas.map(tarjetaResena))
+        : apartado('respuestas', 'Nuevas respuestas a tus dudas', avisos.respuestas.map(tarjetaRespuesta));
+      lista.innerHTML = html || `<div class="todo-al-dia"><span aria-hidden="true">🎉</span>
+        <strong>¡Todo al día!</strong><span>${esAdmin ? 'No hay dudas ni reseñas pendientes.' : 'No tienes notificaciones nuevas.'}</span></div>`;
+      // La administradora no "marca como visto": sus avisos se van solos al responder
       document.getElementById('todo-visto').classList.toggle('oculto', esAdmin || avisos.respuestas.length === 0);
     }
 
     document.getElementById('todo-visto').onclick = async () => {
       try {
         await api('/api/dudas/mis-avisos/leidos', { method: 'PUT', body: {} });
-        mostrarError('');
+        avisar('error', '');
+        avisar('exito', '✅ Todo marcado como visto.');
         await cargar();
         actualizarCampana();
-      } catch (err) { mostrarError(err.message); }
+      } catch (err) { avisar('error', err.message); }
     };
 
     async function iniciar() {
       usuaria = await pintarCabecera();
       if (!usuaria) {
         document.querySelector('main').innerHTML =
-          '<p class="mensaje"><a href="/login.html">Entra</a> para ver tus avisos.</p>';
+          '<p class="mensaje"><a href="/login.html">Entra</a> para ver tus notificaciones.</p>';
         return;
       }
       const esAdmin = usuaria.perfil === 'administradora';
-      document.getElementById('titulo').textContent = esAdmin ? '🔔 Avisos de la directora' : '🔔 Mis notificaciones';
-      document.title = (esAdmin ? 'Avisos' : 'Mis notificaciones') + ' – GLAMIO';
+      document.getElementById('titulo').textContent = 'Notificaciones'; // un solo nombre para todos
+      document.title = 'Notificaciones – GLAMIO';
       document.getElementById('explicacion').textContent = esAdmin
-        ? 'Reseñas de 1 a 3 ⭐ y dudas que todavía no has contestado. Al responder, desaparecen solas de esta lista. (Los reportes están en «⚑ Reportes».)'
-        : 'Aquí te avisamos cuando alguien responde a las dudas que has hecho. Al abrir la lección, se marcan como vistas.';
+        ? 'Revisa las dudas y reseñas pendientes. Al responder, desaparecen solas de esta lista.'
+        : 'Aquí te avisamos cuando alguien responde a tus dudas. Al abrir la lección, se marcan como vistas.';
       cargar();
     }
 

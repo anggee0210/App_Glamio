@@ -12,30 +12,118 @@
     <nav class="menu"></nav>
   </header>
 
+  <!-- 1. Portada grande (ocupa todo el ancho) -->
+  <section class="portada-inicio">
+    <div class="portada-texto">
+      <h1 class="portada-titulo">Tu talento,<br>tu belleza,<br><em>tu futuro.</em></h1>
+      <p class="portada-sub">Aprende, practica y haz crecer tu carrera en el mundo de la belleza.</p>
+    </div>
+    <div class="portada-foto"><img src="/img/portada-inicio.jpg" alt="Modelo con una lima y un esmalte rosa"></div>
+    <!-- A la derecha: la lista en letra manuscrita y, debajo, los dos botones -->
+    <div class="portada-derecha">
+    <ul class="portada-lista" aria-label="Qué ofrece GLAMIO">
+      <li>Formación profesional</li>
+      <li>Herramientas reales</li>
+      <li>Comunidad activa</li>
+      <li>Crecimiento sin límites</li>
+    </ul>
+      <div class="portada-botones">
+        <a class="boton" href="/cursos.html">🎓 Explorar cursos →</a>
+        <a class="boton secundario" href="#que-hacer">▶ Descubrir GLAMIO</a>
+      </div>
+    </div>
+  </section>
+
   <main>
-    <h1>Aprende, pregunta, calcula y muestra tu trabajo</h1>
-    <div class="filtros" id="filtros"></div>
-    <div class="rejilla" id="cursos"></div>
+    <!-- 2. ¿Qué quieres hacer hoy? (las tres partes que existen en la fase 1) -->
+    <h2 class="titulo-linea" id="que-hacer">¿Qué quieres hacer hoy?</h2>
+    <div class="accesos">
+      <a class="acceso acceso-academia" href="/cursos.html">
+        <span class="acceso-texto"><strong>🎓 Academia</strong><span>Cursos y formación profesional</span></span>
+        <img class="acceso-dibujo" src="/img/ilus-libros.jpg" alt="">
+      </a>
+      <a class="acceso acceso-calculadora" id="acceso-calculadora" href="/calculadora.html">
+        <span class="acceso-texto"><strong>🧮 Calculadora</strong><span>Costes, materiales y precios por servicio</span></span>
+        <img class="acceso-dibujo" src="/img/ilus-calculadora.jpg" alt="">
+      </a>
+      <a class="acceso acceso-comunidad" href="/muro.html">
+        <span class="acceso-texto"><strong>👥 Comunidad</strong><span>Comparte tu talento, inspírate y pregunta</span></span>
+        <img class="acceso-dibujo" src="/img/ilus-comunidad.jpg" alt="">
+      </a>
+    </div>
+
+    <!-- 3. Explora tu especialidad: filtros + cursos -->
+    <h2 class="titulo-linea" id="cursos">Explora tu especialidad</h2>
+    <div class="filtros filtros-centrados" id="filtros"></div>
+    <div class="cursos-inicio" id="lista-cursos"><p>Cargando…</p></div>
+
+    <!-- 4. Talentos de la comunidad: trabajos del muro (el servidor solo da los que se pueden ver) -->
+    <h2 class="titulo-linea">Talentos de la comunidad</h2>
+    <div class="talentos" id="talentos"></div>
   </main>
 
   <script src="/js/api.js"></script>
   <script>
-    async function cargarCursos(categoria = '') {
-      const cursos = await api('/api/cursos' + (categoria ? '?categoria=' + categoria : ''));
-      document.getElementById('cursos').innerHTML = cursos.map(c => `
-        <a class="tarjeta" href="/curso.html?id=${c.id}">
-          ${c.imagen ? `<img src="${c.imagen}" alt="">` : ''}
-          <span class="etiqueta">${esc(c.categoria)}</span>
-          <h2>${esc(c.titulo)}</h2>
-          <p>${esc(c.descripcion)}</p>
-          <p class="precio">${Number(c.precio) === 0 ? 'Gratis' : c.precio + ' €'}
-            ${c.media ? ' · ⭐ ' + c.media : ''}</p>
-        </a>`).join('') || '<p>No hay cursos en esta categoría.</p>';
+    let usuaria = null;
+
+    function precioTexto(precio) {
+      const n = Number(precio);
+      return n === 0 ? 'Gratis' : n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
     }
 
-    pintarCabecera();
-    pintarFiltros(document.getElementById('filtros'), cargarCursos);
-    cargarCursos();
+    // "★ 4,8 (12)" con datos reales de las reseñas, o "Sin reseñas aún"
+    function valoracion(c) {
+      if (!c.num_resenas) return '<span class="ayuda">Sin reseñas aún</span>';
+      return `<span class="estrellas">★</span> <strong>${Number(c.media).toLocaleString('es-ES')}</strong>
+        <span class="ayuda" style="display:inline">(${c.num_resenas})</span>`;
+    }
+
+    async function cargarCursos(categoria = '') {
+      const caja = document.getElementById('lista-cursos');
+      try {
+        const cursos = await api('/api/cursos' + (categoria ? '?categoria=' + categoria : ''));
+        caja.innerHTML = cursos.map(c => `
+          <a class="curso-horizontal" href="/curso.html?id=${c.id}">
+            ${c.imagen ? `<img src="${c.imagen}" alt="">` : '<span class="sin-foto" aria-hidden="true">💅</span>'}
+            <span class="curso-datos">
+              <span class="etiqueta">${esc(c.categoria)}</span>
+              <strong class="curso-titulo">${esc(c.titulo)}</strong>
+              <span>${valoracion(c)}</span>
+              <span class="curso-pie">
+                <span class="ayuda">▶ ${c.num_lecciones} ${c.num_lecciones === 1 ? 'lección' : 'lecciones'}</span>
+                <span class="precio">${precioTexto(c.precio)}</span>
+              </span>
+            </span>
+          </a>`).join('') || '<p class="ayuda">No hay cursos en esta categoría.</p>';
+      } catch (err) {
+        caja.innerHTML = `<p class="mensaje error">No se pudieron cargar los cursos: ${esc(err.message)}</p>`;
+      }
+    }
+
+    // Últimos 6 trabajos + "Comparte tu trabajo" (sin cuenta, lleva a Entrar)
+    async function cargarTalentos() {
+      let trabajos = [];
+      try { trabajos = (await api('/api/trabajos')).slice(0, 6); } catch (e) { /* sin trabajos: solo la tarjeta de compartir */ }
+      const puedePublicar = usuaria && ['alumna', 'profesional'].includes(usuaria.perfil);
+      document.getElementById('talentos').innerHTML = trabajos.map(t => `
+        <a class="talento" href="/muro.html" title="${esc(t.nombre)}${t.curso ? ' · ' + esc(t.curso) : ''}">
+          <img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}">
+          <span class="talento-autora">${esc(t.nombre)}</span>
+        </a>`).join('') + `
+        <a class="talento talento-compartir" href="${puedePublicar ? '/muro.html' : usuaria ? '/muro.html' : '/login.html'}">
+          <span class="mas" aria-hidden="true">＋</span>${puedePublicar ? 'Comparte tu trabajo' : usuaria ? 'Ver la comunidad' : 'Entra y comparte tu trabajo'}</a>`;
+    }
+
+    async function iniciar() {
+      usuaria = await pintarCabecera();
+      // Sin cuenta, la calculadora pide entrar primero
+      if (!usuaria) document.getElementById('acceso-calculadora').href = '/login.html';
+      pintarFiltros(document.getElementById('filtros'), cargarCursos);
+      cargarCursos();
+      cargarTalentos();
+    }
+
+    iniciar();
   </script>
 </body>
 </html>

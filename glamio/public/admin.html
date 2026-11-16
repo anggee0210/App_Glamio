@@ -9,7 +9,7 @@
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
-    <h1>Panel de la directora</h1>
+    <h1>Panel de la administradora</h1>
 
     <!-- Pestañas: cada opción enseña solo su parte (decisión del proyecto).
          La pestaña abierta va en la URL (admin.html?pestana=leccion) para que recargar no la pierda. -->
@@ -21,7 +21,49 @@
       <button class="pestana" data-pestana="certificado">🎓 Certificado</button>
     </nav>
 
-    <section class="pestana-panel" data-pestana="cursos">
+    <!-- Panel principal (diseño "Panel de Gestión"): cifras reales, visitas y ventas por mes -->
+    <section class="pestana-panel" data-pestana="resumen">
+      <p class="mensaje error oculto" id="msg-resumen"></p>
+      <div class="cifras-panel" id="cifras"></div>
+      <div class="graficas">
+        <figure class="tarjeta grafica">
+          <figcaption><strong>Visitas a la app por mes</strong><span class="ayuda" id="resumen-visitas"></span></figcaption>
+          <div class="barras" id="grafica-visitas" role="img" aria-label="Visitas por mes"></div>
+        </figure>
+        <figure class="tarjeta grafica">
+          <figcaption><strong>Cursos vendidos por mes</strong><span class="ayuda" id="resumen-ventas"></span></figcaption>
+          <div class="barras" id="grafica-ventas" role="img" aria-label="Cursos vendidos por mes"></div>
+        </figure>
+      </div>
+      <!-- Los mismos datos en tabla (para quien no puede leer la gráfica y para comprobar las cifras) -->
+      <details class="tarjeta tabla-datos">
+        <summary>Ver los datos en una tabla</summary>
+        <div id="tabla-meses"></div>
+      </details>
+      <div class="tarjeta" id="top-cursos"></div>
+    </section>
+
+    <!-- Guías teóricas (PDF) que se venden en cada curso -->
+    <section class="pestana-panel oculto" data-pestana="guias">
+      <form id="form-guia" class="tarjeta">
+        <h2 style="margin-top:0">📖 Nueva guía teórica</h2>
+        <p class="ayuda">Un PDF de teoría que las alumnas compran desde la página del curso (pago simulado). Solo lo descarga quien la compra.</p>
+        <div class="calc-fila-dos">
+          <label>Curso <select name="curso_id" class="sel-curso"></select></label>
+          <label>Precio (€, 0 = gratis) <input name="precio" type="number" min="0" max="9999" step="0.01" value="0"></label>
+        </div>
+        <label>Título <input name="titulo" maxlength="150" required placeholder="Ej: Manual teórico del semipermanente"></label>
+        <label>Descripción <textarea name="descripcion" rows="2" placeholder="Qué contiene la guía"></textarea></label>
+        <label>Archivo PDF (máx. 20 MB) <input type="file" name="archivo" accept="application/pdf" required></label>
+        <p class="mensaje oculto"></p>
+        <button class="boton" style="align-self:flex-start">Subir guía</button>
+      </form>
+      <h2>Guías publicadas</h2>
+      <p class="mensaje error oculto" id="msg-guias"></p>
+      <div id="lista-guias"><p>Cargando…</p></div>
+    </section>
+
+    <section class="pestana-panel oculto" data-pestana="cursos">
       <p class="ayuda">Pulsa «Editar» o «Opciones» para cambiar algo, o añade lecciones y materiales a cada curso.</p>
       <p class="mensaje error oculto" id="msg-lista"></p>
       <div id="lista-cursos"><p>Cargando…</p></div>
@@ -100,7 +142,7 @@
           <input type="file" name="firma" accept="image/*"></label>
         <div id="cert-firma-actual" class="ayuda"></div>
 
-        <input name="directora" placeholder="Nombre de la directora académica">
+        <input name="directora" placeholder="Nombre de la administradora">
         <label class="fila">Color del texto
           <input type="color" name="color_texto" value="#3a2f36" style="width:60px;padding:2px"></label>
 
@@ -133,12 +175,13 @@
 
     // ---------- Pestañas del Panel ----------
     // Enseña solo las secciones de esa pestaña y la guarda en la URL (?pestana=leccion).
-    const PESTANAS = ['cursos', 'curso', 'leccion', 'material', 'certificado'];
+    const PESTANAS = ['resumen', 'cursos', 'curso', 'leccion', 'material', 'certificado', 'guias'];
     function abrirPestanaPanel(nombre) {
-      if (!PESTANAS.includes(nombre)) nombre = 'cursos';
+      if (!PESTANAS.includes(nombre)) nombre = 'resumen';
       document.querySelectorAll('#pestanas-panel .pestana').forEach(b => b.classList.toggle('activa', b.dataset.pestana === nombre));
       document.querySelectorAll('.pestana-panel').forEach(s => s.classList.toggle('oculto', s.dataset.pestana !== nombre));
-      history.replaceState(null, '', nombre === 'cursos' ? location.pathname : '?pestana=' + nombre);
+      history.replaceState(null, '', nombre === 'resumen' ? location.pathname : '?pestana=' + nombre);
+      if (typeof marcarLateral === 'function') marcarLateral(); // resalta la opción del menú lateral
     }
     document.querySelectorAll('#pestanas-panel .pestana').forEach(b => b.onclick = () => abrirPestanaPanel(b.dataset.pestana));
 
@@ -227,6 +270,7 @@
             </div>
             <span class="fila" style="flex-wrap:wrap">
               <button class="chip" onclick="editarCurso(${c.id})">✏️ Editar curso</button>
+              <button class="chip peligro" onclick="borrarCurso(this, ${c.id})">🗑 Borrar curso</button>
               <button class="chip" onclick="nuevaLeccionEn(${c.id})">🎬 + Lección</button>
               <button class="chip" onclick="nuevoMaterialEn(${c.id})">🧴 + Material</button>
             </span>
@@ -357,6 +401,32 @@
       } catch (err) { avisarLista(err.message); }
     }
 
+    // Borrar un curso entero. Si tiene personas inscritas, el servidor avisa (409) con cuántas
+    // y pedimos una SEGUNDA confirmación antes de borrarlo de verdad.
+    async function borrarCurso(boton, id) {
+      const titulo = cursos[id] ? cursos[id].titulo : 'este curso';
+      if (!confirm(`¿Borrar «${titulo}»? Se borran sus lecciones, materiales, dudas, reseñas y guías. No se puede deshacer.`)) return;
+      boton.disabled = true;
+      try {
+        let r = await fetch('/api/cursos/' + id, { method: 'DELETE' });
+        let datos = await r.json();
+        if (r.status === 409) {
+          if (!confirm(datos.error + '\n\n¿Seguro que quieres borrarlo igualmente?')) { boton.disabled = false; return; }
+          r = await fetch('/api/cursos/' + id + '?confirmar=si', { method: 'DELETE' });
+          datos = await r.json();
+        }
+        if (!r.ok) throw new Error(datos.error || 'No se pudo borrar');
+        if (formCurso.dataset.editando == id) modoCrear(formCurso); // si lo estábamos editando
+        await recargar();
+        const msg = document.getElementById('msg-lista');
+        msg.textContent = `✅ Curso «${datos.borrado}» borrado.`;
+        msg.classList.remove('oculto', 'error');
+      } catch (err) {
+        avisarLista(err.message);
+        boton.disabled = false;
+      }
+    }
+
     async function borrarMaterial(id) {
       if (!confirm('¿Borrar este material?')) return;
       try {
@@ -455,6 +525,111 @@
       } catch (err) { avisar(formCertificado, err.message, true); }
     };
 
+    // ---------- Panel principal: estadísticas ----------
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const nombreMes = (aaaamm) => MESES[Number(aaaamm.slice(5, 7)) - 1] + ' ' + aaaamm.slice(2, 4);
+    const euros = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+
+    // Gráfica de barras sencilla (sin librerías): una barra por mes, el valor encima,
+    // y al pasar el ratón (o con el teclado) una pista con el detalle.
+    function pintarBarras(idCaja, meses, valor, pista) {
+      const max = Math.max(1, ...meses.map(valor));
+      document.getElementById(idCaja).innerHTML = meses.map(m => {
+        const v = valor(m);
+        return `<div class="barra-mes" tabindex="0" title="${pista(m)}" aria-label="${nombreMes(m.mes)}: ${pista(m)}">
+          <span class="barra-valor">${v}</span>
+          <span class="barra-relleno" style="height:${Math.max(v / max * 100, v ? 4 : 0)}%"></span>
+          <span class="barra-mes-nombre">${nombreMes(m.mes)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    async function cargarEstadisticas() {
+      let e;
+      try { e = await api('/api/estadisticas'); }
+      catch (err) { const p = document.getElementById('msg-resumen'); p.textContent = err.message; p.classList.remove('oculto'); return; }
+      const c = e.cifras;
+      const mesActual = e.meses[e.meses.length - 1];
+      // Cuatro tarjetas como en el diseño + las visitas y lo vendido este mes
+      const tarjetas = [
+        ['🎓', c.cursos, 'Cursos activos'], ['▶', c.lecciones, 'Lecciones'], ['👥', c.alumnas, 'Alumnas y profesionales'],
+        ['⭐', c.valoracion ? Number(c.valoracion).toLocaleString('es-ES') : '–', c.resenas ? `Valoración media (${c.resenas})` : 'Sin reseñas aún'],
+        ['👁', e.visitas.este_mes, `Visitas este mes (hoy ${e.visitas.hoy})`],
+        ['💶', euros(Number(mesActual.ingresos_cursos) + Number(mesActual.ingresos_guias)), 'Vendido este mes (simulado)']
+      ];
+      document.getElementById('cifras').innerHTML = tarjetas.map(([icono, valor, texto]) =>
+        `<div class="cifra-panel"><span class="cifra-icono" aria-hidden="true">${icono}</span>
+          <span><strong>${valor}</strong><span class="ayuda">${texto}</span></span></div>`).join('');
+
+      pintarBarras('grafica-visitas', e.meses, m => m.visitas, m => `${m.visitas} visitas`);
+      pintarBarras('grafica-ventas', e.meses, m => m.cursos_vendidos,
+        m => `${m.cursos_vendidos} cursos vendidos · ${euros(m.ingresos_cursos)}${m.guias_vendidas ? ` · ${m.guias_vendidas} guías (${euros(m.ingresos_guias)})` : ''}`);
+      document.getElementById('resumen-visitas').textContent = `${e.visitas.total} en total · ${e.visitas.personas_este_mes} personas con sesión este mes`;
+      const vendidos6 = e.meses.reduce((s, m) => s + m.cursos_vendidos, 0);
+      document.getElementById('resumen-ventas').textContent = `${vendidos6} en 6 meses · pago simulado`;
+
+      document.getElementById('tabla-meses').innerHTML = `<table class="tabla">
+        <tr><th>Mes</th><th>Visitas</th><th>Cursos vendidos</th><th>Ingresos cursos</th><th>Guías vendidas</th><th>Ingresos guías</th></tr>
+        ${e.meses.map(m => `<tr><td>${nombreMes(m.mes)}</td><td>${m.visitas}</td><td>${m.cursos_vendidos}</td><td>${euros(m.ingresos_cursos)}</td>
+          <td>${m.guias_vendidas}</td><td>${euros(m.ingresos_guias)}</td></tr>`).join('')}</table>`;
+      document.getElementById('top-cursos').innerHTML = `<h2 style="margin-top:0">🏆 Cursos más vendidos</h2>` +
+        (e.topCursos.length ? `<ol class="top-cursos">${e.topCursos.map(t =>
+          `<li><strong>${esc(t.titulo)}</strong> <span class="ayuda" style="display:inline">· ${t.ventas} ${t.ventas === 1 ? 'venta' : 'ventas'} · ${euros(t.ingresos)}</span></li>`).join('')}</ol>`
+          : '<p class="ayuda">Todavía no se ha vendido ningún curso de pago.</p>');
+    }
+
+    // ---------- Guías teóricas ----------
+    const formGuia = document.getElementById('form-guia');
+
+    async function cargarGuias() {
+      const caja = document.getElementById('lista-guias');
+      try {
+        const listas = await Promise.all(Object.values(cursos).map(c => api('/api/guias?curso=' + c.id).then(g => ({ c, g }))));
+        caja.innerHTML = listas.filter(x => x.g.length).map(({ c, g }) => `
+          <div class="tarjeta" style="margin-bottom:12px">
+            <h3 style="margin:0 0 8px">${esc(c.titulo)}</h3>
+            ${g.map(guia => `
+              <div class="fila fila-lista" style="justify-content:space-between;margin-bottom:6px">
+                <span>📖 <strong>${esc(guia.titulo)}</strong> · ${Number(guia.precio) ? euros(guia.precio) : 'Gratis'}
+                  <span class="ayuda" style="display:inline">· ${guia.ventas} ${guia.ventas === 1 ? 'compra' : 'compras'}</span></span>
+                <span class="fila">
+                  <a class="chip" href="/api/guias/${guia.id}/descargar">⬇ Ver PDF</a>
+                  <button class="chip peligro" onclick="borrarGuia(this, ${guia.id})">🗑 Borrar</button>
+                </span>
+              </div>`).join('')}
+          </div>`).join('') || '<p class="ayuda">Todavía no hay guías. Sube la primera con el formulario de arriba.</p>';
+      } catch (err) {
+        caja.innerHTML = `<p class="mensaje error">${esc(err.message)}</p>`;
+      }
+    }
+
+    formGuia.onsubmit = async (e) => {
+      e.preventDefault();
+      const boton = formGuia.querySelector('.boton');
+      boton.disabled = true;
+      try {
+        await api('/api/guias', { method: 'POST', body: new FormData(formGuia) });
+        const curso = formGuia.curso_id.value;
+        formGuia.reset();
+        formGuia.curso_id.value = curso; // se queda el curso, por si sube varias
+        avisar(formGuia, 'Guía subida ✅ Ya se puede comprar desde la página del curso.');
+        cargarGuias();
+      } catch (err) { avisar(formGuia, err.message, true); }
+      boton.disabled = false;
+    };
+
+    async function borrarGuia(boton, id) {
+      if (!confirm('¿Borrar esta guía? Quien la compró ya no podrá descargarla. No se puede deshacer.')) return;
+      boton.disabled = true;
+      try {
+        await api('/api/guias/' + id, { method: 'DELETE' });
+        cargarGuias();
+      } catch (err) {
+        const p = document.getElementById('msg-guias'); p.textContent = err.message; p.classList.remove('oculto');
+        boton.disabled = false;
+      }
+    }
+
     // ---------- Al abrir la página ----------
     (async () => {
       const usuaria = await pintarCabecera();
@@ -462,9 +637,11 @@
         document.querySelector('main').innerHTML = '<p class="mensaje">Solo la administradora puede ver este panel.</p>';
         return;
       }
-      abrirPestanaPanel(param('pestana') || 'cursos'); // la de la URL, o "Mis cursos"
+      abrirPestanaPanel(param('pestana') || 'resumen'); // la de la URL, o el Panel principal
       await recargar();
       cargarDiseno();
+      cargarEstadisticas();
+      cargarGuias();
     })();
   </script>
 </body>

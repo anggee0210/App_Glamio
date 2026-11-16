@@ -90,7 +90,7 @@ router.post('/', requiereLogin, async (req, res, next) => {
       [req.session.usuaria.id, tipo, elemento_id, motivo]);
     await cliente.query(`UPDATE ${tabla} SET ${campo} = TRUE WHERE id = $1`, [elemento_id]);
     await cliente.query('COMMIT');
-    res.status(201).json({ ok: true, mensaje: 'Gracias. Lo hemos ocultado y la directora académica lo revisará.' });
+    res.status(201).json({ ok: true, mensaje: 'Gracias. Lo hemos ocultado y la administradora lo revisará.' });
   } catch (err) {
     await cliente.query('ROLLBACK');
     next(err);

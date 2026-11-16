@@ -27,6 +27,19 @@ app.use(session({
   cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 horas
 }));
 
+// --- Contador de visitas (estadísticas de la administradora) ---
+// Cada página que se abre (/ o un .html) suma una fila en "visitas". Datos mínimos: página, fecha y,
+// si ha entrado, quién (sin IP: RGPD). Se guarda "sin esperar": si falla, la página carga igual.
+const pool = require('./db/pool');
+app.use((req, res, next) => {
+  if (req.method === 'GET' && (req.path === '/' || req.path.endsWith('.html'))) {
+    const pagina = (req.path === '/' ? '/index.html' : req.path).slice(0, 100);
+    const usuariaId = req.session.usuaria ? req.session.usuaria.id : null;
+    pool.query('INSERT INTO visitas (pagina, usuaria_id) VALUES ($1, $2)', [pagina, usuariaId]).catch(() => {});
+  }
+  next();
+});
+
 // --- Archivos estáticos ---
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -43,6 +56,8 @@ app.use('/api/servicios', require('./routes/servicios'));
 app.use('/api/reportes', require('./routes/reportes'));
 app.use('/api/academia', require('./routes/academia'));
 app.use('/api/certificados', require('./routes/certificados'));
+app.use('/api/estadisticas', require('./routes/estadisticas'));
+app.use('/api/guias', require('./routes/guias'));
 
 // --- Ruta no encontrada en la API ---
 app.use('/api', (req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));

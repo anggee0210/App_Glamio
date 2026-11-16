@@ -27,24 +27,29 @@
     <!-- Pestaña 📷 Trabajos: el muro de siempre -->
     <section id="zona-trabajos">
 
-    <form id="form" class="tarjeta oculto" style="margin-bottom:16px">
-      <h2 style="margin-top:0">Publicar mi resultado</h2>
-      <label>Foto <input type="file" name="foto" accept="image/*" required></label>
-      <label>Curso
-        <select name="curso_id" id="curso"><option value="">Sin curso</option></select>
-      </label>
-      <p class="ayuda">Solo aparecen los cursos en los que estás inscrita: así la etiqueta es de fiar.</p>
-      <label>Descripción <textarea name="descripcion" rows="2" maxlength="500" placeholder="Ej: Mi primera manicura con esmaltado"></textarea></label>
-      <label class="fila"><input type="checkbox" name="permiso_mi_estilo" style="width:auto">
-        Doy permiso para que las clientas vean esta foto (muro de clientas y, más adelante, Mi Estilo)</label>
+    <!-- Diseño "Galería de trabajos": formulario en horizontal (foto · curso · descripción) -->
+    <form id="form" class="form-publicar oculto">
+      <h2>Publicar mi resultado</h2>
+      <div class="publicar-campos">
+        <label>Foto * <input type="file" name="foto" accept="image/*" required></label>
+        <label>Curso
+          <select name="curso_id" id="curso"><option value="">Sin curso</option></select>
+          <span class="ayuda">Solo tus cursos: así la etiqueta es de fiar.</span>
+        </label>
+        <label>Descripción <textarea name="descripcion" rows="2" maxlength="500" placeholder="Cuenta brevemente tu trabajo…"></textarea></label>
+      </div>
+      <div class="publicar-pie">
+        <label class="permiso-casilla"><input type="checkbox" name="permiso_mi_estilo">
+          Doy permiso para que las clientas vean esta foto (muro de clientas y, más adelante, Mi Estilo)</label>
+        <button class="boton" id="publicar">Publicar</button>
+      </div>
       <p class="ayuda">Podrás cambiar este permiso o borrar la foto cuando quieras.</p>
       <p class="mensaje oculto" id="msg-form"></p>
-      <button class="boton" id="publicar">Publicar</button>
     </form>
 
     <p class="mensaje oculto" id="msg"></p>
-    <div class="filtros" id="filtros"></div>
-    <div class="rejilla" id="trabajos"><p>Cargando…</p></div>
+    <div class="filtrar"><strong>Filtrar:</strong><div class="filtros" id="filtros"></div></div>
+    <div class="galeria" id="trabajos"><p>Cargando…</p></div>
     </section>
   </main>
 
@@ -68,8 +73,8 @@
     function etiquetaPermiso(t) {
       if (!usuaria || usuaria.perfil === 'clienta') return '';
       return t.permiso_mi_estilo
-        ? '<span class="etiqueta">👁 Visible para clientas</span>'
-        : '<span class="etiqueta gris">🔒 Solo la comunidad</span>';
+        ? '<span class="etiqueta permiso-si">👁 Visible para clientas</span>'
+        : '<span class="etiqueta permiso-no">🔒 Solo la comunidad</span>';
     }
 
     // Botones de cada tarjeta: la autora gestiona su foto; las demás (con sesión) pueden reportarla
@@ -82,7 +87,7 @@
         </div>`;
       }
       if (!usuaria) return ''; // sin cuenta no se reporta (el servidor pide sesión)
-      return `<div class="fila"><button class="chip" onclick="reportar(this, ${t.id})">⚑ Reportar</button></div>`;
+      return `<div class="fila fila-reportar"><button class="enlace-reportar" onclick="reportar(this, ${t.id})">Reportar</button></div>`;
     }
 
     async function cargarTrabajos(categoria = categoriaActual) {
@@ -95,15 +100,20 @@
         caja.innerHTML = '';
         return avisar('msg', 'No se pudo cargar el muro: ' + err.message, true);
       }
+      // Tarjeta del diseño: foto grande · nombre (serif) + permiso a la derecha · curso · descripción · Reportar
       caja.innerHTML = trabajos.map(t => `
-        <div class="tarjeta">
+        <div class="trabajo">
           <a href="${t.foto}" target="_blank" title="Ver la foto en grande"><img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}"></a>
-          ${t.curso ? `<span class="etiqueta">${esc(t.curso)}</span>` : ''}
-          ${etiquetaPermiso(t)}
-          <p style="margin:6px 0 0"><strong>${esc(t.nombre)}</strong>${esMio(t) ? ' <span class="ayuda" style="display:inline">(tú)</span>' : ''}</p>
-          ${t.descripcion ? `<p style="margin:4px 0">${esc(t.descripcion)}</p>` : ''}
-          <p class="ayuda">${fechaCorta(t.fecha)}</p>
-          ${botones(t)}
+          <div class="trabajo-datos">
+            <div class="trabajo-cabeza">
+              <strong>${esc(t.nombre)}${esMio(t) ? ' <span class="ayuda" style="display:inline">(tú)</span>' : ''}</strong>
+              ${etiquetaPermiso(t)}
+            </div>
+            <p class="trabajo-curso">${t.curso ? esc(t.curso) : 'Sin curso'}</p>
+            ${t.descripcion ? `<p>${esc(t.descripcion)}</p>` : ''}
+            <p class="ayuda">${fechaCorta(t.fecha)}</p>
+            ${botones(t)}
+          </div>
         </div>`).join('') || '<p class="ayuda">Todavía no hay trabajos publicados en esta categoría.</p>';
     }
 
@@ -160,7 +170,7 @@
     };
 
     // ---------- Pestaña ❓ Dudas ----------
-    const PERFILES = { alumna: 'Alumna', profesional: 'Profesional', administradora: '🎓 Directora académica' };
+    const PERFILES = { alumna: 'Alumna', profesional: 'Profesional', administradora: '🎓 Administradora' };
     let dudasCargadas = false; // se piden al servidor solo la primera vez que se abre la pestaña
 
     async function cargarDudasComunidad() {

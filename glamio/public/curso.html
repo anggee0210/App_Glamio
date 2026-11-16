@@ -9,7 +9,8 @@
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
-    <div id="curso"></div>
+    <!-- Diseño "Curso": foto a la izquierda y datos a la derecha (lo pinta pintarCabeceraCurso) -->
+    <section id="curso" class="curso-cabecera"></section>
 
     <!-- Resumen del pago simulado (solo cursos de pago). No pide datos de tarjeta. -->
     <section id="resumen-pago" class="tarjeta oculto" style="margin-top:12px">
@@ -24,33 +25,47 @@
     </section>
     <p class="mensaje error oculto" id="error"></p>
 
-    <section id="zona-progreso" class="oculto">
-      <!-- Igual que en Materiales: el título y su opción en la misma línea, sin tapar nada.
-           El certificado solo aparece con el curso terminado (ver cargarProgreso) -->
-      <div class="titulo-con-opcion">
+    <!-- Tarjeta "Tu progreso": barra con el % dentro, "3 de 6 lecciones" y el certificado a la derecha.
+         Solo si está inscrita; el certificado, con el curso terminado (ver cargarProgreso) -->
+    <section id="zona-progreso" class="tarjeta progreso-tarjeta oculto">
+      <div class="progreso-barra">
         <h2>Tu progreso</h2>
-        <a id="certificado" class="boton-opcion oculto" href="#" title="Abre tu certificado para verlo o imprimirlo">🎓 Ver mi certificado</a>
+        <div class="barra barra-grande"><div id="barra" style="width:0%"><span id="porcentaje"></span></div></div>
       </div>
-      <div class="barra"><div id="barra" style="width:0%"></div></div>
       <p id="texto-progreso"></p>
+      <a id="certificado" class="boton-opcion oculto" href="#" title="Abre tu certificado para verlo o imprimirlo">🎓 Ver mi certificado</a>
     </section>
 
-    <h2>Lecciones</h2>
-    <ol id="lecciones" style="padding-left:20px"></ol>
+    <!-- Dos columnas: lecciones a la izquierda; materiales y reseñas a la derecha -->
+    <div class="curso-columnas">
+      <section class="tarjeta panel-lecciones">
+        <h2>Lecciones</h2>
+        <ol id="lecciones" class="lista-lecciones"></ol>
+      </section>
 
-    <!-- Título + opción pequeña a la derecha, en la misma línea: así no tapa ni empuja la lista.
-         La opción está oculta al principio: solo aparece si está inscrita (ver pintarCabeceraCurso) -->
-    <div class="titulo-con-opcion">
-      <h2>Materiales</h2>
-      <a class="boton-opcion oculto" id="ir-calculadora" href="#" title="Abre la calculadora con estos materiales ya cargados">🧮 Calcular mi precio</a>
+      <div class="curso-lateral">
+        <section class="tarjeta">
+          <h2>📋 Materiales</h2>
+          <ul id="materiales" class="lista-materiales"></ul>
+          <!-- Solo si está inscrita (ver pintarCabeceraCurso) -->
+          <a class="boton-opcion oculto" id="ir-calculadora" href="#" title="Abre la calculadora con estos materiales ya cargados">🧮 Calcular mi precio</a>
+        </section>
+        <!-- Guías teóricas en PDF (solo sale si el curso tiene alguna) -->
+        <section class="tarjeta oculto" id="zona-guias">
+          <h2>📖 Guías teóricas</h2>
+          <p class="mensaje oculto" id="msg-guias"></p>
+          <div class="lista-guias" id="lista-guias"></div>
+        </section>
+        <!-- Resumen de reseñas: "★ 4,8 · 12 reseñas ›", lleva a la lista de abajo -->
+        <a class="tarjeta resumen-resenas" href="#zona-resenas">
+          <h2>☆ Reseñas</h2>
+          <span class="media-estrellas" id="media"></span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+      </div>
     </div>
-    <ul id="materiales" style="padding-left:20px"></ul>
 
-    <!-- Título + media de estrellas a la derecha ("★ 4,5 · 3 reseñas") -->
-    <div class="titulo-con-opcion">
-      <h2>Reseñas</h2>
-      <span class="media-estrellas" id="media"></span>
-    </div>
+    <h2 class="titulo-linea" id="zona-resenas">Reseñas del curso</h2>
     <p class="mensaje oculto" id="msg-resenas"></p>
 
     <!-- Solo con el curso terminado y si aún no lo ha reseñado (RN-18 y RN-19) -->
@@ -117,29 +132,49 @@
 
       if (usuaria) await cargarProgreso();
       pintarLecciones();
+      cargarGuias();
       cargarResenas();
     }
 
-    // Portada, título, precio y el botón (o aviso) según quién mira la página
+    // La primera lección que aún no ha hecho (para "Continuar curso"); si las hizo todas, la primera
+    function siguienteLeccion() {
+      return curso.lecciones.find(l => !completadas.includes(l.id)) || curso.lecciones[0];
+    }
+
+    // Diseño "Curso": foto a la izquierda; categoría, título, descripción, datos y el botón a la derecha.
+    // El botón depende de quién mira: entrar, inscribirse, empezar/continuar, repasar o editar.
     function pintarCabeceraCurso() {
+      const n = curso.lecciones.length;
       let accion = '';
       if (!usuaria) {
-        accion = '<p><a href="/login.html">Entra</a> o <a href="/registro.html">regístrate</a> para inscribirte.</p>';
+        accion = `<a class="boton" href="/login.html">Entra para inscribirte</a>
+          <span class="ayuda">¿No tienes cuenta? <a href="/registro.html">Regístrate</a></span>`;
       } else if (usuaria.perfil === 'administradora') {
-        accion = '<p class="ayuda">Eres la administradora: este curso se edita desde el <a href="/admin.html">Panel</a>.</p>';
+        accion = `<a class="boton secundario" href="/admin.html">✏️ Editar en el Panel</a>`;
       } else if (!PUEDEN_INSCRIBIRSE.includes(usuaria.perfil)) {
         accion = '<p class="ayuda">Los cursos son para alumnas y profesionales.</p>';
       } else if (!inscrita) {
-        accion = `<button class="boton" id="inscribirse" style="margin-top:10px">
-          ${Number(curso.precio) > 0 ? 'Inscribirme · ' + precioTexto(curso.precio) : 'Inscribirme gratis'}</button>`;
+        accion = `<button class="boton" id="inscribirse">
+          ${Number(curso.precio) > 0 ? '🎓 Inscribirme · ' + precioTexto(curso.precio) : '🎓 Inscribirme gratis'}</button>`;
+      } else if (n) {
+        const sig = siguienteLeccion();
+        const texto = terminado ? '↺ Repasar el curso' : completadas.length ? '▶ Continuar curso' : '▶ Empezar curso';
+        accion = `<a class="boton" href="/leccion.html?id=${sig.id}">${texto}</a>`;
       }
       document.getElementById('curso').innerHTML = `
-        ${curso.imagen ? `<img src="${curso.imagen}" alt="" class="portada">` : ''}
-        <span class="etiqueta">${esc(curso.categoria)}</span>
-        <h1>${esc(curso.titulo)}</h1>
-        <p>${esc(curso.descripcion)}</p>
-        <p class="precio">${precioTexto(curso.precio)}</p>
-        ${accion}`;
+        <div class="curso-foto">${curso.imagen ? `<img src="${curso.imagen}" alt="Portada del curso ${esc(curso.titulo)}">`
+          : '<span class="sin-foto" aria-hidden="true">💅</span>'}</div>
+        <div class="curso-info">
+          <span class="etiqueta">${esc(curso.categoria)}</span>
+          <h1>${esc(curso.titulo)}</h1>
+          <p class="curso-descripcion">${esc(curso.descripcion)}</p>
+          <p class="curso-meta">
+            <span>▶ ${n} ${n === 1 ? 'lección' : 'lecciones'}</span>
+            <span>📋 ${curso.materiales.length} ${curso.materiales.length === 1 ? 'material' : 'materiales'}</span>
+            <span class="precio">${precioTexto(curso.precio)}</span>
+          </p>
+          <div class="curso-accion">${accion}</div>
+        </div>`;
       const btn = document.getElementById('inscribirse');
       if (btn) btn.onclick = alPulsarInscribirme;
 
@@ -149,13 +184,17 @@
       document.getElementById('ir-calculadora').classList.toggle('oculto', !puedeCalcular || curso.materiales.length === 0);
     }
 
-    // Lecciones: 🔒 si no está inscrita, ✅ si ya la ha hecho
+    // Lecciones como en el diseño: círculo (✓ morado si está hecha, vacío si no, 🔒 si no está inscrita),
+    // "1. Título" y una flecha ›
     function pintarLecciones() {
       const puedeVer = inscrita || (usuaria && usuaria.perfil === 'administradora');
-      document.getElementById('lecciones').innerHTML = curso.lecciones.map(l => {
-        if (!puedeVer) return `<li class="bloqueada">🔒 ${esc(l.titulo)}</li>`;
-        const hecha = completadas.includes(l.id) ? ' ✅' : '';
-        return `<li><a href="/leccion.html?id=${l.id}">${esc(l.titulo)}</a>${hecha}</li>`;
+      document.getElementById('lecciones').innerHTML = curso.lecciones.map((l, i) => {
+        const titulo = `<span class="leccion-nombre">${i + 1}. ${esc(l.titulo)}</span>`;
+        if (!puedeVer) return `<li class="fila-leccion bloqueada"><span class="circulo" aria-hidden="true">🔒</span>${titulo}</li>`;
+        const hecha = completadas.includes(l.id);
+        return `<li><a class="fila-leccion" href="/leccion.html?id=${l.id}">
+          <span class="circulo ${hecha ? 'hecha' : ''}" aria-label="${hecha ? 'Completada' : 'Sin hacer'}">${hecha ? '✓' : ''}</span>
+          ${titulo}<span class="flecha" aria-hidden="true">›</span></a></li>`;
       }).join('') || '<li class="ayuda">Este curso todavía no tiene lecciones.</li>';
     }
 
@@ -195,8 +234,10 @@
         pintarCabeceraCurso(); // para quitar el botón "Inscribirme" si ya lo está
         if (!inscrita) return;
         document.getElementById('zona-progreso').classList.remove('oculto');
-        document.getElementById('barra').style.width = (p.terminado ? 100 : p.porcentaje) + '%';
-        let texto = `${p.hechas} de ${p.total} lecciones (${p.porcentaje}%)`;
+        const porcentaje = p.terminado ? 100 : p.porcentaje;
+        document.getElementById('barra').style.width = Math.max(porcentaje, 8) + '%'; // un mínimo para que se lea el %
+        document.getElementById('porcentaje').textContent = porcentaje + '%';
+        let texto = `${p.hechas} de ${p.total} lecciones`;
         if (p.terminado) {
           // Si se añadieron lecciones después de terminar, el curso SIGUE terminado (decisión del proyecto)
           const nuevas = p.total - p.hechas;
@@ -208,6 +249,47 @@
         }
         document.getElementById('texto-progreso').textContent = texto;
       } catch (e) { /* sin sesión: no se muestra el progreso */ }
+    }
+
+    // ================= Guías teóricas (PDF, pago simulado) =================
+    async function cargarGuias() {
+      let guias;
+      try { guias = await api('/api/guias?curso=' + id); } catch (e) { return; }
+      document.getElementById('zona-guias').classList.toggle('oculto', guias.length === 0);
+      const puedeComprar = usuaria && PUEDEN_INSCRIBIRSE.includes(usuaria.perfil);
+      const esAdministradora = usuaria && usuaria.perfil === 'administradora';
+      document.getElementById('lista-guias').innerHTML = guias.map(g => {
+        const gratis = Number(g.precio) === 0;
+        let accion;
+        if (g.comprada || esAdministradora) accion = `<a class="boton-opcion" href="/api/guias/${g.id}/descargar">⬇ Descargar PDF</a>`;
+        else if (!usuaria) accion = `<a class="boton-opcion" href="/login.html">Entra para ${gratis ? 'obtenerla' : 'comprarla'}</a>`;
+        else if (puedeComprar) accion = `<button class="boton" onclick="comprarGuia(this, ${g.id}, ${gratis}, '${precioTexto(g.precio)}')">${gratis ? 'Obtener gratis' : 'Comprar · ' + precioTexto(g.precio)}</button>`;
+        else accion = '';
+        return `<div class="guia">
+          <div class="guia-datos">
+            <strong>${esc(g.titulo)}</strong>
+            ${g.descripcion ? `<span class="ayuda">${esc(g.descripcion)}</span>` : ''}
+            <span class="guia-precio">${g.comprada ? '✅ Ya la tienes' : precioTexto(g.precio)}</span>
+          </div>${accion}</div>`;
+      }).join('');
+    }
+
+    async function comprarGuia(boton, guiaId, gratis, precio) {
+      // De pago: confirmación del pago simulado (no se piden datos de tarjeta)
+      if (!gratis && !confirm(`Comprar esta guía por ${precio}.\n\nℹ️ Pago simulado: es una demo, no se cobra nada.`)) return;
+      boton.disabled = true;
+      const msg = document.getElementById('msg-guias');
+      try {
+        await api(`/api/guias/${guiaId}/comprar`, { method: 'POST', body: gratis ? {} : { pago_simulado: true } });
+        msg.textContent = '✅ ¡Listo! Ya puedes descargar la guía.';
+        msg.classList.remove('oculto', 'error');
+        cargarGuias();
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.classList.add('error');
+        msg.classList.remove('oculto');
+        boton.disabled = false;
+      }
     }
 
     // ================= Reseñas =================
@@ -242,7 +324,7 @@
     // --- Una tarjeta de reseña ---
     function tarjetaResena(r) {
       const respuesta = r.respuesta_admin
-        ? `<div class="mensaje" style="margin-top:8px"><strong>🎓 La directora académica responde:</strong> ${esc(r.respuesta_admin)}</div>` : '';
+        ? `<div class="mensaje" style="margin-top:8px"><strong>🎓 La administradora responde:</strong> ${esc(r.respuesta_admin)}</div>` : '';
       // La directora: responder o editar su respuesta (en la propia página, decisión del proyecto)
       const controlesAdmin = esAdmin() ? `
         <div class="fila" style="margin-top:8px">
@@ -284,7 +366,7 @@
       const media = resenas.length ? resenas.reduce((s, r) => s + r.estrellas, 0) / resenas.length : 0;
       document.getElementById('media').innerHTML = resenas.length
         ? `<span class="estrellas">★</span> <strong>${media.toLocaleString('es-ES', { maximumFractionDigits: 1 })}</strong>
-           · ${resenas.length} ${resenas.length === 1 ? 'reseña' : 'reseñas'}` : '';
+           · ${resenas.length} ${resenas.length === 1 ? 'reseña' : 'reseñas'}` : '<span class="ayuda">Sin reseñas aún</span>';
 
       // Formulario: con el curso terminado y sin reseña suya todavía (RN-18 y RN-19)
       const puedeResenar = terminado && PUEDEN_INSCRIBIRSE.includes(usuaria?.perfil) && !resenas.some(esMia);
@@ -301,7 +383,7 @@
       // cuando ya están pintadas (el navegador no puede hacerlo solo porque llegan después)
       if (location.hash === '#resenas' && !yaBajeAResenas) {
         yaBajeAResenas = true;
-        document.getElementById('media').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('zona-resenas').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
     let yaBajeAResenas = false;
