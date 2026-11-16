@@ -57,6 +57,7 @@
   <script>
     let usuaria = null;
     let categoriaActual = '';
+    const misFavoritos = new Set(); // fase 2 · Mi Estilo: ids que la clienta guardó con ♡
 
     // Mensaje en la página (rojo si es un error). Sustituye a los alert().
     function avisar(idElemento, texto, esError = false) {
@@ -87,7 +88,35 @@
         </div>`;
       }
       if (!usuaria) return ''; // sin cuenta no se reporta (el servidor pide sesión)
-      return `<div class="fila fila-reportar"><button class="enlace-reportar" onclick="reportar(this, ${t.id})">Reportar</button></div>`;
+      const reportarBoton = `<button class="enlace-reportar" onclick="reportar(this, ${t.id})">Reportar</button>`;
+      // La clienta, además, puede guardarlo en Mi Estilo con ♡
+      if (usuaria.perfil === 'clienta') {
+        const tiene = misFavoritos.has(t.id);
+        return `<div class="fila fila-reportar fila-clienta">
+          <button class="boton-corazon pequeno${tiene ? ' guardado' : ''}" aria-pressed="${tiene}"
+            onclick="alternarFavorito(this, ${t.id})">${tiene ? '♥ Guardado' : '♡ Guardar'}</button>
+          ${reportarBoton}
+        </div>`;
+      }
+      return `<div class="fila fila-reportar">${reportarBoton}</div>`;
+    }
+
+    // ♡ en el muro: guarda o quita el trabajo de Mi Estilo sin recargar la página
+    async function alternarFavorito(boton, id) {
+      boton.disabled = true; // evita guardar dos veces con doble clic
+      const quitar = misFavoritos.has(id);
+      try {
+        await api('/api/mi-estilo/' + id, { method: quitar ? 'DELETE' : 'POST' });
+        quitar ? misFavoritos.delete(id) : misFavoritos.add(id);
+        boton.textContent = quitar ? '♡ Guardar' : '♥ Guardado';
+        boton.classList.toggle('guardado', !quitar);
+        boton.setAttribute('aria-pressed', String(!quitar));
+        avisar('msg', quitar ? 'Quitado de Mi Estilo' : '♥ Guardado en Mi Estilo');
+      } catch (err) {
+        avisar('msg', err.message, true);
+      } finally {
+        boton.disabled = false;
+      }
     }
 
     async function cargarTrabajos(categoria = categoriaActual) {
@@ -228,6 +257,12 @@
         } catch (err) {
           avisar('msg-form', 'No se pudieron cargar tus cursos: ' + err.message, true);
         }
+      }
+      // La clienta: antes de pintar el muro, saber cuáles tiene ya guardados (para el ♥)
+      if (usuaria && usuaria.perfil === 'clienta') {
+        try {
+          (await api('/api/mi-estilo')).forEach(f => misFavoritos.add(f.id));
+        } catch (err) { /* si falla, los corazones salen vacíos: no es grave */ }
       }
       pintarFiltros(document.getElementById('filtros'), cargarTrabajos);
       cargarTrabajos();
