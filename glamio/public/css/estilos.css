@@ -2,7 +2,7 @@
    Rediseño del 16/11 con los diseños de la autora: morado y lila, títulos con remates (serif). */
 
 /* Tipografías de Google Fonts. Si no hay internet, se usan Georgia y la letra del sistema. */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito+Sans:wght@400;600;700&family=Great+Vibes&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito+Sans:wght@400;600;700&display=swap');
 
 :root {
   /* Colores del rediseño */
@@ -273,7 +273,7 @@ body { overflow-wrap: anywhere; }
 .portada-derecha { display: flex; flex-direction: column; gap: 22px; padding: 24px 40px 24px 28px; }
 .portada-derecha .portada-botones { flex-direction: column; align-items: flex-start; }
 .portada-lista { list-style: none; display: flex; flex-direction: column; gap: 14px; }
-.portada-lista li { font-family: 'Great Vibes', 'Brush Script MT', cursive; font-size: 1.85rem; color: var(--principal);
+.portada-lista li { font-family: var(--serif); font-weight: 600; font-size: 1.4rem; letter-spacing: .2px; color: var(--principal);
   display: flex; align-items: center; gap: 12px; white-space: nowrap; }
 .portada-lista li::before { content: '✓'; font-family: 'Nunito Sans', sans-serif; font-size: 1rem; font-weight: 700; color: var(--principal);
   width: 30px; height: 30px; border: 2px solid var(--principal); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
