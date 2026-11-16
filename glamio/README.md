@@ -14,7 +14,7 @@ App web de formación en belleza (uñas, cabello y cejas): **academia de cursos*
 | Perfil | Qué puede hacer |
 |---|---|
 | **Administradora** | Crea, edita y borra cursos, lecciones y materiales · sube guías teóricas en PDF · diseña el certificado · responde dudas y marca la ⭐ destacada · responde reseñas · revisa los reportes · ve las **estadísticas** |
-| **Alumna** | Se inscribe (gratis o con pago simulado) · ve lecciones y marca su progreso · certificado · compra guías · pregunta con foto · calculadora · publica sus trabajos · reseña cursos terminados |
+| **Alumna** | Se inscribe (gratis o con pago simulado) · ve lecciones y marca su progreso · certificado · compra guías · pregunta con foto · calculadora · publica sus trabajos · reseña cursos terminados · tiene **perfil público** (fase 2) |
 | **Profesional** | Lo mismo que la alumna · su insignia es «Profesional certificada» |
 | **Clienta** | El **muro** en lectura (trabajos con permiso de su autora) y **💜 Mi Estilo**: guarda con ♡ los que le gustan (fase 2) |
 
@@ -55,6 +55,13 @@ La cuenta de la administradora no se puede crear desde la web: se crea con `db/c
 - Solo salen trabajos **con permiso de la autora y sin reportar**. Si la autora quita el permiso, desaparece también de los favoritos (y vuelve si lo da otra vez); si lo borra, el favorito se borra solo.
 - Los favoritos son **privados**: nadie más los ve, tampoco la autora.
 
+## Fase 2 empezada: 👤 Perfil público (alumna y profesional)
+
+- Página `perfil.html?id=N`, que puede ver **cualquiera** (también sin cuenta). Se llega pulsando el nombre de la autora en el muro o en Mi Estilo, o desde «👤 Mi perfil público» en el menú del círculo.
+- Muestra nombre, insignia («Alumna/Profesional certificada» solo si ha terminado algún curso), cursos terminados, trabajos y servicios. **Nunca el email.**
+- Los trabajos siguen la **misma regla que el muro**: a la clienta y a quien no tiene cuenta solo le salen los que tienen permiso; los reportados no salen.
+- Servicios: en **Calculadora → Mis servicios**, la casilla **«👁 Mostrar en mi perfil»** (por defecto, desmarcada). Sale el nombre, los minutos y el precio, sin el desglose de costes.
+
 ---
 
 ## Stack
@@ -79,7 +86,7 @@ glamio/
 │   ├── pool.js            # Conexión a PostgreSQL
 │   ├── schema.sql         # Tablas, índices y trigger (¡borra todo! ver abajo)
 │   ├── migracion-17-11.sql # Estadísticas y guías para una base que ya existe (no borra nada)
-│   ├── migracion-18-11.sql # Fase 2 · Mi Estilo: tabla favoritos y su trigger (no borra nada)
+│   ├── migracion-18-11.sql # Fase 2: tabla favoritos y su trigger + servicios.publico (no borra nada)
 │   ├── seed.sql           # Categorías, academia y cursos de ejemplo
 │   ├── crear-admin.js     # Crea la cuenta de la administradora
 │   └── cambiar-contrasena.js # Cambia la contraseña de una cuenta (si se olvida)
@@ -99,9 +106,10 @@ glamio/
 │   ├── dudas.js           # Dudas, respuestas, destacada, notificaciones, Comunidad
 │   ├── trabajos.js        # Muro: publicar, permiso 👁/🔒, borrar
 │   ├── resenas.js         # Reseñas: publicar, responder, borrar
-│   ├── servicios.js       # Calculadora «Calcular mi precio»
+│   ├── servicios.js       # Calculadora «Calcular mi precio» (y «Mostrar en mi perfil»)
 │   ├── reportes.js        # Reportar y moderar
-│   └── mi-estilo.js       # Fase 2 · Mi Estilo: favoritos de la clienta
+│   ├── mi-estilo.js       # Fase 2 · Mi Estilo: favoritos de la clienta
+│   └── perfil.js          # Fase 2 · Perfil público de alumna y profesional
 ├── public/
 │   ├── index.html         # Inicio: portada, accesos, cursos y talentos de la comunidad
 │   ├── cursos.html        # Solo cursos, con filtros
@@ -115,6 +123,7 @@ glamio/
 │   ├── admin.html         # Panel de la administradora (menú lateral)
 │   ├── reportes.html      # ⚑ Reportes
 │   ├── mi-estilo.html     # 💜 Mi Estilo (clienta): catálogo deslizable + Mis favoritos
+│   ├── perfil.html        # 👤 Perfil público (?id=N)
 │   ├── img/               # Logos, portada e ilustraciones
 │   ├── css/estilos.css
 │   └── js/api.js          # fetch, cabecera, menú lateral, notificaciones, reportar… (funciones comunes)
@@ -144,7 +153,7 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
    >
    > **¿Ya tenías la base de antes?** No uses `db:crear`: aplica solo lo nuevo, en orden (ninguno borra nada):
    > - de antes del 17/11 (visitas, guías e importe de las ventas): `psql -U postgres -d glamio -f db/migracion-17-11.sql`
-   > - de antes del 18/11 (Mi Estilo): `psql -U postgres -d glamio -f db/migracion-18-11.sql`
+   > - de antes del 18/11 (Mi Estilo y perfil público): `psql -U postgres -d glamio -f db/migracion-18-11.sql`
    >
    > En Windows, si `psql` o `createdb` no se encuentran, están en `C:\Program Files\PostgreSQL\18\bin\`.
 4. Crear la cuenta de la administradora (con una contraseña segura, no la de ejemplo):
@@ -181,7 +190,7 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 1. **Aprendo**: como alumna, ir a **Cursos**, abrir uno, inscribirse (pago simulado si es de pago), ver las lecciones y marcarlas como completadas. Al terminar, **🎓 Ver mi certificado**. Comprar una **📖 guía teórica** y descargarla.
 2. **Pregunto**: en una lección, hacer una duda con foto. Como administradora, **🔔 Notificaciones** avisa: responder y marcar **⭐ destacada**. La alumna recibe la notificación.
 3. **Sé cuánto cobrar**: en el curso, **🧮 Calcular mi precio**. Se cargan los materiales; poner los costes, los minutos, el €/h y el margen, y guardar.
-4. **Muestro mi resultado**: en **Comunidad → 📷 Trabajos**, publicar una foto etiquetada con el curso y dar permiso 👁. Como clienta, verla en el muro, guardarla con **♡** y abrirla en **💜 Mi Estilo**.
+4. **Muestro mi resultado**: en **Comunidad → 📷 Trabajos**, publicar una foto etiquetada con el curso y dar permiso 👁. Como clienta, verla en el muro, guardarla con **♡** y abrirla en **💜 Mi Estilo**. Pulsar el nombre de la autora para ver su **👤 perfil público** (cursos terminados, trabajos y los servicios que haya marcado en la calculadora).
 5. **Reseña**: dejar ⭐ en el curso terminado. La administradora responde.
 6. **Moderación**: reportar algo con un motivo. Se oculta, y la administradora lo revisa en **⚑ Reportes**.
 7. **Estadísticas**: como administradora, **Panel → 🏠 Panel principal**: visitas y cursos vendidos por mes.
@@ -200,6 +209,7 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 | Las reseñas no las borra la administradora: se responden o se ocultan si un reporte lo confirma (RN-21) | `routes/resenas.js` y `routes/reportes.js` |
 | La clienta solo recibe trabajos con permiso y no reportados (RN-22) | Filtro en el servidor, `routes/trabajos.js` |
 | Mi Estilo: solo la clienta guarda favoritos, sin repetir, y solo de trabajos con permiso | `requierePerfil('clienta')` en `routes/mi-estilo.js` + clave primaria doble + trigger `favorito_solo_clienta` |
+| El perfil público nunca enseña el email; los trabajos, con la regla del muro; los servicios, solo si ella los marca | `routes/perfil.js` + `PUT /api/servicios/:id/publico` (solo la dueña) |
 | Solo se reporta lo que una misma puede ver | `puedeReportar()` en `routes/reportes.js` |
 | Las guías solo las descarga quien las compró | `privado/guias` (no pública) + comprobación de compra en `routes/guias.js` |
 | Borrar un curso con inscritas pide una segunda confirmación | `DELETE /api/cursos/:id` responde 409 hasta `?confirmar=si` |
@@ -212,6 +222,6 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 ## Fases
 
 1. **Academia** ← esta entrega
-2. Clientas: **Mi Estilo (favoritos) ✅ ya en esta entrega** · pendiente: perfil público de profesionales, reserva de citas y reseñas por enlace tras la cita
+2. Clientas: **Mi Estilo (favoritos) ✅ y perfil público ✅ ya en esta entrega** · pendiente: reserva de citas y reseñas por enlace tras la cita
 3. Tienda / Stock
 4. Otras academias publican cursos
