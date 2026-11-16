@@ -13,7 +13,8 @@
 
 /* Cada dato se coloca por su CENTRO (left/top vienen de la posición guardada) */
 .cert-el { position: absolute; transform: translate(-50%, -50%); text-align: center; line-height: 1.15; }
-.cert-el-nombre, .cert-el-curso { font-family: var(--serif); font-weight: 700; width: max-content; max-width: 86%; }
+/* Nombre y curso: siempre en una línea (si es largo, ajustarTextos() encoge la letra) */
+.cert-el-nombre, .cert-el-curso { font-family: var(--serif); font-weight: 700; white-space: nowrap; }
 .cert-el-datos { white-space: nowrap; line-height: 1.4; opacity: .75; }
 .cert-el-logo { aspect-ratio: 1; }
 .cert-el-firma { display: flex; align-items: center; justify-content: center; }

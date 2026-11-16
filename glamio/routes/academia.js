@@ -70,7 +70,9 @@ router.put('/certificado', requiereAdmin, subirImagenes, async (req, res, next) 
     const { rows } = await pool.query(
       `UPDATE academias SET cert_fondo = $1, cert_firma = $2, cert_logo = $3, cert_logo_forma = $4, cert_directora = $5, cert_color_texto = $6
        WHERE id = $7 RETURNING *`,
-      [fondo, firma, logo, logo_forma || antes.cert_logo_forma, directora || null, color_texto || antes.cert_color_texto, ACADEMIA_ID]);
+      [fondo, firma, logo, logo_forma || antes.cert_logo_forma,
+       directora === undefined ? antes.cert_directora : (directora || null),   // el Panel ya no lo envía: se conserva
+       color_texto || antes.cert_color_texto, ACADEMIA_ID]);
 
     // Las imágenes viejas que ya no se usan se borran del disco
     if (antes.cert_fondo && antes.cert_fondo !== fondo) borrarArchivo(antes.cert_fondo);

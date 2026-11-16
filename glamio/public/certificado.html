@@ -9,12 +9,12 @@
   <style>
     .aviso-prueba { max-width: 1000px; margin: 10px auto 0; }
 
-    /* Al imprimir o guardar en PDF: hoja carta apaisada, sin márgenes y solo el certificado */
+    /* Al imprimir o guardar en PDF: hoja CARTA apaisada (11 × 8,5 pulgadas), sin márgenes y solo el certificado */
     @page { size: letter landscape; margin: 0; }
     @media print {
       .no-imprimir { display: none !important; }
       body, main { margin: 0; padding: 0; background: #fff; }
-      .certificado { width: 279.4mm; height: 215.9mm; max-width: none; margin: 0; border-radius: 0; box-shadow: none;
+      .certificado { width: 279.4mm; height: 215.9mm; aspect-ratio: auto; max-width: none; margin: 0; border-radius: 0; box-shadow: none;
         -webkit-print-color-adjust: exact; print-color-adjust: exact; } /* imprime también el fondo */
     }
   </style>
@@ -50,6 +50,7 @@
       cert.style.setProperty('--texto', d.color_texto);
       cert.style.backgroundImage = d.fondo ? `url("${d.fondo}")` : 'none';
       cert.innerHTML = htmlPlantilla(c, d, d.posiciones);
+      ajustarTextos(cert);          // nombres o cursos largos: que quepan en una línea
       document.getElementById('imprimir').classList.remove('oculto');
     }
 
@@ -72,6 +73,7 @@
         document.getElementById('cert').innerHTML = `<p style="padding:20px">${esc(err.message)}</p>`;
       }
     }
+    vigilarAjuste(document.getElementById('cert'));
     iniciar();
   </script>
 </body>

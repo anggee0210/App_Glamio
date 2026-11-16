@@ -137,6 +137,7 @@
       <form id="form-certificado">
         <label>Imagen de fondo (tamaño carta horizontal, por ejemplo 3300 × 2550 px)
           <input type="file" name="fondo" accept="image/*"></label>
+        <p class="mensaje oculto" id="aviso-resolucion"></p>
         <div id="cert-fondo-actual" class="ayuda"></div>
 
         <label>Firma escaneada (opcional, mejor PNG con fondo transparente)
@@ -153,13 +154,11 @@
             <option value="desvanecido">🌫️ Desvanecido (redondo con bordes suaves)</option>
           </select></label>
 
-        <input name="directora" placeholder="Nombre de la administradora">
         <label class="fila">Color del texto
           <input type="color" name="color_texto" value="#3a2f36" style="width:60px;padding:2px"></label>
 
         <div class="fila">
-          <button class="boton">Guardar diseño</button>
-          <a class="boton secundario" href="/certificado.html?vista_previa=1" target="_blank">Vista previa</a>
+          <button class="boton">Guardar imágenes y colores</button>
         </div>
         <p class="mensaje oculto"></p>
       </form>
@@ -170,7 +169,7 @@
         <p class="mensaje" id="editor-sin-fondo">📄 Aún no has subido una imagen de fondo: el certificado sale <strong>en blanco</strong>, solo con los datos.
           Sube arriba el certificado que prefieras y luego coloca aquí los datos.</p>
         <p class="ayuda">Arrastra cada dato a su sitio (o elígelo abajo y muévelo con las flechas del teclado).
-          Así cualquier certificado que subas queda bien. Los cambios no se ven en los certificados hasta que pulses «Guardar posiciones».</p>
+          Así cualquier certificado que subas queda bien. Los cambios no se ven en los certificados hasta que pulses «Guardar y ver vista previa».</p>
         <div class="certificado editor-cert" id="editor-cert"></div>
         <div class="editor-chips" id="editor-chips"></div>
         <div class="editor-controles">
@@ -179,10 +178,10 @@
           <button type="button" class="boton secundario" id="editor-borrar">🗑 Borrar del certificado</button>
           <span class="ayuda" id="editor-fijo">El nombre y el curso siempre salen.</span>
         </div>
-        <div class="fila">
-          <button type="button" class="boton" id="editor-guardar">Guardar posiciones</button>
+        <div class="fila" style="align-items:center">
+          <button type="button" class="boton" id="editor-vista-previa">Guardar y ver vista previa</button>
           <button type="button" class="boton secundario" id="editor-restablecer">Restablecer</button>
-          <a class="boton secundario" href="/certificado.html?vista_previa=1" target="_blank">Vista previa</a>
+          <strong class="oculto" id="editor-pendiente" style="color:#a12622">● Cambios sin guardar</strong>
         </div>
         <p class="mensaje oculto" id="editor-mensaje"></p>
       </div>
@@ -534,6 +533,24 @@
     // ---------- Diseño del certificado ----------
     const formCertificado = document.getElementById('form-certificado');
 
+    // AVISO DE RESOLUCIÓN: para imprimir bien en hoja carta (11 pulgadas de ancho) hacen falta
+    // unos 3300 px de ancho. Por debajo de 2400 px se avisa (en pantalla se ve bien, en papel no).
+    const ANCHO_MINIMO_IMPRESION = 2400;
+    function avisoResolucion(ancho, alto, esNueva) {
+      const aviso = document.getElementById('aviso-resolucion');
+      const pequena = ancho < ANCHO_MINIMO_IMPRESION;
+      aviso.classList.toggle('oculto', !pequena);
+      if (pequena) aviso.textContent = `⚠ ${esNueva ? 'La imagen elegida' : 'El fondo actual'} mide ${ancho} × ${alto} px: ` +
+        'en pantalla se ve bien, pero al imprimir puede salir borrosa. Para hoja carta, mejor 3300 × 2550 px.';
+    }
+    formCertificado.fondo.addEventListener('change', () => {
+      const archivo = formCertificado.fondo.files[0];
+      if (!archivo) return;
+      const img = new Image();
+      img.onload = () => { avisoResolucion(img.naturalWidth, img.naturalHeight, true); URL.revokeObjectURL(img.src); };
+      img.src = URL.createObjectURL(archivo);       // se mide en el navegador, sin subirla todavía
+    });
+
     // Enseña la imagen que hay ahora y un botón para borrarla
     function pintarImagenActual(contenedor, ruta, campoQuitar) {
       document.getElementById(contenedor).innerHTML = ruta
@@ -555,9 +572,8 @@
         setTimeout(() => { if (boton.isConnected) { delete boton.dataset.seguro; boton.textContent = '🗑 Borrar'; } }, 4000);
         return;
       }
-      // Se envían también el nombre, el color y la forma del logo actuales, para que no cambien
+      // Se envían también el color y la forma del logo actuales, para que no cambien
       const datos = new FormData();
-      datos.append('directora', formCertificado.directora.value);
       datos.append('color_texto', formCertificado.color_texto.value);
       datos.append('logo_forma', formCertificado.logo_forma.value);
       datos.append(boton.dataset.quitar, 'on');
@@ -570,9 +586,15 @@
 
     async function cargarDiseno() {
       const d = await api('/api/academia/certificado');
-      formCertificado.directora.value = d.directora || '';
       formCertificado.color_texto.value = d.color_texto;
       pintarImagenActual('cert-fondo-actual', d.fondo, 'quitar_fondo');
+      // Resolución del fondo actual (si no hay fondo, sin aviso)
+      document.getElementById('aviso-resolucion').classList.add('oculto');
+      if (d.fondo) {
+        const img = new Image();
+        img.onload = () => { if (!formCertificado.fondo.files[0]) avisoResolucion(img.naturalWidth, img.naturalHeight, false); };
+        img.src = d.fondo;
+      }
       pintarImagenActual('cert-firma-actual', d.firma, 'quitar_firma');
       pintarImagenActual('cert-logo-actual', d.logo, 'quitar_logo');
       formCertificado.logo_forma.value = d.logo_forma;
@@ -585,7 +607,7 @@
         await api('/api/academia/certificado', { method: 'PUT', body: new FormData(formCertificado) });
         formCertificado.fondo.value = ''; formCertificado.firma.value = ''; formCertificado.logo.value = '';
         await cargarDiseno();
-        avisar(formCertificado, 'Diseño guardado ✅ Pulsa «Vista previa» para verlo.');
+        avisar(formCertificado, 'Guardado ✅ Ahora coloca los datos abajo y pulsa «Guardar y ver vista previa».');
       } catch (err) { avisar(formCertificado, err.message, true); }
     };
 
@@ -595,15 +617,25 @@
     const editorCert = document.getElementById('editor-cert');
     const editorTamano = document.getElementById('editor-tamano');
     const editorBorrar = document.getElementById('editor-borrar');
+    vigilarAjuste(editorCert);
     let disenoEditor = null;   // el diseño cargado (fondo, logo, firma...)
     let posEditor = null;      // las posiciones mientras se editan (aún sin guardar)
     let elegido = 'nombre';    // el dato que se está moviendo
+    let sinGuardar = false;    // ¿hay posiciones movidas que aún no se han guardado?
+
+    // CAMBIOS SIN GUARDAR: se enseña «● Cambios sin guardar» y, si se intenta salir de la página,
+    // el navegador pregunta antes (así no se pierde lo movido).
+    function marcarCambios(hay = true) {
+      sinGuardar = hay;
+      document.getElementById('editor-pendiente').classList.toggle('oculto', !hay);
+    }
+    window.addEventListener('beforeunload', (e) => { if (sinGuardar) { e.preventDefault(); e.returnValue = ''; } });
 
     function pintarEditor(d) {
       disenoEditor = d;
       document.getElementById('editor-posiciones').classList.remove('oculto');
       document.getElementById('editor-sin-fondo').classList.toggle('oculto', !!d.fondo);
-      posEditor = mezclarPosiciones(d.posiciones);
+      if (!sinGuardar) posEditor = mezclarPosiciones(d.posiciones);   // si hay cambios sin guardar, se conservan
       editorCert.style.backgroundImage = d.fondo ? `url("${d.fondo}")` : 'none';
       editorCert.style.setProperty('--texto', d.color_texto);
       // Botones para elegir cada dato (útiles en el móvil y para los datos ocultos)
@@ -616,6 +648,7 @@
 
     function redibujarEditor() {
       editorCert.innerHTML = htmlPlantilla(EJEMPLO_CERT, disenoEditor, posEditor);
+      ajustarTextos(editorCert);
       elegir(elegido);
     }
 
@@ -641,23 +674,27 @@
     function alternarBorrado() {
       if (!ELEMENTOS_CERT[elegido].ocultable) return;
       posEditor[elegido].ver = !posEditor[elegido].ver;
+      marcarCambios();
       redibujarEditor();
       mensajeEditor(posEditor[elegido].ver
-        ? `«${ELEMENTOS_CERT[elegido].etiqueta}» se ha restaurado. Pulsa «Guardar posiciones» para aplicarlo.`
-        : `«${ELEMENTOS_CERT[elegido].etiqueta}» borrado. Pulsa «Guardar posiciones» para que se quite de los certificados.`);
+        ? `«${ELEMENTOS_CERT[elegido].etiqueta}» se ha restaurado. Pulsa «Guardar y ver vista previa» para aplicarlo.`
+        : `«${ELEMENTOS_CERT[elegido].etiqueta}» borrado. Pulsa «Guardar y ver vista previa» para que se quite de los certificados.`);
     }
 
     // Cambia el estilo del dato en pantalla sin volver a pintarlo todo (va más fluido al arrastrar)
     function moverEnPantalla(clave) {
       const el = editorCert.querySelector(`[data-el="${clave}"]`);
-      if (el) el.setAttribute('style', estiloDato(clave, posEditor[clave]));
+      if (!el) return;
+      el.setAttribute('style', estiloDato(clave, posEditor[clave]));
+      el.dataset.t = posEditor[clave].t;
+      ajustarTextos(editorCert);
     }
 
     document.getElementById('editor-chips').onclick = (e) => {
       const b = e.target.closest('[data-el]');
       if (b) elegir(b.dataset.el);
     };
-    editorTamano.oninput = () => { posEditor[elegido].t = Number(editorTamano.value); moverEnPantalla(elegido); };
+    editorTamano.oninput = () => { posEditor[elegido].t = Number(editorTamano.value); marcarCambios(); moverEnPantalla(elegido); };
     editorBorrar.onclick = alternarBorrado;
 
     // ARRASTRAR: con "pointer events" funciona igual con ratón, dedo o lápiz.
@@ -679,6 +716,7 @@
       const limitar = n => Math.min(100, Math.max(0, n));
       posEditor[elegido].x = limitar((e.clientX - arrastre.dx - hoja.left) / hoja.width * 100);
       posEditor[elegido].y = limitar((e.clientY - arrastre.dy - hoja.top) / hoja.height * 100);
+      marcarCambios();
       moverEnPantalla(elegido);
     });
     const soltar = () => {
@@ -702,6 +740,7 @@
       const paso = e.shiftKey ? 2 : 0.5, p = posEditor[elegido];
       p.x = Math.min(100, Math.max(0, p.x + movs[e.key][0] * paso));
       p.y = Math.min(100, Math.max(0, p.y + movs[e.key][1] * paso));
+      marcarCambios();
       moverEnPantalla(elegido);
     });
 
@@ -709,16 +748,29 @@
       const m = document.getElementById('editor-mensaje');
       m.textContent = texto; m.classList.remove('oculto'); m.classList.toggle('error', error);
     };
-    document.getElementById('editor-guardar').onclick = async () => {
+    async function guardarPosiciones() {
+      disenoEditor = await api('/api/academia/certificado/posiciones', { method: 'PUT', body: { posiciones: posEditor } });
+      marcarCambios(false);
+    }
+    // Guarda (si hay algo sin guardar) y abre la vista previa con lo que se acaba de colocar.
+    // La pestaña se abre ANTES de guardar: si se abriera después, el navegador la bloquearía como ventana emergente.
+    document.getElementById('editor-vista-previa').onclick = async () => {
+      const ventana = window.open('', '_blank');
       try {
-        disenoEditor = await api('/api/academia/certificado/posiciones', { method: 'PUT', body: { posiciones: posEditor } });
-        mensajeEditor('Posiciones guardadas ✅ Ya se ven así en todos los certificados.');
-      } catch (err) { mensajeEditor(err.message, true); }
+        if (sinGuardar) await guardarPosiciones();
+        mensajeEditor('Guardado ✅ Ya se ve así en todos los certificados. La vista previa se ha abierto en otra pestaña.');
+        if (ventana) ventana.location = '/certificado.html?vista_previa=1';
+        else location.href = '/certificado.html?vista_previa=1';   // si el navegador no deja abrir pestañas
+      } catch (err) {
+        if (ventana) ventana.close();
+        mensajeEditor(err.message, true);
+      }
     };
     document.getElementById('editor-restablecer').onclick = () => {
       posEditor = mezclarPosiciones(null);
+      marcarCambios();
       redibujarEditor();
-      mensajeEditor('Vuelven las posiciones de por defecto. Pulsa «Guardar posiciones» para quedarte con ellas.');
+      mensajeEditor('Vuelven las posiciones de por defecto. Pulsa «Guardar y ver vista previa» para quedarte con ellas.');
     };
 
     // ---------- Panel principal: estadísticas ----------

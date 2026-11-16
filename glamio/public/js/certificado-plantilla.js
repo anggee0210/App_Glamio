@@ -70,7 +70,30 @@ function htmlPlantilla(c, d, posiciones) {
     if (!p.ver) continue;                         // borrado: no sale
     const clases = ['cert-el', 'cert-el-' + clave];
     if (clave === 'logo') clases.push('forma-logo', 'forma-' + (d.logo_forma || 'desvanecido'));
-    html += `<div class="${clases.join(' ')}" data-el="${clave}" style="${estiloDato(clave, p)}">${contenido[clave]}</div>`;
+    html += `<div class="${clases.join(' ')}" data-el="${clave}" data-t="${p.t}" style="${estiloDato(clave, p)}">${contenido[clave]}</div>`;
   }
   return html;
+}
+
+// NOMBRES Y CURSOS LARGOS: van siempre en UNA línea y, si no caben en el 86 % del ancho
+// de la hoja, se encoge su letra lo justo. Nunca se agrandan por encima del tamaño elegido.
+// Como la letra va en "cqw" (% del ancho de la hoja), la proporción vale igual en PC,
+// en el móvil y al imprimir.
+const ANCHO_MAX_TEXTO = 0.86;
+function ajustarTextos(hoja) {
+  const maximo = hoja.clientWidth * ANCHO_MAX_TEXTO;
+  if (!maximo) return;                                   // hoja escondida (otra pestaña): se ajusta al verse
+  hoja.querySelectorAll('.cert-el-nombre, .cert-el-curso').forEach(el => {
+    const t = Number(el.dataset.t);
+    el.style.fontSize = t + 'cqw';                       // primero, el tamaño elegido
+    const ancho = el.scrollWidth;
+    if (ancho > maximo) el.style.fontSize = (t * maximo / ancho).toFixed(3) + 'cqw';
+  });
+}
+
+// Vuelve a ajustar cuando cambia el tamaño de la hoja (la pestaña se abre, se gira el móvil...)
+// y cuando termina de cargar la letra (con otra letra el texto mide distinto).
+function vigilarAjuste(hoja) {
+  new ResizeObserver(() => ajustarTextos(hoja)).observe(hoja);
+  if (document.fonts) document.fonts.ready.then(() => ajustarTextos(hoja));
 }
