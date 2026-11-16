@@ -713,7 +713,9 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
 .logo-grande img { width: 112px; height: 112px; }
 .logo-grande { gap: 16px; }
 .acceso-form { max-width: 640px; gap: 18px; }
-.campo-icono input { font-size: 2.05rem; padding: 26px 84px; border-width: 2px; }
+.campo-icono input { font-size: 1.65rem; padding: 30px 84px; border-width: 2px; } /* letra algo más pequeña, la caja casi igual de alta */
+/* La contraseña, un poco más pequeña aún (por name, porque el 👁 cambia su type a text) */
+.campo-icono input[name=password] { font-size: 1.4rem; padding-top: 34px; padding-bottom: 34px; }
 .campo-icono input::placeholder { color: #8a7d90; }
 .campo-icono svg { width: 40px; height: 40px; left: 26px; }
 .ver-contrasena { font-size: 2rem; right: 22px; }
@@ -729,7 +731,8 @@ a.fila-leccion:hover { background: var(--principal-claro); border-radius: 10px; 
   .logo-grande .logo-nombre { font-size: 3.2rem; }
   .logo-grande .logo-lema { font-size: 1rem; letter-spacing: 2px; }
   .logo-grande img { width: 80px; height: 80px; }
-  .campo-icono input { font-size: 1.6rem; padding: 20px 64px; }
+  .campo-icono input { font-size: 1.35rem; padding: 22px 64px; }
+  .campo-icono input[name=password] { font-size: 1.15rem; padding-top: 25px; padding-bottom: 25px; }
   .campo-icono svg { width: 30px; height: 30px; left: 18px; }
   .ver-contrasena { font-size: 1.6rem; }
   .boton-ancho { font-size: 1.3rem; }
