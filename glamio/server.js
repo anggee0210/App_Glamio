@@ -3,7 +3,7 @@
 // ===============================
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
+const { cargarSesion } = require('./middleware/sesiones');
 const path = require('path');
 
 const app = express();
@@ -13,19 +13,10 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Si falta SESSION_SECRET en .env (o se dejó el de ejemplo), avisamos: con una clave conocida,
-// alguien podría falsificar la cookie de sesión. La app sigue arrancando para no bloquear la clase.
-const secreto = process.env.SESSION_SECRET;
-if (!secreto || secreto.startsWith('CAMBIAR') || secreto === 'cambia-esto-por-algo-secreto') {
-  console.warn('⚠️  Pon un SESSION_SECRET propio en .env (mira .env.example). Ahora se usa uno de prueba.');
-}
-
-app.use(session({
-  secret: secreto || 'glamio-secreto',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 horas
-}));
+// Sesiones propias (tabla "sesiones" en PostgreSQL): en cada petición lee la cookie
+// glamio_sesion y, si es válida, rellena req.session.usuaria. Ver middleware/sesiones.js
+// (Va ANTES del contador de visitas, que necesita saber quién ha entrado.)
+app.use(cargarSesion);
 
 // --- Contador de visitas (estadísticas de la administradora) ---
 // Cada página que se abre (/ o un .html) suma una fila en "visitas". Datos mínimos: página, fecha y,
@@ -60,6 +51,7 @@ app.use('/api/estadisticas', require('./routes/estadisticas'));
 app.use('/api/guias', require('./routes/guias'));
 app.use('/api/mi-estilo', require('./routes/mi-estilo')); // fase 2: favoritos de la clienta
 app.use('/api/perfil', require('./routes/perfil'));       // fase 2: perfil público de alumna y profesional
+app.use('/api/ficha', require('./routes/ficha'));         // ficha personal de la alumna (solo ella y la admin)
 
 // --- Ruta no encontrada en la API ---
 app.use('/api', (req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));

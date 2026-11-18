@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar contraseña – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
+</head>
+<body class="cuerpo-acceso">
+  <!-- Misma estructura que "Entrar" y "Crear cuenta" -->
+  <div class="pantalla-acceso">
+    <div class="acceso-foto acceso-logo"><img src="/img/logo-grande.jpg" alt="GLAMIO, Academia de belleza: formación que transforma tu talento en belleza profesional"></div>
+
+    <div class="acceso-panel">
+      <a href="/index.html" class="logo logo-grande" aria-label="GLAMIO, ir al inicio">
+        <img src="/img/logo-g.png" alt="">
+        <span class="logo-texto"><span class="logo-nombre">GLAMIO</span><span class="logo-lema">ACADEMIA DE BELLEZA</span></span>
+      </a>
+
+      <h1 class="acceso-titulo">¿Olvidaste tu contraseña?</h1>
+      <p class="acceso-sub">Escribe tu email y te enviaremos un enlace para crear una nueva</p>
+
+      <form id="form" class="acceso-form">
+        <label class="campo-icono">
+          <span class="visualmente-oculto">Email</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <input type="email" name="email" placeholder="Email" autocomplete="email" required>
+        </label>
+        <p class="mensaje oculto" id="msg"></p>
+        <button class="boton boton-ancho" id="enviar">📧 Enviar enlace</button>
+      </form>
+
+      <a class="boton-contorno" href="/login.html">🔑 ¿Ya te acuerdas? <strong>Entrar</strong></a>
+      <a class="volver-inicio" href="/index.html">← Volver al inicio</a>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    document.getElementById('form').onsubmit = async (e) => {
+      e.preventDefault();
+      const boton = document.getElementById('enviar');
+      const msg = document.getElementById('msg');
+      boton.disabled = true;
+      try {
+        // La respuesta es SIEMPRE la misma, exista o no la cuenta (así no se revela qué emails hay)
+        const res = await api('/api/auth/recuperar', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
+        msg.textContent = res.mensaje + '. Mira también en spam. El enlace caduca en 30 minutos.';
+        msg.classList.remove('error');
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.classList.add('error');
+      }
+      msg.classList.remove('oculto');
+      boton.disabled = false;
+    };
+  </script>
+</body>
+</html>

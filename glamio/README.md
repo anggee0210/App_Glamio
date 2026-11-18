@@ -71,7 +71,7 @@ La cuenta de la administradora no se puede crear desde la web: se crea con `db/c
 - **Frontend:** HTML, CSS y JavaScript (fetch), sin frameworks · diseño para el móvil y a pantalla completa en el PC
 - **Backend:** Node.js + Express (API REST)
 - **Base de datos:** PostgreSQL con `pg` (consultas parametrizadas `$1, $2`)
-- **Login:** `express-session` + `bcrypt`
+- **Login:** sesiones propias en PostgreSQL (cookie `httpOnly`) + contraseñas con **Argon2id** + verificación de email con correos reales (`nodemailer`). Detalle en `docs/LOGIN-SEGURO.md`
 - **Archivos:** `multer` (imágenes, vídeos cortos y PDF de las guías; los vídeos largos, por YouTube)
 - Todo funciona **en local**: sin servicios externos (las tipografías se cargan de Google Fonts y, sin internet, se usan las del sistema).
 
@@ -91,15 +91,21 @@ glamio/
 │   ├── migracion-18-11.sql # Fase 2: tabla favoritos y su trigger + servicios.publico (no borra nada)
 │   ├── migracion-logo-certificado.sql # Certificado: logo, forma del logo y posiciones de los datos (no borra nada)
 │   ├── migracion-portadas.sql # Portadas: ajuste Rellenar/Completa y posición de la foto (no borra nada)
+│   ├── migracion-login.sql # Login seguro: sesiones, tokens y email verificado (no borra nada)
 │   ├── seed.sql           # Categorías, academia y cursos de ejemplo
 │   ├── crear-admin.js     # Crea la cuenta de la administradora
-│   └── cambiar-contrasena.js # Cambia la contraseña de una cuenta (si se olvida)
+│   ├── cambiar-contrasena.js # Cambia la contraseña de una cuenta (si se olvida)
+│   └── desbloquear-cuenta.js # Desbloquea una cuenta (si la bloqueada es la administradora)
 ├── middleware/
 │   ├── auth.js            # requiereLogin / requiereAdmin / requierePerfil
+│   ├── sesiones.js        # Sesiones propias: cookie glamio_sesion, SHA-256 en la BD, caducidad deslizante
+│   ├── contrasenas.js     # Argon2id (y migración automática de las contraseñas bcrypt antiguas)
+│   ├── seguridad.js       # Email normalizado, política de contraseñas, límite de intentos
+│   ├── correo.js          # Correos reales con nodemailer (o simulados)
 │   ├── permisos.js        # esId() y puedeEntrarEnLeccion() (RN-14)
 │   └── subidas.js         # multer: tipos y tamaño, rechazar() y borrarArchivo()
 ├── routes/
-│   ├── auth.js            # Registro, login, logout, /yo
+│   ├── auth.js            # Los 7 flujos del login: registro, login, logout, sesiones, cambiar, recuperar, verificar
 │   ├── categorias.js      # Uñas, Cabello, Cejas…
 │   ├── cursos.js          # Cursos (crear, editar, borrar), materiales, inscripción, progreso, certificado
 │   ├── lecciones.js       # Lecciones y «marcar como completada»
@@ -117,7 +123,8 @@ glamio/
 ├── public/
 │   ├── index.html         # Inicio: portada, ¿Qué quieres hacer hoy?, cursos y talentos de la comunidad
 │   ├── cursos.html        # Solo cursos, con botones por categoría
-│   ├── login.html · registro.html
+│   ├── login.html · registro.html · recuperar.html · restablecer.html · verificar.html
+│   ├── cuenta.html        # ⚙️ Mi cuenta: cambiar contraseña y sesiones abiertas
 │   ├── curso.html         # Detalle, progreso, lecciones, materiales, guías y reseñas
 │   ├── leccion.html       # Vídeo + dudas de la lección
 │   ├── certificado.html · certificados.html
@@ -126,6 +133,7 @@ glamio/
 │   ├── avisos.html        # 🔔 Notificaciones
 │   ├── admin.html         # Panel de la administradora (menú lateral)
 │   ├── reportes.html      # ⚑ Reportes
+│   ├── bloqueadas.html    # 🔒 Cuentas bloqueadas (3 intentos fallidos): solo la administradora desbloquea
 │   ├── mi-estilo.html     # 💜 Mi Estilo (clienta): catálogo deslizable + Mis favoritos
 │   ├── perfil.html        # 👤 Perfil público (?id=N)
 │   ├── img/               # Logos, portada e ilustraciones
@@ -134,6 +142,8 @@ glamio/
 │   ├── js/api.js          # fetch, cabecera, menú lateral, notificaciones, reportar, portadas… (funciones comunes)
 │   ├── js/catalogo.js     # Botones de categoría y tarjetas de curso (Cursos e Inicio)
 │   └── js/certificado-plantilla.js # Dónde va cada dato del certificado (certificado y editor del Panel)
+├── test/                  # Harness de pruebas (npm test): login, permisos, reseñas, calculadora…
+├── docs/LOGIN-SEGURO.md   # Cómo funciona el login, flujo a flujo
 ├── uploads/               # Fotos y vídeos subidos (imagenes/ y videos/), fuera de git
 └── privado/guias/         # PDF de las guías: NO es pública, fuera de git
 ```
@@ -148,7 +158,7 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
    ```bash
    npm install
    ```
-2. Copiar `.env.example` a `.env` y poner tu contraseña de PostgreSQL y un `SESSION_SECRET` propio.
+2. Copiar `.env.example` a `.env` y poner tu contraseña de PostgreSQL y los datos de Gmail para los correos (ver `docs/LOGIN-SEGURO.md`).
 3. Crear la base de datos y cargar las tablas y los datos de ejemplo:
    ```bash
    createdb -U postgres glamio
@@ -163,6 +173,8 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
    > - de antes del 18/11 (Mi Estilo y perfil público): `psql -U postgres -d glamio -f db/migracion-18-11.sql`
    > - certificado con plantilla (logo y posiciones): `psql -U postgres -d glamio -f db/migracion-logo-certificado.sql`
    > - ajuste de las portadas de los cursos: `psql -U postgres -d glamio -f db/migracion-portadas.sql`
+   > - login seguro (sesiones, recuperar contraseña, verificar email): `psql -U postgres -d glamio -f db/migracion-login.sql`
+   >   Las cuentas que ya existían quedan verificadas, y sus contraseñas pasan solas a Argon2id al entrar.
    >
    > Si falta alguna, el certificado o las portadas darán error. Se pueden ejecutar más de una vez sin problema.
    >
@@ -192,7 +204,15 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 | Clienta | `clienta@glamio.local` | `Demo2026!` |
 | Administradora | `admin@glamio.local` | *(la que se puso al crearla; no se guarda aquí)* |
 
-¿Se olvidó una contraseña? `node db/cambiar-contrasena.js email "NuevaContraseña"` (mínimo 8 caracteres).
+¿Se olvidó una contraseña? Desde **Entrar → ¿Olvidaste tu contraseña?** llega un enlace al correo. También se puede cambiar desde la terminal: `node db/cambiar-contrasena.js email "NuevaContraseña"` (mínimo 8 caracteres, con letras y números).
+
+## Pruebas automáticas (harness)
+
+```bash
+npm test              # con correos reales (si el .env tiene Gmail)
+npm run test:simulado # sin enviar correos, más rápido
+```
+Usan una base de datos aparte (`glamio_test`): **no tocan tus datos**.
 
 ---
 
@@ -226,7 +246,7 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 | Borrar un curso con inscritas pide una segunda confirmación | `DELETE /api/cursos/:id` responde 409 hasta `?confirmar=si` |
 | Pago simulado | `routes/cursos.js` y `routes/guias.js` (`pago_simulado: true`) |
 
-**Seguridad:** contraseñas con `bcrypt`, perfiles comprobados **en el servidor** (no solo ocultando botones), SQL parametrizado, `multer` con tipo y tamaño limitados, textos escapados con `esc()` antes de pintarlos, y RGPD (consentimiento para las fotos, borrar lo propio y visitas guardadas **sin IP**).
+**Seguridad:** contraseñas con **Argon2id** (parámetros de OWASP), sesiones con token aleatorio guardado como SHA-256, cookie `httpOnly` + `SameSite`, bloqueo de la cuenta al 3.er intento fallido (solo la administradora desbloquea), verificación de email, perfiles comprobados **en el servidor** (no solo ocultando botones), SQL parametrizado, `multer` con tipo y tamaño limitados, textos escapados con `esc()` antes de pintarlos, y RGPD (consentimiento para las fotos, borrar lo propio y visitas guardadas **sin IP**).
 
 ---
 

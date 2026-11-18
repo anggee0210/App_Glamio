@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuentas bloqueadas – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main>
+    <header class="al-titulo">
+      <p class="al-antetitulo">Seguridad</p>
+      <h1>Cuentas bloqueadas</h1>
+      <p class="al-sub">Una cuenta se bloquea sola al tercer intento fallido de contraseña, y solo tú puedes desbloquearla.</p>
+    </header>
+
+    <p class="mensaje oculto" id="msg"></p>
+
+    <section class="al-panel bq-panel">
+      <div class="bq-cabeza">
+        <h2>Pendientes de revisar</h2>
+        <span class="bq-contador" id="cuantas"></span>
+      </div>
+      <div id="lista"><p class="al-nada">Cargando…</p></div>
+    </section>
+
+    <p class="bq-nota">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3z"/><path d="M12 8v5M12 16.5v.5"/></svg>
+      Antes de desbloquear, comprueba que quien te lo pide es la dueña de la cuenta (por ejemplo, que te escriba desde su email).
+      Al desbloquearla le llega un correo de aviso.
+    </p>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    // Página de la administradora. La seguridad está en el servidor: /api/auth/bloqueadas solo responde a la administradora.
+    const ICONO_ABRIR = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>';
+    const ICONO_OK = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9.5"/></svg>';
+
+    function avisar(texto, esError = false) {
+      const p = document.getElementById('msg');
+      p.textContent = texto;
+      p.classList.toggle('error', esError);
+      p.classList.toggle('oculto', !texto);
+    }
+
+    // Iniciales: "Laura Gómez" → "LG"
+    function iniciales(nombre) {
+      const p = (nombre || '?').trim().split(/\s+/);
+      return esc((p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase());
+    }
+
+    async function cargar() {
+      const cuentas = await api('/api/auth/bloqueadas');
+      const lista = document.getElementById('lista');
+      document.getElementById('cuantas').textContent = cuentas.length || '';
+      if (!cuentas.length) {
+        lista.innerHTML = `<div class="bq-todo-bien">${ICONO_OK}
+          <h3>Todo en orden</h3><p>No hay ninguna cuenta bloqueada.</p></div>`;
+        return;
+      }
+      // Una tabla de verdad (filas y columnas): en el móvil, el CSS la convierte en tarjetas
+      lista.innerHTML = `<table class="bq-tabla">
+        <thead><tr><th>Usuaria</th><th>Perfil</th><th>Bloqueada</th><th><span class="visualmente-oculto">Acción</span></th></tr></thead>
+        <tbody>${cuentas.map(c => `
+          <tr>
+            <td><span class="bq-usuaria"><span class="al-avatar">${iniciales(c.nombre)}</span>
+              <span class="al-fila-texto"><strong>${esc(c.nombre)}</strong><small>${esc(c.email)}</small></span></span></td>
+            <td><span class="bq-perfil">${esc(NOMBRES_PERFIL[c.perfil] || c.perfil)}</span></td>
+            <td><span class="bq-cuando" title="${new Date(c.bloqueada_en).toLocaleString('es-ES')}">${haceCuanto(c.bloqueada_en)}</span></td>
+            <td class="bq-celda-accion"><button class="al-accion borde" data-id="${c.id}">${ICONO_ABRIR}Desbloquear</button></td>
+          </tr>`).join('')}</tbody></table>`;
+      lista.querySelectorAll('button[data-id]').forEach(b => b.onclick = async () => {
+        b.disabled = true;
+        try {
+          const res = await api(`/api/auth/bloqueadas/${b.dataset.id}/desbloquear`, { method: 'PUT' });
+          avisar(res.mensaje + '. Le hemos enviado un correo para avisarla.');
+          cargar();
+          actualizarCampana(); // actualiza el número del menú lateral
+        } catch (err) {
+          avisar(err.message, true);
+          b.disabled = false;
+        }
+      });
+    }
+
+    (async () => {
+      const usuaria = await pintarCabecera();
+      if (!usuaria || usuaria.perfil !== 'administradora') return location.replace('/index.html');
+      cargar().catch(err => avisar(err.message, true));
+    })();
+  </script>
+</body>
+</html>

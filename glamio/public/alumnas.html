@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alumnas – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main>
+    <header class="al-titulo">
+      <p class="al-antetitulo">Gestión de la academia</p>
+      <h1>Alumnas</h1>
+      <p class="al-sub">Cuenta, ficha personal y cursos de cada alumna. Solo tú puedes crear y modificar su ficha;
+        ella la ve en <em>Mi cuenta</em> sin poder cambiarla. Nunca sale en su perfil público.</p>
+    </header>
+    <p class="mensaje oculto" id="msg"></p>
+
+    <div class="al-zona">
+      <!-- Izquierda: buscador, filtro y lista -->
+      <aside class="al-lista" aria-label="Lista de alumnas">
+        <label class="al-buscar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="visualmente-oculto">Buscar</span>
+          <input type="search" id="buscar" placeholder="Nombre, email o documento" autocomplete="off">
+        </label>
+        <div class="al-filtro" role="group" aria-label="Filtrar">
+          <button data-filtro="todas" class="activo">Todas <span id="n-todas"></span></button>
+          <button data-filtro="con">Con ficha <span id="n-con"></span></button>
+          <button data-filtro="sin">Sin ficha <span id="n-sin"></span></button>
+        </div>
+        <div id="lista" class="al-filas"><p class="al-nada">Cargando…</p></div>
+      </aside>
+
+      <!-- Derecha: la alumna elegida -->
+      <section class="al-panel" id="detalle" aria-live="polite">
+        <div class="al-vacio">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          <p>Elige una alumna de la lista para ver su información.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/ficha-form.js"></script>
+  <script>
+    // Página de la administradora. La seguridad está en el servidor: /api/ficha/alumnas solo responde a la administradora.
+    let alumnas = [];       // la lista completa (el buscador y el filtro trabajan aquí, sin volver a pedirla)
+    let abierta = null;     // id de la alumna que se está viendo
+    let filtro = 'todas';   // todas | con | sin
+
+    // Iconos de línea (sin emojis, como en Comunidad y Cursos)
+    const ICONO = {
+      lapiz: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg>',
+      mas: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+      papelera: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'
+    };
+
+    function avisar(texto, esError = false) {
+      const p = document.getElementById('msg');
+      p.textContent = texto;
+      p.classList.toggle('error', esError);
+      p.classList.toggle('oculto', !texto);
+      if (texto) p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Botón que hay que pulsar DOS veces (como la papelera de la Comunidad): sin ventanas del navegador.
+    // Si no se pulsa la segunda vez en 4 segundos, vuelve a su texto.
+    function dosClics(boton, accion) {
+      const original = boton.innerHTML;
+      boton.onclick = async () => {
+        if (!boton.dataset.seguro) {
+          boton.dataset.seguro = '1';
+          boton.textContent = '¿Seguro? Pulsa otra vez';
+          setTimeout(() => { delete boton.dataset.seguro; boton.innerHTML = original; }, 4000);
+          return;
+        }
+        boton.disabled = true;
+        try { await accion(); } catch (err) { avisar(err.message, true); boton.disabled = false; }
+      };
+    }
+
+    // Iniciales: "Laura Gómez" → "LG"
+    function iniciales(nombre) {
+      const p = (nombre || '?').trim().split(/\s+/);
+      return esc((p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase());
+    }
+    function fecha(f) { return f ? new Date(f).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : ''; }
+    function fechaCortaDia(f) { return f ? new Date(f).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''; }
+
+    // ---------- Lista ----------
+    async function cargarLista() {
+      alumnas = await api('/api/ficha/alumnas');
+      pintarLista();
+    }
+
+    function pintarLista() {
+      const texto = document.getElementById('buscar').value.trim().toLowerCase();
+      const conFicha = alumnas.filter(a => a.tiene_ficha).length;
+      document.getElementById('n-todas').textContent = alumnas.length;
+      document.getElementById('n-con').textContent = conFicha;
+      document.getElementById('n-sin').textContent = alumnas.length - conFicha;
+
+      const vistas = alumnas.filter(a =>
+        (filtro === 'todas' || (filtro === 'con') === a.tiene_ficha) &&
+        (!texto || [a.nombre, a.email, a.nombre_completo, a.numero_documento].some(x => (x || '').toLowerCase().includes(texto))));
+      const lista = document.getElementById('lista');
+      if (!vistas.length) {
+        lista.innerHTML = `<p class="al-nada">${alumnas.length ? 'Ninguna alumna coincide.' : 'Todavía no hay alumnas.'}</p>`;
+        return;
+      }
+      lista.innerHTML = vistas.map(a => `
+        <button class="al-fila ${a.id === abierta ? 'activa' : ''}" data-id="${a.id}">
+          <span class="al-avatar">${iniciales(a.nombre_completo || a.nombre)}</span>
+          <span class="al-fila-texto">
+            <strong>${esc(a.nombre_completo || a.nombre)}</strong>
+            <small>${esc(a.email)}</small>
+          </span>
+          <span class="al-estado ${a.tiene_ficha ? 'si' : 'no'}" title="${a.tiene_ficha ? 'Ficha completa' : 'Sin ficha'}">
+            ${a.tiene_ficha ? 'Ficha' : 'Sin ficha'}</span>
+        </button>`).join('');
+      lista.querySelectorAll('.al-fila').forEach(b => b.onclick = () => abrirAlumna(Number(b.dataset.id)));
+    }
+
+    // ---------- Una alumna ----------
+    async function abrirAlumna(id) {
+      avisar('');
+      abierta = id;
+      history.replaceState(null, '', '?id=' + id); // así se puede recargar sin perderla
+      pintarLista();
+      try {
+        const datos = await api('/api/ficha/alumnas/' + id);
+        pintarDetalle(datos);
+        if (window.innerWidth < 980) document.getElementById('detalle').scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        document.getElementById('detalle').innerHTML = `<div class="al-vacio"><p>${esc(err.message)}</p></div>`;
+      }
+    }
+
+    // Una línea de "dato: valor" para la cuenta
+    const dato = (nombre, valor) => `<div><dt>${nombre}</dt><dd>${esc(valor)}</dd></div>`;
+
+    function pintarDetalle({ cuenta, ficha, cursos, actividad }) {
+      const terminados = cursos.filter(c => c.terminado).length;
+      const caja = document.getElementById('detalle');
+      caja.innerHTML = `
+        <div class="al-cabeza">
+          <span class="al-avatar grande">${iniciales(ficha ? ficha.nombre_completo : cuenta.nombre)}</span>
+          <div class="al-cabeza-texto">
+            <h2>${esc(ficha ? ficha.nombre_completo : cuenta.nombre)}</h2>
+            <p>${esc(cuenta.email)}</p>
+            <p class="al-marcas">
+              <span>Alumna desde ${fecha(cuenta.creada_en)}</span>
+              <span class="al-marca ${cuenta.email_verificado_en ? 'ok' : ''}">${cuenta.email_verificado_en ? 'Email confirmado' : 'Email sin confirmar'}</span>
+              ${cuenta.bloqueada_en ? '<span class="al-marca mal">Cuenta bloqueada</span>' : ''}
+            </p>
+          </div>
+        </div>
+
+        <dl class="al-cifras">
+          <div><dt>Cursos</dt><dd>${cursos.length}</dd></div>
+          <div><dt>Terminados</dt><dd>${terminados}</dd></div>
+          <div><dt>Dudas</dt><dd>${actividad.dudas}</dd></div>
+          <div><dt>Trabajos</dt><dd>${actividad.trabajos}</dd></div>
+          <div><dt>Reseñas</dt><dd>${actividad.resenas}</dd></div>
+          <div><dt>Guías</dt><dd>${actividad.guias}</dd></div>
+        </dl>
+
+        <section class="al-seccion" id="bloque-cuenta">
+          <div class="al-seccion-cabeza"><h3>Cuenta</h3>
+            <button class="al-accion" id="editar-cuenta">${ICONO.lapiz}Modificar</button></div>
+          <dl class="ficha-datos">
+            ${dato('Nombre en GLAMIO', cuenta.nombre)}
+            ${dato('Email de acceso', cuenta.email)}
+          </dl>
+        </section>
+
+        <section class="al-seccion" id="bloque-ficha">
+          <div class="al-seccion-cabeza"><h3>Ficha personal</h3>
+            <span class="al-acciones">
+              <button class="al-accion" id="editar-ficha">${ficha ? ICONO.lapiz + 'Modificar' : ICONO.mas + 'Rellenar'}</button>
+              ${ficha ? `<button class="al-accion peligro" id="borrar-ficha">${ICONO.papelera}Borrar ficha</button>` : ''}
+            </span></div>
+          ${ficha ? htmlVerFicha(ficha) + `<p class="al-nota">Actualizada el ${fecha(ficha.actualizada_en)}</p>`
+                  : '<p class="al-nada izq">Todavía no tiene ficha personal.</p>'}
+        </section>
+
+        <section class="al-seccion">
+          <div class="al-seccion-cabeza"><h3>Cursos</h3></div>
+          ${cursos.length ? `<div class="al-tabla-caja"><table class="al-tabla">
+            <thead><tr><th>Curso</th><th>Progreso</th><th>Estado</th><th>Inscrita</th><th class="num">Importe</th></tr></thead>
+            <tbody>${cursos.map(c => {
+              const pct = c.total_lecciones ? Math.round(c.lecciones_hechas / c.total_lecciones * 100) : 0;
+              return `<tr>
+                <td><a href="/curso.html?id=${c.id}">${esc(c.titulo)}</a></td>
+                <td><span class="al-progreso"><span class="barra-mini"><span style="width:${pct}%"></span></span>
+                  <small>${c.lecciones_hechas}/${c.total_lecciones}</small></span></td>
+                <td>${c.terminado ? `<span class="al-marca ok">Terminado</span>` : '<span class="al-marca">En curso</span>'}</td>
+                <td>${fechaCortaDia(c.inscrita_en)}</td>
+                <td class="num">${Number(c.importe) > 0 ? Number(c.importe).toFixed(2).replace('.', ',') + ' €' : 'Gratis'}</td>
+              </tr>`; }).join('')}</tbody></table></div>`
+            : '<p class="al-nada izq">No está inscrita en ningún curso.</p>'}
+        </section>
+
+        <section class="al-seccion al-peligro">
+          <div>
+            <h3>Borrar la cuenta</h3>
+            <p class="al-nota">Elimina a ${esc(cuenta.nombre)} y todo lo suyo. No se puede deshacer.</p>
+          </div>
+          <button class="al-accion peligro" id="borrar-cuenta">${ICONO.papelera}Borrar cuenta</button>
+          <div id="confirmar-borrado" class="al-confirmar"></div>
+        </section>`;
+
+      document.getElementById('editar-cuenta').onclick = () => formCuenta(cuenta);
+      document.getElementById('editar-ficha').onclick = () => formFicha(cuenta, ficha);
+      if (ficha) dosClics(document.getElementById('borrar-ficha'), async () => {
+        const r = await api(`/api/ficha/alumnas/${cuenta.id}/ficha`, { method: 'DELETE' });
+        await recargar(cuenta.id);
+        avisar(r.mensaje + '. Su cuenta y sus cursos siguen igual.');
+      });
+      document.getElementById('borrar-cuenta').onclick = () => pedirBorrarCuenta(cuenta);
+    }
+
+    // Vuelve a pedir la lista y la alumna (después de guardar o borrar)
+    async function recargar(id) {
+      await cargarLista();
+      if (id) await abrirAlumna(id);
+    }
+
+    // Botones de guardar/cancelar de los formularios
+    const botonesForm = (texto) => `<div class="al-form-botones"><button class="boton">${texto}</button>
+      <button type="button" class="boton secundario" id="cancelar">Cancelar</button></div>`;
+
+    // ---------- Modificar la cuenta ----------
+    function formCuenta(cuenta) {
+      const bloque = document.getElementById('bloque-cuenta');
+      bloque.innerHTML = `
+        <div class="al-seccion-cabeza"><h3>Modificar la cuenta</h3></div>
+        <form class="ficha-rejilla" id="form-cuenta">
+          <label>Nombre en GLAMIO <input name="nombre" value="${esc(cuenta.nombre)}" maxlength="100" required></label>
+          <label>Email de acceso <input type="email" name="email" value="${esc(cuenta.email)}" maxlength="150" required></label>
+          <p class="al-nota ficha-ancho">Si cambias el email, entrará con el nuevo y su misma contraseña. Avísala.</p>
+          <div class="ficha-ancho">${botonesForm('Guardar cambios')}</div>
+        </form>`;
+      document.getElementById('cancelar').onclick = () => abrirAlumna(cuenta.id);
+      document.getElementById('form-cuenta').onsubmit = async (e) => {
+        e.preventDefault();
+        const boton = e.target.querySelector('.boton');
+        boton.disabled = true;
+        try {
+          await api(`/api/ficha/alumnas/${cuenta.id}/cuenta`, { method: 'PUT', body: Object.fromEntries(new FormData(e.target)) });
+          await recargar(cuenta.id);
+          avisar('Cuenta modificada.');
+        } catch (err) { avisar(err.message, true); boton.disabled = false; }
+      };
+    }
+
+    // ---------- Modificar o rellenar la ficha ----------
+    function formFicha(cuenta, ficha) {
+      const bloque = document.getElementById('bloque-ficha');
+      bloque.innerHTML = `
+        <div class="al-seccion-cabeza"><h3>${ficha ? 'Modificar' : 'Rellenar'} la ficha personal</h3></div>
+        <form id="form-ficha">
+          ${htmlFormFicha(ficha)}
+          ${botonesForm('Guardar ficha')}
+        </form>`;
+      const form = document.getElementById('form-ficha');
+      activarFormFicha(form);
+      document.getElementById('cancelar').onclick = () => abrirAlumna(cuenta.id);
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const boton = form.querySelector('.boton');
+        boton.disabled = true;
+        try {
+          await api(`/api/ficha/alumnas/${cuenta.id}/ficha`, { method: 'PUT', body: leerFormFicha(form) });
+          await recargar(cuenta.id);
+          avisar('Ficha guardada.');
+        } catch (err) { avisar(err.message, true); boton.disabled = false; }
+      };
+    }
+
+    // ---------- Borrar la cuenta (dos pasos) ----------
+    // 1.º el servidor dice qué se perdería (409 sin ?confirmar=si); 2.º se confirma.
+    async function pedirBorrarCuenta(cuenta) {
+      const caja = document.getElementById('confirmar-borrado');
+      const boton = document.getElementById('borrar-cuenta');
+      try {
+        await api(`/api/ficha/alumnas/${cuenta.id}`, { method: 'DELETE' });
+      } catch (err) {
+        if (!err.datos || !err.datos.perderia) return avisar(err.message, true);
+        const p = err.datos.perderia;
+        boton.classList.add('oculto');
+        caja.innerHTML = `
+          <p><strong>Se borrará para siempre</strong> su cuenta, su ficha personal,
+            ${p.cursos} ${p.cursos === 1 ? 'curso' : 'cursos'} (${p.certificados} con certificado),
+            ${p.trabajos} trabajos, ${p.dudas} dudas y ${p.resenas} reseñas.</p>
+          <div class="al-form-botones"><button class="boton-peligro" id="si-borrar">Sí, borrar para siempre</button>
+            <button type="button" class="boton secundario" id="no-borrar">Cancelar</button></div>`;
+        caja.classList.add('abierta');
+        document.getElementById('no-borrar').onclick = () => { caja.innerHTML = ''; caja.classList.remove('abierta'); boton.classList.remove('oculto'); };
+        document.getElementById('si-borrar').onclick = async (e) => {
+          e.target.disabled = true;
+          try {
+            const r = await api(`/api/ficha/alumnas/${cuenta.id}?confirmar=si`, { method: 'DELETE' });
+            abierta = null;
+            history.replaceState(null, '', location.pathname);
+            document.getElementById('detalle').innerHTML =
+              '<div class="al-vacio"><p>Elige una alumna de la lista para ver su información.</p></div>';
+            await cargarLista();
+            avisar(r.mensaje + '.');
+          } catch (err2) { avisar(err2.message, true); e.target.disabled = false; }
+        };
+      }
+    }
+
+    (async () => {
+      const usuaria = await pintarCabecera();
+      if (!usuaria || usuaria.perfil !== 'administradora') return location.replace('/index.html');
+      try {
+        await Promise.all([cargarLista(), cargarPaises()]);
+        const id = Number(param('id'));
+        if (id) abrirAlumna(id);
+      } catch (err) { avisar(err.message, true); }
+      document.getElementById('buscar').oninput = pintarLista;
+      document.querySelectorAll('.al-filtro button').forEach(b => b.onclick = () => {
+        filtro = b.dataset.filtro;
+        document.querySelectorAll('.al-filtro button').forEach(x => x.classList.toggle('activo', x === b));
+        pintarLista();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmar email – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
+</head>
+<body class="cuerpo-acceso">
+  <!-- Se llega aquí desde el enlace del correo de bienvenida: verificar.html?token=... -->
+  <div class="pantalla-acceso">
+    <div class="acceso-foto acceso-logo"><img src="/img/logo-grande.jpg" alt="GLAMIO, Academia de belleza: formación que transforma tu talento en belleza profesional"></div>
+
+    <div class="acceso-panel">
+      <a href="/index.html" class="logo logo-grande" aria-label="GLAMIO, ir al inicio">
+        <img src="/img/logo-g.png" alt="">
+        <span class="logo-texto"><span class="logo-nombre">GLAMIO</span><span class="logo-lema">ACADEMIA DE BELLEZA</span></span>
+      </a>
+
+      <h1 class="acceso-titulo">Confirmar tu email</h1>
+      <p class="mensaje" id="msg">Comprobando el enlace…</p>
+
+      <a class="volver-inicio" href="/index.html">← Volver al inicio</a>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    (async () => {
+      const msg = document.getElementById('msg');
+      try {
+        // Al confirmar, el servidor inicia la sesión y la llevamos a su página de inicio
+        const res = await api('/api/auth/verificar-email', { method: 'POST', body: { token: param('token') } });
+        msg.textContent = '✅ ' + res.mensaje;
+        setTimeout(() => location.href = paginaInicio(res.usuaria), 1500);
+      } catch (err) {
+        msg.classList.add('error');
+        msg.innerHTML = `${esc(err.message)}. Puedes pedir otro correo desde <a href="/login.html"><strong>Entrar</strong></a>.`;
+      }
+    })();
+  </script>
+</body>
+</html>

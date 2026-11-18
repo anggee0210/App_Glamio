@@ -9,7 +9,11 @@ async function api(url, opciones = {}) {
   }
   const res = await fetch(url, opciones);
   const datos = await res.json();
-  if (!res.ok) throw new Error(datos.error || 'Algo salió mal');
+  if (!res.ok) {
+    const error = new Error(datos.error || 'Algo salió mal');
+    error.datos = datos; // por si la página necesita más información (p. ej. sin_verificar en el login)
+    throw error;
+  }
   return datos;
 }
 
@@ -61,6 +65,35 @@ function activarVerContrasena() {
   });
 }
 
+// Login siempre en blanco (petición del 18/11): que no salgan el email y la contraseña de la vez anterior.
+// Quien los rellena es el NAVEGADOR (los guardó), no GLAMIO. Para evitarlo:
+//  1. Los campos llevan readonly en el HTML: el navegador no rellena campos de solo lectura.
+//     Se quita al tocarlos (focus), así se puede escribir normal.
+//  2. Se vacían al abrir la página y al volver con "Atrás" (pageshow): el navegador
+//     a veces guarda la página entera en memoria con lo que estaba escrito.
+// Quita el readonly al tocar el campo. pointerdown llega ANTES que el foco: así en el móvil
+// sale el teclado al primer toque (con solo focus, a veces hay que tocar dos veces).
+function permitirEscribir(c) {
+  const quitar = () => c.removeAttribute('readonly');
+  c.addEventListener('pointerdown', quitar, { once: true });
+  c.addEventListener('focus', quitar, { once: true });
+}
+
+function camposEnBlanco(form) {
+  const campos = form.querySelectorAll('input[type=email], input[type=password], input[name=password]');
+  // Solo se vacían los que ella todavía no ha tocado (siguen readonly): nunca se borra lo que está escribiendo
+  const vaciar = () => campos.forEach(c => { if (c.readOnly) c.value = ''; });
+  campos.forEach(c => permitirEscribir(c));
+  vaciar();
+  setTimeout(vaciar, 300); // por si el navegador rellena un poco después de cargar
+  // Al volver con "Atrás", la página sale de la memoria del navegador: se vacía todo y vuelve el readonly
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    campos.forEach(c => { c.value = ''; c.setAttribute('readonly', ''); });
+    campos.forEach(c => permitirEscribir(c));
+  });
+}
+
 // Logo de la cabecera: sello redondo con la G dorada + "GLAMIO / ACADEMIA DE BELLEZA".
 // Se pinta aquí para no repetirlo en cada página HTML. También pone el icono de la pestaña.
 function pintarLogo(cabecera) {
@@ -84,6 +117,8 @@ function seccionActual() {
   if (p.endsWith('/avisos.html')) return 'avisos';
   if (p.endsWith('/admin.html')) return 'panel';
   if (p.endsWith('/reportes.html')) return 'reportes';
+  if (p.endsWith('/bloqueadas.html')) return 'bloqueadas';
+  if (p.endsWith('/alumnas.html')) return 'alumnas';
   if (p.endsWith('/mi-estilo.html')) return 'miestilo';
   if (p.endsWith('/perfil.html')) return 'perfil'; // ninguna opción del menú se resalta
   return 'inicio';
@@ -106,7 +141,7 @@ function htmlDerecha(usuaria) {
         <span class="inicial">${esc(usuaria.nombre.trim().charAt(0).toUpperCase())}</span>
         <span class="nombre-perfil">${esc(usuaria.nombre)}<small>${NOMBRES_PERFIL[usuaria.perfil] || ''}</small></span> ▾
       </button>
-      <span class="menu-perfil">${certificados}<a href="#" id="salir">Salir (${esc(usuaria.nombre)})</a></span>
+      <span class="menu-perfil">${certificados}<a href="/cuenta.html">⚙️ Mi cuenta</a><a href="#" id="salir">Salir (${esc(usuaria.nombre)})</a></span>
     </span></span>`;
 }
 
@@ -140,21 +175,51 @@ function pintarPie(usuaria) {
 
 // ---------- Menú lateral de la administradora (diseños "Panel de Gestión", "Avisos" y "Reportes") ----------
 // Sale en el Panel y en Reportes (Notificaciones ya está en el menú de arriba). Las opciones del Panel abren su pestaña.
+// Rediseño 18/11: sin emojis, cada opción con su icono de línea (ICONOS_LATERAL) y agrupadas por "grupo".
 const OPCIONES_LATERAL = [
-  { clave: 'resumen', href: '/admin.html', texto: '🏠 Panel principal' },
-  { clave: 'cursos', href: '/admin.html?pestana=cursos', texto: '📚 Mis cursos' },
-  { clave: 'curso', href: '/admin.html?pestana=curso', texto: '➕ Nuevo curso' },
-  { clave: 'leccion', href: '/admin.html?pestana=leccion', texto: '🎬 Nueva lección' },
-  { clave: 'material', href: '/admin.html?pestana=material', texto: '🧴 Materiales' },
-  { clave: 'certificado', href: '/admin.html?pestana=certificado', texto: '🎓 Certificado' },
-  { clave: 'guias', href: '/admin.html?pestana=guias', texto: '📖 Guías teóricas' },
-  { clave: 'reportes', href: '/reportes.html', texto: '⚑ Reportes', extra: ' id="enlace-reportes" title="Reportes pendientes"', contador: '<span class="contador oculto"></span>' },
+  { grupo: 'Academia', clave: 'resumen', href: '/admin.html', texto: 'Panel principal', icono: 'resumen' },
+  { grupo: 'Academia', clave: 'cursos', href: '/admin.html?pestana=cursos', texto: 'Mis cursos', icono: 'cursos' },
+  { grupo: 'Academia', clave: 'curso', href: '/admin.html?pestana=curso', texto: 'Nuevo curso', icono: 'curso' },
+  { grupo: 'Academia', clave: 'leccion', href: '/admin.html?pestana=leccion', texto: 'Nueva lección', icono: 'leccion' },
+  { grupo: 'Academia', clave: 'material', href: '/admin.html?pestana=material', texto: 'Materiales', icono: 'material' },
+  { grupo: 'Academia', clave: 'certificado', href: '/admin.html?pestana=certificado', texto: 'Certificado', icono: 'certificado' },
+  { grupo: 'Academia', clave: 'guias', href: '/admin.html?pestana=guias', texto: 'Guías teóricas', icono: 'guias' },
+  { grupo: 'Comunidad', clave: 'reportes', href: '/reportes.html', texto: 'Reportes', icono: 'reportes', extra: ' id="enlace-reportes" title="Reportes pendientes"', contador: '<span class="contador oculto"></span>' },
+  { grupo: 'Personas', clave: 'alumnas', href: '/alumnas.html', texto: 'Alumnas', icono: 'alumnas' },
+  { grupo: 'Personas', clave: 'bloqueadas', href: '/bloqueadas.html', texto: 'Cuentas bloqueadas', icono: 'bloqueadas', extra: ' id="enlace-bloqueadas" title="Cuentas bloqueadas por 3 intentos fallidos"', contador: '<span class="contador oculto"></span>' },
 ];
+
+// Iconos de línea del menú lateral (trazos SVG de 24×24; el color lo pone el CSS con currentColor)
+const ICONOS_LATERAL = {
+  resumen: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  cursos: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21a2 2 0 0 1 2-2h13"/>',
+  curso: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
+  leccion: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',
+  material: '<path d="M9 3h6M10 3v5L5 18a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3L14 8V3"/><path d="M7.5 14h9"/>',
+  certificado: '<circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/>',
+  guias: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  reportes: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  alumnas: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13.8c2 .9 3.5 3 3.5 5.7"/>',
+  bloqueadas: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'
+};
+
+// El HTML del menú: un título por grupo y, debajo, sus opciones
+function htmlLateral() {
+  let grupo = '';
+  return OPCIONES_LATERAL.map(o => {
+    const titulo = o.grupo !== grupo ? `<p class="lateral-grupo">${o.grupo}</p>` : '';
+    grupo = o.grupo;
+    return `${titulo}<a href="${o.href}" data-clave="${o.clave}"${o.extra || ''}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS_LATERAL[o.icono]}</svg><span>${o.texto}</span>${o.contador || ''}</a>`;
+  }).join('');
+}
 
 // ¿Qué opción del lateral está abierta? (en el Panel, la pestaña de la URL)
 function claveLateral() {
   const p = location.pathname;
   if (p.endsWith('/reportes.html')) return 'reportes';
+  if (p.endsWith('/bloqueadas.html')) return 'bloqueadas';
+  if (p.endsWith('/alumnas.html')) return 'alumnas';
   return param('pestana') || 'resumen';
 }
 
@@ -170,7 +235,8 @@ function pintarLateral() {
   const envoltorio = document.createElement('div');
   envoltorio.className = 'con-lateral';
   envoltorio.innerHTML = `<aside class="lateral" aria-label="Gestión de la academia"><nav>
-    ${OPCIONES_LATERAL.map(o => `<a href="${o.href}" data-clave="${o.clave}"${o.extra || ''}>${o.texto}${o.contador || ''}</a>`).join('')}
+    <div class="lateral-marca"><small>Panel de gestión</small><strong>Administradora</strong></div>
+    ${htmlLateral()}
   </nav></aside>`;
   main.before(envoltorio);
   envoltorio.appendChild(main);
@@ -188,9 +254,9 @@ function pintarLateral() {
 async function pintarCabecera() {
   const usuaria = await api('/api/auth/yo');
 
-  // La clienta solo puede estar en el muro, en Mi Estilo y en los perfiles públicos (fase 2):
+  // La clienta solo puede estar en el muro, en Mi Estilo, en los perfiles públicos (fase 2) y en Mi cuenta:
   // si abre otra página, la llevamos al muro. (Es para que la app se vea bien; la seguridad de verdad está en el servidor.)
-  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo|perfil)\.html$/.test(location.pathname)) {
+  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo|perfil|cuenta)\.html$/.test(location.pathname)) {
     location.replace('/muro.html');
     return usuaria;
   }
@@ -233,7 +299,7 @@ async function pintarCabecera() {
   activarSalir();
   activarPerfil();
   // La administradora tiene además el menú lateral en sus páginas de gestión
-  if (usuaria && usuaria.perfil === 'administradora' && /\/(admin|reportes)\.html$/.test(location.pathname)) pintarLateral();
+  if (usuaria && usuaria.perfil === 'administradora' && /\/(admin|reportes|bloqueadas|alumnas)\.html$/.test(location.pathname)) pintarLateral();
   if (usuaria) {
     usuariaCampana = usuaria;
     actualizarCampana();
@@ -276,6 +342,9 @@ async function actualizarCampana() {
     const n = dudas.length + resenas.length + respuestas.length;
     contadores.forEach(c => ponerNumero(c, n));
     ponerNumero(document.querySelector('#enlace-reportes .contador'), reportes.length);
+    // Cuentas bloqueadas (solo la administradora tiene ese enlace en el menú lateral)
+    const enlaceBloqueadas = document.querySelector('#enlace-bloqueadas .contador');
+    if (enlaceBloqueadas) ponerNumero(enlaceBloqueadas, (await api('/api/auth/bloqueadas')).length);
     // En el móvil el menú está cerrado: un puntito rojo en "☰ Menú" avisa de que hay algo
     const punto = document.querySelector('#boton-menu .punto');
     if (punto) punto.classList.toggle('oculto', n + reportes.length === 0);

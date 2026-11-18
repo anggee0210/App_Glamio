@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi cuenta – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main style="max-width:720px">
+    <h1>⚙️ Mi cuenta</h1>
+
+    <!-- Mis datos: la ficha personal (solo la alumna). La ven ella y la administradora, nunca el perfil público. -->
+    <section class="tarjeta oculto" id="mis-datos" style="margin-bottom:20px">
+      <h2>Mis datos</h2>
+      <p class="ayuda" style="margin-bottom:12px">Son privados: solo los ves tú y la administradora de la academia.
+        Si algún dato no es correcto, pídele a la administradora que lo cambie.</p>
+      <div id="caja-datos"><p>Cargando…</p></div>
+      <p class="mensaje oculto" id="msgDatos"></p>
+    </section>
+
+    <!-- Cambio de contraseña: pide la actual aunque haya sesión -->
+    <section class="tarjeta" style="margin-bottom:20px">
+      <h2>Cambiar contraseña</h2>
+      <form id="formPassword">
+        <label>Contraseña actual <input type="password" name="actual" autocomplete="current-password" required></label>
+        <label>Contraseña nueva <input type="password" name="nueva" autocomplete="new-password" minlength="8" required>
+          <small>Mínimo 8 caracteres, con letras y números.</small></label>
+        <p class="mensaje oculto" id="msgPassword"></p>
+        <button class="boton">Cambiar contraseña</button>
+      </form>
+    </section>
+
+    <!-- Sesiones abiertas: dónde está iniciada la cuenta, y cerrarlas -->
+    <section class="tarjeta">
+      <h2>Tus sesiones abiertas</h2>
+      <p class="avisos-sub">Si no reconoces algún dispositivo, ciérralo y cambia tu contraseña.</p>
+      <div id="sesiones"><p>Cargando…</p></div>
+      <button class="boton secundario" id="cerrarTodas" style="margin-top:14px">Cerrar todas las demás sesiones</button>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/ficha-form.js"></script>
+  <script>
+    // ---------- Mis datos (solo alumna, SOLO PARA LEER) ----------
+    // Decisión del 18/11: la ficha la crea y la modifica solo la administradora (Panel → Alumnas).
+    // La alumna la ve aquí sin formulario. (El servidor también se lo impide: PUT /api/ficha responde 403.)
+    async function cargarMisDatos() {
+      const ficha = await api('/api/ficha');
+      document.getElementById('mis-datos').classList.remove('oculto');
+      document.getElementById('caja-datos').innerHTML = ficha
+        ? htmlVerFicha(ficha)
+        : '<p class="mensaje">Todavía no hay datos guardados. La administradora de la academia los rellenará.</p>';
+    }
+
+    function mostrar(id, texto, esError) {
+      const p = document.getElementById(id);
+      p.textContent = texto;
+      p.classList.toggle('error', !!esError);
+      p.classList.remove('oculto');
+    }
+
+    // Nombre sencillo del navegador a partir del "user agent"
+    function nombreNavegador(ua = '') {
+      const sistema = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android'
+        : /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Mac OS/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : '';
+      const nav = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox'
+        : /Safari\//.test(ua) ? 'Safari' : 'Navegador';
+      return sistema ? `${nav} en ${sistema}` : nav;
+    }
+
+    async function cargarSesiones() {
+      const sesiones = await api('/api/auth/sesiones');
+      document.getElementById('sesiones').innerHTML = sesiones.map(s => `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--borde)">
+          <div>
+            <strong>${s.actual ? '📍 Este dispositivo' : '💻 ' + esc(nombreNavegador(s.navegador))}</strong><br>
+            <small>${s.actual ? esc(nombreNavegador(s.navegador)) + ' · ' : ''}desde ${fechaCorta(s.creada_en)}</small>
+          </div>
+          ${s.actual ? '' : `<button class="boton secundario" data-id="${s.id}">Cerrar</button>`}
+        </div>`).join('');
+      document.getElementById('cerrarTodas').classList.toggle('oculto', sesiones.length < 2);
+      document.querySelectorAll('#sesiones button').forEach(b => b.onclick = async () => {
+        await api('/api/auth/sesiones/' + b.dataset.id, { method: 'DELETE' });
+        cargarSesiones();
+      });
+    }
+
+    (async () => {
+      const usuaria = await pintarCabecera();
+      if (!usuaria) return location.replace('/login.html');
+      cargarSesiones();
+      if (usuaria.perfil === 'alumna') cargarMisDatos().catch(err => mostrar('msgDatos', err.message, true));
+    })();
+
+    document.getElementById('formPassword').onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await api('/api/auth/cambiar-password', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
+        e.target.reset();
+        mostrar('msgPassword', '✅ Contraseña cambiada. Hemos cerrado tu sesión en los demás dispositivos y te hemos enviado un aviso por correo.');
+        cargarSesiones();
+      } catch (err) {
+        mostrar('msgPassword', err.message, true);
+        // Al 3.er fallo de la contraseña actual, la cuenta se bloquea y se cierra la sesión
+        if (err.datos && err.datos.bloqueada) setTimeout(() => location.href = '/login.html', 4000);
+      }
+    };
+
+    document.getElementById('cerrarTodas').onclick = async () => {
+      await api('/api/auth/cerrar-todas', { method: 'POST' });
+      cargarSesiones();
+    };
+  </script>
+</body>
+</html>
