@@ -221,6 +221,21 @@ En la base de la demo existen estas cuentas (solo en local, no son reales):
 
 ¿Se olvidó una contraseña? Desde **Entrar → ¿Olvidaste tu contraseña?** llega un enlace al correo. También se puede cambiar desde la terminal: `node db/cambiar-contrasena.js email "NuevaContraseña"` (mínimo 8 caracteres, con letras y números).
 
+## Copia de seguridad
+
+```bash
+npm run copia
+```
+Guarda en **`Documentos\GLAMIO-copias\glamio-AAAA-MM-DD_HH-MM\`** la base de datos completa (`glamio.sql`) y las carpetas `uploads` (fotos y vídeos) y `privado` (PDF de las guías). Se puede cambiar la carpeta con `COPIAS_DIR` en el `.env`.
+
+> ⚠️ La copia lleva **datos personales** (fichas de las alumnas) y contraseñas cifradas: se guarda **fuera del proyecto** para que nunca se suba a GitHub. Conviene guardar también la última en un USB.
+
+**Recuperar una copia** (deja la base **igual que el día de la copia**: lo que se hizo después se pierde):
+1. Parar el servidor.
+2. Cargar la base: `psql -U postgres -d glamio -f "RUTA\DE\LA\COPIA\glamio.sql"`
+3. Copiar de vuelta las carpetas `uploads` y `privado` de la copia a la carpeta del proyecto.
+4. Arrancar el servidor.
+
 ## Pruebas automáticas (harness)
 
 ```bash

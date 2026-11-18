@@ -1243,6 +1243,8 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 .al-tabla a:hover { color: var(--principal); text-decoration: underline; }
 .al-progreso { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .al-progreso small { color: var(--gris); }
+/* Si el panel es estrecho (PC normal, con el menú lateral), la fecha de inscripción sobra y se corta: se oculta */
+@media (max-width: 1700px) { .al-tabla th:nth-child(4), .al-tabla td:nth-child(4) { display: none; } }
 .barra-mini { display: inline-block; width: 80px; height: 6px; border-radius: 99px; background: var(--principal-claro); overflow: hidden; }
 .barra-mini span { display: block; height: 100%; background: var(--principal); border-radius: 99px; }
 
