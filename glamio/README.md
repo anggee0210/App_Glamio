@@ -102,6 +102,7 @@ glamio/
 │   ├── migracion-portadas.sql # Portadas: ajuste Rellenar/Completa y posición de la foto (no borra nada)
 │   ├── migracion-login.sql # Login seguro: sesiones, tokens y email verificado (no borra nada)
 │   ├── migracion-ficha-alumna.sql # Ficha personal: países con su documento y fichas_alumnas (no borra nada)
+│   ├── migracion-mas-paises.sql   # 31 países más para la ficha (48 en total; no borra nada)
 │   ├── seed.sql           # Categorías, academia y cursos de ejemplo
 │   ├── crear-admin.js     # Crea la cuenta de la administradora
 │   ├── cambiar-contrasena.js # Cambia la contraseña de una cuenta (si se olvida)
@@ -190,6 +191,7 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
    > - login seguro (sesiones, recuperar contraseña, verificar email): `psql -U postgres -d glamio -f db/migracion-login.sql`
    >   Las cuentas que ya existían quedan verificadas, y sus contraseñas pasan solas a Argon2id al entrar.
    > - ficha personal de la alumna (países y documentos): `psql -U postgres -d glamio -f db/migracion-ficha-alumna.sql`
+   > - más países para la ficha (después de la anterior): `psql -U postgres -d glamio -f db/migracion-mas-paises.sql`
    >
    > Si falta alguna, la parte que la usa (certificado, portadas, login o ficha) dará error. Se pueden ejecutar más de una vez sin problema.
    >
