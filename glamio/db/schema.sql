@@ -97,6 +97,9 @@ CREATE TABLE lecciones (
   curso_id     INT NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
   titulo       VARCHAR(150) NOT NULL,
   orden        INT NOT NULL DEFAULT 1,
+    tipo         VARCHAR(10) NOT NULL DEFAULT 'video'
+               CHECK (tipo IN ('teoria', 'video')), -- guía teórica o video
+  gratis       BOOLEAN NOT NULL DEFAULT FALSE, -- TRUE = se ve sin pagar (muestra)
   video_url    VARCHAR(255), -- enlace YouTube (videos largos)
   video_local  VARCHAR(255), -- archivo subido con multer (videos cortos)
   contenido    TEXT
