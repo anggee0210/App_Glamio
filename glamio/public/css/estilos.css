@@ -1415,3 +1415,41 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 .vista-guia iframe { display: block; width: 100%; height: 75vh; min-height: 420px; border: 1px solid var(--borde); border-radius: 14px; background: #f4eef6; }
 .vista-guia .ayuda { margin: 8px 0 0; }
 @media (max-width: 640px) { .vista-guia iframe { height: 65vh; min-height: 320px; } }
+
+/* =====================================================================
+   PANEL · Alumnas con letras un poco más grandes (pedido 24/11)
+   Solo la página Alumnas (.al-*) y la ficha dentro de su panel.
+   ===================================================================== */
+.al-antetitulo { font-size: .9rem; }
+.al-titulo h1 { font-size: 2.9rem; }
+.al-sub { font-size: 1.1rem; }
+.al-buscar input { font-size: 1.1rem; }
+.al-filtro button { font-size: .96rem; }
+.al-fila-texto strong { font-size: 1.2rem; }
+.al-fila-texto small { font-size: 1rem; }
+.al-estado { font-size: .92rem; }
+.al-nada { font-size: 1.02rem; }
+.al-nada.izq { font-size: 1.12rem; }
+.al-cabeza h2 { font-size: 2.6rem; }
+.al-cabeza p { font-size: 1.2rem; }
+.al-marcas { font-size: .95rem !important; }
+.al-marca { font-size: .92rem; }
+.al-cifras dt { font-size: .84rem; }
+.al-cifras dd { font-size: 2.3rem; }
+.al-seccion h3 { font-size: .98rem; }
+.al-accion { font-size: 1.05rem; }
+.al-accion svg { width: 18px; height: 18px; }
+.al-nota { font-size: .95rem; }
+.al-tabla { font-size: 1.14rem; }
+.al-tabla th { font-size: .8rem; }
+.al-confirmar p { font-size: 1.04rem; }
+.al-panel .ficha-datos dt { font-size: .9rem; }
+.al-panel .ficha-datos dd { font-size: 1.34rem; }
+.al-panel .ficha-rejilla label { font-size: .98rem; }
+.al-panel .ficha-rejilla input, .al-panel .ficha-rejilla select { font-size: 1.1rem; }
+.al-panel .ficha-nie legend { font-size: .98rem; }
+.al-panel .ficha-radio { font-size: 1.06rem !important; }
+@media (max-width: 640px) {
+  .al-titulo h1 { font-size: 2.2rem; }
+  .al-cabeza h2 { font-size: 1.6rem; }
+}
