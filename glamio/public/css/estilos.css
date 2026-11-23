@@ -221,7 +221,7 @@ body { overflow-wrap: anywhere; }
 
 /* Pantallas medianas: el círculo del perfil sin el nombre al lado, para que quepa el menú */
 @media (max-width: 1500px) { .nombre-perfil { display: none; } }
-@media (max-width: 1180px) {
+@media (max-width: 1340px) {
   /* Cabecera en UNA línea: el logo a la izquierda y "☰ Menú" a la derecha */
   .cabecera { flex-wrap: wrap; padding: 10px 16px; gap: 8px; justify-content: space-between; }
   .boton-menu { display: inline-flex; }
@@ -1321,3 +1321,97 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .bq-tabla td:first-child { grid-column: 1 / -1; }
   .bq-celda-accion { width: auto; }
 }
+
+/* =====================================================================
+   CURSOS · tarjetas coordinadas (todas iguales, foto y textos alineados)
+   ===================================================================== */
+/* auto-fill deja columnas vacías: si hay pocas tarjetas no se estiran */
+.catalogo-rejilla { grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 26px; }
+.catalogo-carta { height: 100%; }
+/* Misma proporción de foto en todas; un fondo suave por si la foto es «Completa» */
+.catalogo-foto { aspect-ratio: 4 / 3; flex: none; background: #f6eef8; }
+/* El título siempre ocupa 2 líneas (si es más largo, termina en «…»): así las líneas de datos, precio y «Ver curso» quedan a la misma altura */
+.catalogo-nombre { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; font-size: 1.38rem; }
+.catalogo-cuerpo { gap: 6px; padding: 18px 20px 20px; }
+.catalogo-pie { padding-top: 14px; }
+/* En la portada «Completa» el difuminado de detrás es más suave y limpio */
+.catalogo-foto .portada-completa::before { filter: blur(22px) brightness(1.02) saturate(.9); opacity: .55; }
+@media (max-width: 640px) {
+  .catalogo-rejilla { grid-template-columns: 1fr; }
+  .catalogo-nombre { min-height: 0; }
+}
+
+/* =====================================================================
+   PANEL · Mis cursos con letras más grandes (solo esta lista)
+   ===================================================================== */
+#lista-cursos { font-size: 1.18rem; line-height: 1.55; }
+#lista-cursos h3 { font-size: 1.7rem; }
+#lista-cursos strong { font-size: 1.22rem; }
+/* El nombre del curso, más grande y con la letra de los títulos */
+#lista-cursos .tarjeta > .fila:first-child strong { font-family: var(--serif); font-size: 1.6rem; color: var(--principal-oscuro); }
+#lista-cursos .etiqueta, #lista-cursos .precio { font-size: 1.05rem; }
+#lista-cursos .ayuda { font-size: 1rem; }
+#lista-cursos .chip { font-size: 1.05rem; padding: 9px 16px; }
+#lista-cursos .fila-lista { padding: 6px 0; }
+[data-pestana="cursos"] > .ayuda { font-size: 1.1rem; }
+@media (max-width: 640px) {
+  #lista-cursos { font-size: 1.05rem; }
+  #lista-cursos h3 { font-size: 1.4rem; }
+  #lista-cursos .chip { font-size: .98rem; padding: 8px 13px; }
+}
+
+/* =====================================================================
+   PANEL · todas las pestañas con letras más grandes (igual que Mis cursos)
+   ===================================================================== */
+.pestana-panel { font-size: 1.18rem; line-height: 1.55; }
+.pestana-panel h2 { font-size: 2rem; }
+.pestana-panel h3 { font-size: 1.5rem; }
+/* Panel principal: textos pequeños de las cifras y las gráficas un poco más grandes */
+.pestana-panel .cifra-panel strong { font-size: 2.1rem; }
+.pestana-panel .grafica figcaption strong { font-size: 1.3rem; }
+.pestana-panel .barra-valor { font-size: 1rem; }
+.pestana-panel .barra-mes-nombre { font-size: .95rem; }
+.pestana-panel .tabla { font-size: 1.08rem; }
+.pestana-panel .chip { font-size: 1.05rem; }
+.pestana-panel input:not([type=radio]):not([type=file]):not([type=checkbox]):not([type=color]):not([type=range]),
+.pestana-panel textarea,
+.pestana-panel select { font-size: 1.15rem; padding: 14px 16px; }
+.pestana-panel input[type=file] { font-size: 1.05rem; }
+.pestana-panel label, .pestana-panel .ajuste-foto > span { font-size: 1.15rem; }
+.pestana-panel .ajuste-foto label span { font-size: 1.05rem; padding: 8px 16px; }
+.pestana-panel .ayuda { font-size: 1rem; }
+.pestana-panel .boton { font-size: 1.15rem; padding: 13px 26px; }
+@media (max-width: 640px) {
+  .pestana-panel { font-size: 1.05rem; }
+  .pestana-panel h2 { font-size: 1.6rem; }
+}
+
+/* =====================================================================
+   BARRA DE ARRIBA y MENÚ LATERAL del Panel con letras más grandes
+   ===================================================================== */
+.menu { font-size: 1.2rem; }
+.menu > a { padding: 9px 15px; }
+.lateral a { font-size: 1.25rem; padding: 14px 16px; }
+.lateral a svg { width: 26px; height: 26px; }
+.lateral-grupo { font-size: .86rem; }
+.lateral-marca small { font-size: .84rem; }
+.lateral-marca strong { font-size: 1.75rem; }
+.con-lateral { grid-template-columns: 20rem minmax(0, 1fr); }
+@media (max-width: 1000px) {
+  .con-lateral { grid-template-columns: minmax(0, 1fr); }
+  .lateral a { font-size: 1.05rem; padding: 10px 14px; }
+  .lateral a svg { width: 21px; height: 21px; }
+}
+@media (max-width: 1340px) {
+  .menu a { font-size: 1.2rem; }
+}
+/* El logo nunca se aplasta: si no cabe todo, sale el botón ☰ (ahora desde 1340px, porque las opciones son más grandes) */
+.cabecera .logo { flex-shrink: 0; }
+
+/* =====================================================================
+   PANEL · Guías publicadas: vista previa del PDF dentro de la tarjeta
+   ===================================================================== */
+.vista-guia { margin: 6px 0 16px; }
+.vista-guia iframe { display: block; width: 100%; height: 75vh; min-height: 420px; border: 1px solid var(--borde); border-radius: 14px; background: #f4eef6; }
+.vista-guia .ayuda { margin: 8px 0 0; }
+@media (max-width: 640px) { .vista-guia iframe { height: 65vh; min-height: 320px; } }

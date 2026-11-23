@@ -83,6 +83,7 @@ CREATE TABLE cursos (
   titulo        VARCHAR(150) NOT NULL,
   descripcion   TEXT,
   precio        NUMERIC(8,2) NOT NULL DEFAULT 0, -- 0 = gratis
+  precio_teoria NUMERIC(8,2) NOT NULL DEFAULT 0, -- precio solo guías (0 = gratis)
   imagen        VARCHAR(255),
   imagen_ajuste VARCHAR(10) NOT NULL DEFAULT 'rellenar'   -- portada: 'rellenar' (recorta) o 'completa' (entera)
                 CHECK (imagen_ajuste IN ('rellenar', 'completa')),

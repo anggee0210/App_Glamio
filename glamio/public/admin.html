@@ -55,7 +55,7 @@
         </div>
         <label>Título <input name="titulo" maxlength="150" required placeholder="Ej: Manual teórico del semipermanente"></label>
         <label>Descripción <textarea name="descripcion" rows="2" placeholder="Qué contiene la guía"></textarea></label>
-        <label>Archivo PDF (máx. 20 MB) <input type="file" name="archivo" accept="application/pdf" required></label>
+        <label>Archivo PDF (máx. 100 MB) <input type="file" name="archivo" accept="application/pdf" required></label>
         <p class="mensaje oculto"></p>
         <button class="boton" style="align-self:flex-start">Subir guía</button>
       </form>
@@ -918,10 +918,12 @@
                 <span>📖 <strong>${esc(guia.titulo)}</strong> · ${Number(guia.precio) ? euros(guia.precio) : 'Gratis'}
                   <span class="ayuda" style="display:inline">· ${guia.ventas} ${guia.ventas === 1 ? 'compra' : 'compras'}</span></span>
                 <span class="fila">
-                  <a class="chip" href="/api/guias/${guia.id}/descargar">⬇ Ver PDF</a>
+                  <button class="chip" onclick="verGuia(this, ${guia.id})">👁 Vista previa</button>
+                  <a class="chip" href="/api/guias/${guia.id}/descargar">⬇ Descargar</a>
                   <button class="chip peligro" onclick="borrarGuia(this, ${guia.id})">🗑 Borrar</button>
                 </span>
-              </div>`).join('')}
+              </div>
+              <div class="vista-guia oculto" id="vista-guia-${guia.id}"></div>`).join('')}
           </div>`).join('') || '<p class="ayuda">Todavía no hay guías. Sube la primera con el formulario de arriba.</p>';
       } catch (err) {
         caja.innerHTML = `<p class="mensaje error">${esc(err.message)}</p>`;
@@ -942,6 +944,19 @@
       } catch (err) { avisar(formGuia, err.message, true); }
       boton.disabled = false;
     };
+
+    // Vista previa: abre (o cierra) el PDF dentro de la tarjeta, con el visor del navegador.
+    // El <iframe> se crea solo al abrirla, para no cargar todos los PDF al entrar en la pestaña.
+    function verGuia(boton, id) {
+      const caja = document.getElementById('vista-guia-' + id);
+      const abrir = caja.classList.contains('oculto');
+      caja.classList.toggle('oculto', !abrir);
+      boton.textContent = abrir ? '✕ Cerrar vista previa' : '👁 Vista previa';
+      if (abrir && !caja.firstChild) {
+        caja.innerHTML = `<iframe src="/api/guias/${id}/descargar?ver=1#view=FitH" title="Vista previa de la guía"></iframe>
+          <p class="ayuda"><a href="/api/guias/${id}/descargar?ver=1" target="_blank" rel="noopener">Abrir en una pestaña nueva ↗</a></p>`;
+      }
+    }
 
     async function borrarGuia(boton, id) {
       if (!confirm('¿Borrar esta guía? Quien la compró ya no podrá descargarla. No se puede deshacer.')) return;

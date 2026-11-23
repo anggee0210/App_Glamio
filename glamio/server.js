@@ -61,7 +61,12 @@ app.use((err, req, res, next) => {
   // Errores de multer (archivo demasiado grande, etc.): son de los datos enviados → 400
   if (err.name === 'MulterError') {
     err.status = 400;
-    if (err.code === 'LIMIT_FILE_SIZE') err.message = 'El archivo es demasiado grande (máximo 50 MB). Los vídeos largos, por YouTube.';
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      // Las guías PDF tienen su propio límite (100 MB); el resto de subidas, 50 MB
+      err.message = req.originalUrl.startsWith('/api/guias')
+        ? 'La guía es demasiado grande (máximo 100 MB).'
+        : 'El archivo es demasiado grande (máximo 50 MB). Los vídeos largos, por YouTube.';
+    }
   }
   const estado = err.status || 500;
   if (estado === 500) console.error(err); // solo apuntamos los fallos de verdad del servidor

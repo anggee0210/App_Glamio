@@ -13,13 +13,14 @@ const router = express.Router();
 const CARPETA = path.join(__dirname, '..', 'privado', 'guias');
 fs.mkdirSync(CARPETA, { recursive: true });
 
-// multer solo para PDF de hasta 20 MB
+// multer solo para PDF de hasta 100 MB (las guías con muchas fotos pesan bastante)
+const MAX_MB_GUIA = 100;
 const subirPdf = multer({
   storage: multer.diskStorage({
     destination: CARPETA,
     filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1e6) + '.pdf')
   }),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: MAX_MB_GUIA * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') return cb(null, true);
     const error = new Error('La guía tiene que ser un PDF');
@@ -106,14 +107,26 @@ router.get('/:id/descargar', requiereLogin, async (req, res, next) => {
     if (!esId(req.params.id)) return res.status(404).json({ error: 'Guía no encontrada' });
     const guia = (await pool.query('SELECT titulo, archivo FROM guias WHERE id = $1', [req.params.id])).rows[0];
     if (!guia) return res.status(404).json({ error: 'Guía no encontrada' });
-    if (req.session.usuaria.perfil !== 'administradora') {
+    const esAdmin = req.session.usuaria.perfil === 'administradora';
+    // La vista previa (?ver=1) es solo para la administradora: las alumnas descargan la guía que compraron
+    if (req.query.ver === '1' && !esAdmin) {
+      return res.status(403).json({ error: 'La vista previa es solo para la administradora' });
+    }
+    if (!esAdmin) {
       const compra = await pool.query('SELECT 1 FROM compras_guias WHERE guia_id = $1 AND usuaria_id = $2',
         [req.params.id, req.session.usuaria.id]);
       if (!compra.rows[0]) return res.status(403).json({ error: 'Compra la guía para descargarla' });
     }
     // path.basename: aunque alguien manipulara el nombre, nunca sale de privado/guias
     const nombre = guia.titulo.replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'guia';
-    res.download(path.join(CARPETA, path.basename(guia.archivo)), nombre + '.pdf');
+    const ruta = path.join(CARPETA, path.basename(guia.archivo));
+    // ?ver=1 → vista previa: el navegador lo abre en su visor de PDF en vez de descargarlo
+    if (req.query.ver === '1') {
+      res.type('application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(nombre)}.pdf`);
+      return res.sendFile(ruta);
+    }
+    res.download(ruta, nombre + '.pdf');
   } catch (err) { next(err); }
 });
 
