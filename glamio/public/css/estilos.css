@@ -1449,7 +1449,33 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 .al-panel .ficha-rejilla input, .al-panel .ficha-rejilla select { font-size: 1.1rem; }
 .al-panel .ficha-nie legend { font-size: .98rem; }
 .al-panel .ficha-radio { font-size: 1.06rem !important; }
+/* Con la letra más grande, la lista necesita más ancho para que no se corten los nombres ni el filtro */
+/* Pantalla grande: lista a la izquierda (21rem) y la ficha al lado */
+@media (min-width: 1700px) { .al-zona { grid-template-columns: minmax(0, 21rem) minmax(0, 1fr); } }
+/* Portátil (981-1699px): con el menú lateral no caben las dos columnas con letra grande,
+   así que la lista va arriba (con su propio desplazamiento) y la ficha usa todo el ancho */
+@media (min-width: 981px) and (max-width: 1699px) {
+  .al-zona { grid-template-columns: minmax(0, 1fr); }
+  .al-lista { position: static; max-height: 380px; }
+}
+.al-filtro button { padding-left: 6px; padding-right: 6px; }
 @media (max-width: 640px) {
   .al-titulo h1 { font-size: 2.2rem; }
   .al-cabeza h2 { font-size: 1.6rem; }
 }
+
+/* =====================================================================
+   PANEL · Alumnas: con una ficha abierta, la lista se oculta y sale una ✕ para salir
+   ===================================================================== */
+.al-zona.con-ficha { grid-template-columns: minmax(0, 1fr) !important; }
+.al-zona.con-ficha .al-lista { display: none; }
+.al-panel { position: relative; }
+.al-cerrar { position: absolute; top: 18px; right: 18px; z-index: 2; width: 48px; height: 48px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 1.35rem; line-height: 1;
+  background: #fff; color: var(--principal-oscuro); border: 1px solid var(--borde); cursor: pointer;
+  box-shadow: 0 4px 14px rgba(61, 23, 71, .08); transition: background .15s, transform .15s; }
+.al-cerrar:hover { background: var(--principal-claro); transform: rotate(90deg); }
+.al-cerrar:focus-visible { outline: 3px solid var(--lila); outline-offset: 2px; }
+/* El nombre no pasa por debajo de la ✕ */
+.al-zona.con-ficha .al-cabeza { padding-right: 84px; }
+@media (max-width: 640px) { .al-cerrar { top: 12px; right: 12px; width: 42px; height: 42px; } .al-zona.con-ficha .al-cabeza { padding-right: 64px; } }

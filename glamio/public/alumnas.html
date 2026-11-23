@@ -126,6 +126,8 @@
     }
 
     // ---------- Una alumna ----------
+    // Con una ficha abierta, la lista de la izquierda se oculta y la ficha usa todo el ancho.
+    // La ✕ de la ficha (o la tecla Esc) la cierra y vuelve a enseñar la lista.
     async function abrirAlumna(id) {
       avisar('');
       abierta = id;
@@ -134,11 +136,27 @@
       try {
         const datos = await api('/api/ficha/alumnas/' + id);
         pintarDetalle(datos);
-        if (window.innerWidth < 980) document.getElementById('detalle').scrollIntoView({ behavior: 'smooth' });
+        document.querySelector('.al-zona').classList.add('con-ficha');
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // arriba del todo: el título y la ✕ a la vista
       } catch (err) {
-        document.getElementById('detalle').innerHTML = `<div class="al-vacio"><p>${esc(err.message)}</p></div>`;
+        cerrarAlumna();
+        avisar(err.message, true);
       }
     }
+
+    function cerrarAlumna() {
+      abierta = null;
+      history.replaceState(null, '', location.pathname);
+      document.querySelector('.al-zona').classList.remove('con-ficha');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.getElementById('detalle').innerHTML =
+        '<div class="al-vacio"><p>Elige una alumna de la lista para ver su información.</p></div>';
+      pintarLista();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && abierta && !document.querySelector('.al-confirmar.abierta, #detalle form') /* no cerrar a mitad de un formulario */) cerrarAlumna();
+    });
 
     // Una línea de "dato: valor" para la cuenta
     const dato = (nombre, valor) => `<div><dt>${nombre}</dt><dd>${esc(valor)}</dd></div>`;
@@ -147,6 +165,7 @@
       const terminados = cursos.filter(c => c.terminado).length;
       const caja = document.getElementById('detalle');
       caja.innerHTML = `
+        <button type="button" class="al-cerrar" id="cerrar-ficha" title="Cerrar la ficha (Esc)" aria-label="Cerrar la ficha y volver a la lista">✕</button>
         <div class="al-cabeza">
           <span class="al-avatar grande">${iniciales(ficha ? ficha.nombre_completo : cuenta.nombre)}</span>
           <div class="al-cabeza-texto">
@@ -214,6 +233,7 @@
           <div id="confirmar-borrado" class="al-confirmar"></div>
         </section>`;
 
+      document.getElementById('cerrar-ficha').onclick = cerrarAlumna;
       document.getElementById('editar-cuenta').onclick = () => formCuenta(cuenta);
       document.getElementById('editar-ficha').onclick = () => formFicha(cuenta, ficha);
       if (ficha) dosClics(document.getElementById('borrar-ficha'), async () => {
@@ -305,10 +325,7 @@
           e.target.disabled = true;
           try {
             const r = await api(`/api/ficha/alumnas/${cuenta.id}?confirmar=si`, { method: 'DELETE' });
-            abierta = null;
-            history.replaceState(null, '', location.pathname);
-            document.getElementById('detalle').innerHTML =
-              '<div class="al-vacio"><p>Elige una alumna de la lista para ver su información.</p></div>';
+            cerrarAlumna();
             await cargarLista();
             avisar(r.mensaje + '.');
           } catch (err2) { avisar(err2.message, true); e.target.disabled = false; }
