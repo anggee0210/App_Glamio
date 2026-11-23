@@ -115,7 +115,8 @@ CREATE TABLE inscripciones (
   usuaria_id   INT NOT NULL REFERENCES usuarias(id) ON DELETE CASCADE,
   curso_id     INT NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
   pagado       BOOLEAN DEFAULT FALSE, -- pago simulado
-  terminado    BOOLEAN DEFAULT FALSE,
+  nivel        VARCHAR(10) NOT NULL DEFAULT 'completo'
+               CHECK (nivel IN ('teoria', 'completo')), -- qué compró: solo guías o todo
   terminado_en TIMESTAMP, -- fecha real de fin: la que sale en el certificado
   fecha        TIMESTAMP DEFAULT NOW(), -- fecha de inscripción
   UNIQUE (usuaria_id, curso_id)
