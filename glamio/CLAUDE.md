@@ -14,7 +14,7 @@ Para la entrega de clase, **Uñas** es la categoría principal (2-3 cursos compl
 - **Frontend:** HTML, CSS y JavaScript con `fetch`. Diseño pensado primero para móvil.
 - **Backend:** Node.js + Express (API REST).
 - **Base de datos:** PostgreSQL con `pg`.
-- **Login seguro:** sesiones propias guardadas en la tabla `sesiones` (`middleware/sesiones.js`, cookie `glamio_sesion`) y contraseñas con **Argon2id** (`middleware/contrasenas.js`; las antiguas de `bcrypt` se vuelven a cifrar al entrar). Email verificado obligatorio, recuperar contraseña y bloqueo tras 3 fallos. Detalles en `docs/LOGIN-SEGURO.md`.
+- **Login seguro:** sesiones propias guardadas en la tabla `sesiones` (`middleware/sesiones.js`, cookie `glamio_sesion`) y contraseñas con **Argon2id** (`middleware/contrasenas.js`). Email verificado obligatorio, recuperar contraseña y bloqueo tras 3 fallos. Detalles en `docs/LOGIN-SEGURO.md`.
 - **Correo:** `nodemailer` (`CORREO_MODO` en `.env`: simulado o Gmail real). Es lo único que sale del ordenador.
 - **Archivos:** `multer` para imágenes (`uploads/`), videos propios cortos (50 MB; los largos por YouTube) y guías en PDF (100 MB, en `privado/guias/`, que no es público).
 - Todo debe funcionar **en local**. El pago es **simulado**.

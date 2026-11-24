@@ -180,8 +180,8 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    // Si su contraseña estaba guardada con bcrypt (cuentas antiguas), ahora que sabemos
-    // cuál es, la volvemos a cifrar con Argon2id. Así se migra sin que nadie note nada.
+    // Si su contraseña se guardó con parámetros más flojos que los actuales,
+    // ahora que sabemos cuál es, la volvemos a cifrar con los nuevos.
     if (necesitaRecifrar(usuaria.password)) {
       await pool.query('UPDATE usuarias SET password = $1 WHERE id = $2', [await cifrarPassword(password), usuaria.id]);
     }

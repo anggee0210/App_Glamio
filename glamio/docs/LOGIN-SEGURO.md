@@ -9,7 +9,7 @@ Este documento explica qué hace cada uno, por qué, y en qué archivo está.
 |---|---|
 | `db/schema.sql` | Tablas `sesiones`, `tokens_recuperacion`, `tokens_verificacion` y columna `email_verificado_en` |
 | `middleware/sesiones.js` | Crear, cargar, renovar y cerrar sesiones (sustituye a express-session) |
-| `middleware/contrasenas.js` | Cifrar y comprobar contraseñas con **Argon2id** (parámetros de OWASP) y migrar las antiguas de bcrypt |
+| `middleware/contrasenas.js` | Cifrar y comprobar contraseñas con **Argon2id** (parámetros de OWASP) |
 | `db/migracion-login.sql` | Añade las tablas del login a una base que ya existe (no borra nada) |
 | `middleware/seguridad.js` | Normalizar email, política de contraseñas y límite de intentos |
 | `middleware/correo.js` | Envío de correos **reales** con nodemailer (o simulados si no hay SMTP) |
@@ -37,7 +37,7 @@ y con una huella no se puede reconstruir el token, así que no podría entrar en
 
 Las contraseñas se guardan con **Argon2id** (librería `argon2`), con los parámetros mínimos que
 recomienda OWASP: 19 MiB de memoria, 2 pasadas y 1 hilo.
-- Ganó la *Password Hashing Competition* y es lo que recomienda OWASP hoy (por encima de bcrypt).
+- Ganó la *Password Hashing Competition* y es lo que recomienda OWASP hoy.
 - Gasta memoria en cada intento, lo que hace muy caro probar millones de contraseñas con tarjetas gráficas.
 - El hash lleva dentro el algoritmo, los parámetros y la sal: `$argon2id$v=19$m=19456,t=2,p=1$...`
 - Todo el código usa solo `cifrarPassword()` y `comprobarPassword()` (`middleware/contrasenas.js`):
@@ -46,10 +46,10 @@ recomienda OWASP: 19 MiB de memoria, 2 pasadas y 1 hilo.
 ### Migración: las cuentas que ya existían no se pierden
 - `db/migracion-login.sql` añade las tablas nuevas **sin borrar nada** y da por verificadas
   las cuentas que ya existían (se crearon cuando no había verificación).
-- Sus contraseñas estaban guardadas con bcrypt. `comprobarPassword()` sabe comprobar las dos
-  (bcrypt y Argon2id) y, cuando una usuaria antigua entra con la contraseña buena, el login
-  la **vuelve a cifrar con Argon2id** (`necesitaRecifrar()`). Así todas pasan a Argon2id solas,
-  sin pedir a nadie que cambie su contraseña.
+- Todas las contraseñas están cifradas con Argon2id: el proyecto ya **no usa bcrypt**
+  (las cuentas antiguas se pasaron a Argon2id el 24/11/2026 y se desinstaló la librería).
+- Si algún día se suben los parámetros, `necesitaRecifrar()` hace que cada contraseña se
+  vuelva a cifrar sola en el siguiente login, sin pedir a nadie que la cambie.
 
 ## Cómo funciona una sesión
 

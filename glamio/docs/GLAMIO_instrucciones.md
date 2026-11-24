@@ -8,7 +8,7 @@ App web de belleza con tres categorías: **Uñas, Cabello y Cejas**. Une cursos 
 - HTML, CSS, JS (fetch)
 - Node.js + Express
 - PostgreSQL (`pg`)
-- `express-session` + `bcrypt`
+- Login seguro: sesiones propias (tabla `sesiones`) + contraseñas con **Argon2id**
 - `multer` (videos largos por YouTube)
 - Carpetas: `public/`, `routes/`, `db/`
 - Todo en local, pago simulado.

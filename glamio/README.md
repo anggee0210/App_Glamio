@@ -93,6 +93,7 @@ glamio/
 ├── server.js              # Servidor Express, contador de visitas, rutas y manejo de errores
 ├── package.json
 ├── .env.example           # Copiar como .env
+├── CLAUDE.md              # Guía del proyecto para Claude (reglas, stack, tablas)
 ├── db/
 │   ├── pool.js            # Conexión a PostgreSQL
 │   ├── schema.sql         # Tablas, índices y trigger (¡borra todo! ver abajo)
@@ -104,6 +105,8 @@ glamio/
 │   ├── migracion-ficha-alumna.sql # Ficha personal: países con su documento y fichas_alumnas (no borra nada)
 │   ├── migracion-mas-paises.sql   # 31 países más para la ficha (48 en total; no borra nada)
 │   ├── seed.sql           # Categorías, academia y cursos de ejemplo
+│   ├── datos-demo.js      # Cuentas demo con datos para la presentación (npm run db:demo)
+│   ├── copia-seguridad.js # Copia de la BD, uploads y privado (npm run copia)
 │   ├── crear-admin.js     # Crea la cuenta de la administradora
 │   ├── cambiar-contrasena.js # Cambia la contraseña de una cuenta (si se olvida)
 │   ├── cambiar-email-admin.js # Cambia el email de la administradora
@@ -111,7 +114,7 @@ glamio/
 ├── middleware/
 │   ├── auth.js            # requiereLogin / requiereAdmin / requierePerfil
 │   ├── sesiones.js        # Sesiones propias: cookie glamio_sesion, SHA-256 en la BD, caducidad deslizante
-│   ├── contrasenas.js     # Argon2id (y migración automática de las contraseñas bcrypt antiguas)
+│   ├── contrasenas.js     # Argon2id (cifrar y comprobar contraseñas)
 │   ├── seguridad.js       # Email normalizado, política de contraseñas, límite de intentos
 │   ├── correo.js          # Correos reales con nodemailer (o simulados)
 │   ├── permisos.js        # esId() y puedeEntrarEnLeccion() (RN-14)
@@ -150,7 +153,8 @@ glamio/
 │   ├── bloqueadas.html    # Cuentas bloqueadas (3 intentos fallidos): solo la administradora desbloquea
 │   ├── mi-estilo.html     # 💜 Mi Estilo (clienta): catálogo deslizable + Mis favoritos
 │   ├── perfil.html        # 👤 Perfil público (?id=N)
-│   ├── img/               # Logos, portada e ilustraciones
+│   ├── simuladores/       # Vista previa de Tienda y Citas (sin base de datos, guarda en el navegador)
+│   ├── img/               # Logos, portada, ilustraciones y fotos de la tienda
 │   ├── css/estilos.css
 │   ├── css/certificado-plantilla.css # La hoja del certificado y su editor
 │   ├── js/api.js          # fetch, cabecera, menú lateral, notificaciones, reportar, portadas… (funciones comunes)
@@ -158,7 +162,12 @@ glamio/
 │   ├── js/ficha-form.js   # Formulario de la ficha (el documento cambia con el país) y la ficha para leer
 │   └── js/certificado-plantilla.js # Dónde va cada dato del certificado (certificado y editor del Panel)
 ├── test/                  # Harness de pruebas (npm test): login, permisos, reseñas, calculadora, ficha…
-├── docs/LOGIN-SEGURO.md   # Cómo funciona el login, flujo a flujo
+├── docs/                  # Documentación del proyecto
+│   ├── LOGIN-SEGURO.md    # Cómo funciona el login, flujo a flujo
+│   ├── GLAMIO_casos_de_uso.md # Casos de uso (actores, flujos y reglas)
+│   ├── GLAMIO-Diseno-UX-UI.md # Diseño de pantallas y estilo
+│   ├── GLAMIO_instrucciones.md # Resumen corto del proyecto
+│   └── agentes/           # Instrucciones de los agentes Revisor y Autenticador
 ├── uploads/               # Fotos y vídeos subidos (imagenes/ y videos/), fuera de git
 └── privado/guias/         # PDF de las guías: NO es pública, fuera de git
 ```

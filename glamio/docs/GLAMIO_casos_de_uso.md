@@ -81,14 +81,14 @@ Este documento cubre la **Fase 1 (Academia – proyecto de clase)**. Al final ha
 | **Actor** | Visitante |
 | **Objetivo** | Crear una cuenta con un perfil. |
 | **Precondición** | No tiene sesión iniciada. |
-| **Postcondición** | Se crea un registro en `usuarias` con la contraseña cifrada (`bcrypt`) y se inicia sesión. |
+| **Postcondición** | Se crea un registro en `usuarias` con la contraseña cifrada (**Argon2id**) y se le envía un correo para confirmar su email. |
 
 **Flujo principal**
 1. La visitante pulsa «Crear cuenta».
 2. El sistema muestra el formulario: nombre, email, contraseña y perfil (Alumna, Profesional o Clienta).
 3. La visitante rellena los datos y envía.
 4. El sistema valida los campos, cifra la contraseña y guarda la usuaria.
-5. El sistema inicia la sesión y redirige al inicio según el perfil.
+5. El sistema le envía un correo con un enlace (válido 24 h). Al abrirlo, el email queda confirmado, se inicia la sesión y va al inicio según su perfil.
 
 **Flujos alternativos**
 - **4a.** El email ya existe → el sistema muestra «Este email ya está registrado».
@@ -105,11 +105,11 @@ Este documento cubre la **Fase 1 (Academia – proyecto de clase)**. Al final ha
 |---|---|
 | **Actor** | Usuaria registrada / Administradora |
 | **Precondición** | Tiene cuenta. |
-| **Postcondición** | Se crea (o destruye) la sesión con `express-session`. |
+| **Postcondición** | Se crea (o se cierra) la sesión, guardada en la tabla `sesiones` (cookie `glamio_sesion`). |
 
 **Flujo principal**
 1. La usuaria introduce email y contraseña.
-2. El sistema compara la contraseña con `bcrypt`.
+2. El sistema compara la contraseña con **Argon2id**.
 3. Si es correcta, guarda `id` y `perfil` en la sesión y redirige a su panel.
 4. Para salir, pulsa «Cerrar sesión» y el sistema destruye la sesión.
 
