@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva contraseña – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
+</head>
+<body class="cuerpo-acceso">
+  <!-- Se llega aquí desde el enlace del correo: restablecer.html?token=... -->
+  <div class="pantalla-acceso">
+    <div class="acceso-foto acceso-logo"><img src="/img/logo-grande.jpg" alt="GLAMIO, Academia de belleza: formación que transforma tu talento en belleza profesional"></div>
+
+    <div class="acceso-panel">
+      <a href="/index.html" class="logo logo-grande" aria-label="GLAMIO, ir al inicio">
+        <img src="/img/logo-g.png" alt="">
+        <span class="logo-texto"><span class="logo-nombre">GLAMIO</span><span class="logo-lema">ACADEMIA DE BELLEZA</span></span>
+      </a>
+
+      <h1 class="acceso-titulo">Crea tu contraseña nueva</h1>
+      <p class="acceso-sub">Mínimo 8 caracteres, con letras y números</p>
+
+      <form id="form" class="acceso-form">
+        <label class="campo-icono">
+          <span class="visualmente-oculto">Contraseña nueva</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          <input type="password" name="password" placeholder="Contraseña nueva" autocomplete="new-password" minlength="8" required>
+          <button type="button" class="ver-contrasena" aria-label="Mostrar la contraseña" title="Mostrar la contraseña">👁</button>
+        </label>
+        <p class="mensaje oculto" id="msg"></p>
+        <button class="boton boton-ancho" id="guardar">✔ Guardar contraseña</button>
+      </form>
+
+      <a class="volver-inicio" href="/login.html">← Volver a Entrar</a>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    activarVerContrasena(); // el 👁 (está en api.js)
+
+    document.getElementById('form').onsubmit = async (e) => {
+      e.preventDefault();
+      const boton = document.getElementById('guardar');
+      const msg = document.getElementById('msg');
+      boton.disabled = true;
+      try {
+        const datos = { token: param('token'), password: e.target.password.value };
+        const res = await api('/api/auth/restablecer', { method: 'POST', body: datos });
+        // Todo bien: escondemos el campo y ofrecemos entrar
+        e.target.querySelectorAll('label, button').forEach(el => el.classList.add('oculto'));
+        msg.innerHTML = res.bloqueada
+          ? `🔒 ${esc(res.mensaje)}`                                   // sigue bloqueada: solo la admin la desbloquea
+          : `✅ ${esc(res.mensaje)} <a href="/login.html"><strong>Entrar</strong></a>`;
+        msg.classList.remove('error');
+      } catch (err) {
+        msg.textContent = err.message; // p. ej. "El enlace no es válido o ha caducado"
+        msg.classList.add('error');
+        boton.disabled = false;
+      }
+      msg.classList.remove('oculto');
+    };
+  </script>
+</body>
+</html>

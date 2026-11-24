@@ -5,16 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel de administradora – GLAMIO</title>
   <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="stylesheet" href="/css/certificado-plantilla.css">
 </head>
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
-    <h1>Panel de administradora</h1>
+    <h1>Panel de la administradora</h1>
 
-    <h2>Mis cursos</h2>
-    <div id="lista-cursos"><p>Cargando…</p></div>
+    <!-- Pestañas: cada opción enseña solo su parte (decisión del proyecto).
+         La pestaña abierta va en la URL (admin.html?pestana=leccion) para que recargar no la pierda. -->
+    <nav class="pestanas pestanas-panel" id="pestanas-panel">
+      <button class="pestana activa" data-pestana="cursos">📚 Mis cursos</button>
+      <button class="pestana" data-pestana="curso">➕ Nuevo curso</button>
+      <button class="pestana" data-pestana="leccion">🎬 Nueva lección</button>
+      <button class="pestana" data-pestana="material">🧴 Materiales</button>
+      <button class="pestana" data-pestana="certificado">🎓 Certificado</button>
+    </nav>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <!-- Panel principal (diseño "Panel de Gestión"): cifras reales, visitas y ventas por mes -->
+    <section class="pestana-panel" data-pestana="resumen">
+      <p class="mensaje error oculto" id="msg-resumen"></p>
+      <div class="cifras-panel" id="cifras"></div>
+      <div class="graficas">
+        <figure class="tarjeta grafica">
+          <figcaption><strong>Visitas a la app por mes</strong><span class="ayuda" id="resumen-visitas"></span></figcaption>
+          <div class="barras" id="grafica-visitas" role="img" aria-label="Visitas por mes"></div>
+        </figure>
+        <figure class="tarjeta grafica">
+          <figcaption><strong>Cursos vendidos por mes</strong><span class="ayuda" id="resumen-ventas"></span></figcaption>
+          <div class="barras" id="grafica-ventas" role="img" aria-label="Cursos vendidos por mes"></div>
+        </figure>
+      </div>
+      <!-- Los mismos datos en tabla (para quien no puede leer la gráfica y para comprobar las cifras) -->
+      <details class="tarjeta tabla-datos">
+        <summary>Ver los datos en una tabla</summary>
+        <div id="tabla-meses"></div>
+      </details>
+      <div class="tarjeta" id="top-cursos"></div>
+    </section>
+
+    <!-- Guías teóricas (PDF) que se venden en cada curso -->
+    <section class="pestana-panel oculto" data-pestana="guias">
+      <form id="form-guia" class="tarjeta">
+        <h2 style="margin-top:0">📖 Nueva guía teórica</h2>
+        <p class="ayuda">Un PDF de teoría que las alumnas compran desde la página del curso (pago simulado). Solo lo descarga quien la compra.</p>
+        <div class="calc-fila-dos">
+          <label>Curso <select name="curso_id" class="sel-curso"></select></label>
+          <label>Precio (€, 0 = gratis) <input name="precio" type="number" min="0" max="9999" step="0.01" value="0"></label>
+        </div>
+        <label>Título <input name="titulo" maxlength="150" required placeholder="Ej: Manual teórico del semipermanente"></label>
+        <label>Descripción <textarea name="descripcion" rows="2" placeholder="Qué contiene la guía"></textarea></label>
+        <label>Archivo PDF (máx. 100 MB) <input type="file" name="archivo" accept="application/pdf" required></label>
+        <p class="mensaje oculto"></p>
+        <button class="boton" style="align-self:flex-start">Subir guía</button>
+      </form>
+      <h2>Guías publicadas</h2>
+      <p class="mensaje error oculto" id="msg-guias"></p>
+      <div id="lista-guias"><p>Cargando…</p></div>
+    </section>
+
+    <section class="pestana-panel oculto" data-pestana="cursos">
+      <p class="ayuda">Pulsa «Editar» o «Opciones» para cambiar algo, o añade lecciones y materiales a cada curso.</p>
+      <p class="mensaje error oculto" id="msg-lista"></p>
+      <div id="lista-cursos"><p>Cargando…</p></div>
+    </section>
+
+    <section class="tarjeta pestana-panel oculto" data-pestana="curso">
       <h2 style="margin-top:0">Nuevo curso</h2>
       <form id="form-curso">
         <input name="titulo" placeholder="Título" required>
@@ -23,6 +79,21 @@
         <input name="precio" type="number" step="0.01" min="0" placeholder="Precio (0 = gratis)">
         <label>Imagen <input type="file" name="imagen" accept="image/*"></label>
         <p class="ayuda oculto"></p>
+        <!-- Cómo se ajusta la portada a su cuadro (tarjetas y página del curso) -->
+        <div class="ajuste-foto" role="radiogroup" aria-label="Ajuste de la foto">
+          <span>Ajuste de la foto</span>
+          <label><input type="radio" name="imagen_ajuste" value="rellenar" checked><span>Rellenar</span></label>
+          <label><input type="radio" name="imagen_ajuste" value="completa"><span>Completa</span></label>
+          <small class="ayuda" id="ajuste-ayuda">La foto ocupa todo el cuadro (recorta un poco los bordes).</small>
+        </div>
+        <!-- Vista previa del tamaño de la tarjeta: en «Rellenar» se arrastra la foto para encuadrarla -->
+        <div class="ajuste-vista oculto" id="ajuste-vista">
+          <div class="ajuste-marco" id="ajuste-marco" title="Arrastra la foto para elegir qué parte se ve"></div>
+          <p class="ayuda" id="ajuste-pista">Vista previa · arrastra la foto para encuadrarla ·
+            <button type="button" class="enlace-centrar" id="ajuste-centrar">Centrar</button></p>
+        </div>
+        <input type="hidden" name="imagen_x" value="50">
+        <input type="hidden" name="imagen_y" value="50">
         <div class="fila">
           <button class="boton">Crear curso</button>
           <button type="button" class="boton secundario cancelar oculto">Cancelar</button>
@@ -31,7 +102,7 @@
       </form>
     </section>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <section class="tarjeta pestana-panel oculto" data-pestana="leccion">
       <h2 style="margin-top:0">Nueva lección</h2>
       <form id="form-leccion">
         <select name="curso_id" class="sel-curso"></select>
@@ -49,7 +120,7 @@
       </form>
     </section>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <section class="tarjeta pestana-panel oculto" data-pestana="material">
       <h2 style="margin-top:0">Material de un curso</h2>
       <form id="form-material">
         <select name="curso_id" class="sel-curso"></select>
@@ -63,7 +134,8 @@
       </form>
     </section>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <!-- Va en la misma pestaña que "Nuevo curso": se necesita al elegir la categoría del curso -->
+    <section class="tarjeta pestana-panel oculto" data-pestana="curso" style="margin-top:14px">
       <h2 style="margin-top:0">Nueva categoría</h2>
       <form id="form-categoria">
         <div class="fila">
@@ -75,34 +147,66 @@
       </form>
     </section>
 
-    <section class="tarjeta" style="margin-top:14px">
+    <section class="tarjeta pestana-panel oculto" data-pestana="certificado">
       <h2 style="margin-top:0">Diseño del certificado</h2>
       <form id="form-certificado">
-        <label>Imagen de fondo (horizontal, por ejemplo 3508 × 2480 px)
+        <label>Imagen de fondo (tamaño carta horizontal, por ejemplo 3300 × 2550 px)
           <input type="file" name="fondo" accept="image/*"></label>
+        <p class="mensaje oculto" id="aviso-resolucion"></p>
         <div id="cert-fondo-actual" class="ayuda"></div>
 
         <label>Firma escaneada (opcional, mejor PNG con fondo transparente)
           <input type="file" name="firma" accept="image/*"></label>
         <div id="cert-firma-actual" class="ayuda"></div>
 
-        <input name="directora" placeholder="Nombre de la directora académica">
+        <label>Logo (opcional; mejor PNG con fondo transparente)
+          <input type="file" name="logo" accept="image/*"></label>
+        <div id="cert-logo-actual" class="ayuda"></div>
+        <label>Forma del logo
+          <select name="logo_forma">
+            <option value="cuadrado">⬛ Cuadrado (tal cual)</option>
+            <option value="redondo">⚫ Redondo</option>
+            <option value="desvanecido">🌫️ Desvanecido (redondo con bordes suaves)</option>
+          </select></label>
+
         <label class="fila">Color del texto
           <input type="color" name="color_texto" value="#3a2f36" style="width:60px;padding:2px"></label>
 
         <div class="fila">
-          <button class="boton">Guardar diseño</button>
-          <a class="boton secundario" href="/certificado.html?vista_previa=1" target="_blank">Vista previa</a>
+          <button class="boton">Guardar imágenes y colores</button>
         </div>
         <p class="mensaje oculto"></p>
       </form>
+
+      <!-- EDITOR DE POSICIONES: la administradora arrastra cada dato a su hueco de la plantilla -->
+      <div id="editor-posiciones" class="oculto">
+        <h3>Colocar los datos en tu plantilla</h3>
+        <p class="mensaje" id="editor-sin-fondo">📄 Aún no has subido una imagen de fondo: el certificado sale <strong>en blanco</strong>, solo con los datos.
+          Sube arriba el certificado que prefieras y luego coloca aquí los datos.</p>
+        <p class="ayuda">Arrastra cada dato a su sitio (o elígelo abajo y muévelo con las flechas del teclado).
+          Así cualquier certificado que subas queda bien. Los cambios no se ven en los certificados hasta que pulses «Guardar y ver vista previa».</p>
+        <div class="certificado editor-cert" id="editor-cert"></div>
+        <div class="editor-chips" id="editor-chips"></div>
+        <div class="editor-controles">
+          <strong id="editor-nombre-dato"></strong>
+          <label class="fila" style="margin:0">Tamaño <input type="range" id="editor-tamano" step="0.05"></label>
+          <button type="button" class="boton secundario" id="editor-borrar">🗑 Borrar del certificado</button>
+          <span class="ayuda" id="editor-fijo">El nombre y el curso siempre salen.</span>
+        </div>
+        <div class="fila" style="align-items:center">
+          <button type="button" class="boton" id="editor-vista-previa">Guardar y ver vista previa</button>
+          <button type="button" class="boton secundario" id="editor-restablecer">Restablecer</button>
+          <strong class="oculto" id="editor-pendiente" style="color:#a12622">● Cambios sin guardar</strong>
+        </div>
+        <p class="mensaje oculto" id="editor-mensaje"></p>
+      </div>
     </section>
 
-    <h2>Reportes pendientes</h2>
-    <div id="reportes"></div>
+    <!-- Los reportes tienen ahora su propia página: reportes.html (opción "⚑ Reportes" del menú) -->
   </main>
 
   <script src="/js/api.js"></script>
+  <script src="/js/certificado-plantilla.js"></script>
   <script>
     // Aquí guardamos cada curso con sus lecciones y materiales (por id),
     // para rellenar los formularios al pulsar "Editar" sin volver a pedirlos.
@@ -117,6 +221,39 @@
     const formCurso = document.getElementById('form-curso');
     const formLeccion = document.getElementById('form-leccion');
     const formMaterial = document.getElementById('form-material');
+
+    // ---------- Pestañas del Panel ----------
+    // Enseña solo las secciones de esa pestaña y la guarda en la URL (?pestana=leccion).
+    const PESTANAS = ['resumen', 'cursos', 'curso', 'leccion', 'material', 'certificado', 'guias'];
+    function abrirPestanaPanel(nombre) {
+      if (!PESTANAS.includes(nombre)) nombre = 'resumen';
+      document.querySelectorAll('#pestanas-panel .pestana').forEach(b => b.classList.toggle('activa', b.dataset.pestana === nombre));
+      document.querySelectorAll('.pestana-panel').forEach(s => s.classList.toggle('oculto', s.dataset.pestana !== nombre));
+      history.replaceState(null, '', nombre === 'resumen' ? location.pathname : '?pestana=' + nombre);
+      if (typeof marcarLateral === 'function') marcarLateral(); // resalta la opción del menú lateral
+    }
+    document.querySelectorAll('#pestanas-panel .pestana').forEach(b => b.onclick = () => abrirPestanaPanel(b.dataset.pestana));
+
+    // Botones rápidos de "Mis cursos": abren la pestaña con ese curso ya elegido
+    function nuevaLeccionEn(cursoId) {
+      modoCrear(formLeccion);
+      formLeccion.curso_id.value = cursoId;
+      proponerOrden();
+      abrirPestanaPanel('leccion');
+    }
+    function nuevoMaterialEn(cursoId) {
+      modoCrear(formMaterial);
+      formMaterial.curso_id.value = cursoId;
+      abrirPestanaPanel('material');
+    }
+
+    // Aviso en rojo encima de "Mis cursos" (quitar vídeo, borrar lección o material). Sustituye a alert().
+    function avisarLista(texto) {
+      const p = document.getElementById('msg-lista');
+      p.textContent = texto;
+      p.classList.toggle('oculto', !texto);
+      if (texto) p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
     // ---------- Mensajes dentro de cada formulario ----------
     function avisar(form, texto, esError = false) {
@@ -139,6 +276,8 @@
       // Al editar no se cambia de curso: el desplegable se bloquea
       const selCurso = form.querySelector('.sel-curso');
       if (selCurso) selCurso.disabled = true;
+      // El formulario está en otra pestaña: la abrimos antes de llevar la vista hasta él
+      abrirPestanaPanel(form.closest('section').dataset.pestana);
       form.scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -154,6 +293,7 @@
       const selCurso = form.querySelector('.sel-curso');
       if (selCurso) selCurso.disabled = false;
       if (form === formLeccion) proponerOrden();
+      if (form === formCurso) { fotoVista = null; form.imagen_x.value = 50; form.imagen_y.value = 50; explicarAjuste(); }
     }
 
     document.querySelectorAll('.cancelar').forEach(boton =>
@@ -178,11 +318,16 @@
               <span class="etiqueta" style="margin:0 0 0 6px">${esc(c.categoria)}</span>
               <span class="precio" style="margin-left:6px">${Number(c.precio) === 0 ? 'Gratis' : c.precio + ' €'}</span>
             </div>
-            <button class="chip" onclick="editarCurso(${c.id})">Editar curso</button>
+            <span class="fila" style="flex-wrap:wrap">
+              <button class="chip" onclick="editarCurso(${c.id})">✏️ Editar curso</button>
+              <button class="chip peligro" onclick="borrarCurso(this, ${c.id})">🗑 Borrar curso</button>
+              <button class="chip" onclick="nuevaLeccionEn(${c.id})">🎬 + Lección</button>
+              <button class="chip" onclick="nuevoMaterialEn(${c.id})">🧴 + Material</button>
+            </span>
           </div>
           <p style="margin:10px 0 4px"><strong>Lecciones</strong></p>
           ${c.lecciones.map(l => `
-            <div class="fila" style="justify-content:space-between;margin-bottom:4px">
+            <div class="fila fila-lista" style="justify-content:space-between;margin-bottom:4px">
               <span>${l.orden}. ${esc(l.titulo)}
                 <span class="ayuda">${l.tiene_video_propio ? '🎬 vídeo propio' : l.tiene_youtube ? '▶ YouTube' : 'sin vídeo'}</span>
               </span>
@@ -199,7 +344,7 @@
             </div>`).join('') || '<p class="ayuda">Todavía no tiene lecciones.</p>'}
           <p style="margin:10px 0 4px"><strong>Materiales</strong></p>
           ${c.materiales.map(m => `
-            <div class="fila" style="justify-content:space-between;margin-bottom:4px">
+            <div class="fila fila-lista" style="justify-content:space-between;margin-bottom:4px">
               <span>${esc(m.nombre)}${m.cantidad ? ' (' + esc(m.cantidad) + ')' : ''}</span>
               <span class="fila">
                 <button class="chip" onclick="editarMaterial(${c.id}, ${m.id})">Editar</button>
@@ -248,6 +393,11 @@
       const ayuda = formCurso.querySelector('.ayuda');
       ayuda.textContent = c.imagen ? 'Si no eliges otra imagen, se queda la que tiene.' : 'Este curso todavía no tiene imagen.';
       ayuda.classList.remove('oculto');
+      formCurso.imagen_ajuste.value = c.imagen_ajuste || 'rellenar';
+      fotoVista = c.imagen;
+      formCurso.imagen_x.value = Number(c.imagen_x ?? 50);
+      formCurso.imagen_y.value = Number(c.imagen_y ?? 50);
+      explicarAjuste();
       modoEditar(formCurso, id);
     }
 
@@ -294,7 +444,7 @@
         await api(`/api/lecciones/${id}/video`, { method: 'DELETE' });
         soltarSiSeEdita(id);
         await recargar();
-      } catch (err) { alert(err.message); }
+      } catch (err) { avisarLista(err.message); }
     }
 
     async function borrarLeccion(id) {
@@ -303,7 +453,33 @@
         await api('/api/lecciones/' + id, { method: 'DELETE' });
         soltarSiSeEdita(id);
         await recargar();
-      } catch (err) { alert(err.message); }
+      } catch (err) { avisarLista(err.message); }
+    }
+
+    // Borrar un curso entero. Si tiene personas inscritas, el servidor avisa (409) con cuántas
+    // y pedimos una SEGUNDA confirmación antes de borrarlo de verdad.
+    async function borrarCurso(boton, id) {
+      const titulo = cursos[id] ? cursos[id].titulo : 'este curso';
+      if (!confirm(`¿Borrar «${titulo}»? Se borran sus lecciones, materiales, dudas, reseñas y guías. No se puede deshacer.`)) return;
+      boton.disabled = true;
+      try {
+        let r = await fetch('/api/cursos/' + id, { method: 'DELETE' });
+        let datos = await r.json();
+        if (r.status === 409) {
+          if (!confirm(datos.error + '\n\n¿Seguro que quieres borrarlo igualmente?')) { boton.disabled = false; return; }
+          r = await fetch('/api/cursos/' + id + '?confirmar=si', { method: 'DELETE' });
+          datos = await r.json();
+        }
+        if (!r.ok) throw new Error(datos.error || 'No se pudo borrar');
+        if (formCurso.dataset.editando == id) modoCrear(formCurso); // si lo estábamos editando
+        await recargar();
+        const msg = document.getElementById('msg-lista');
+        msg.textContent = `✅ Curso «${datos.borrado}» borrado.`;
+        msg.classList.remove('oculto', 'error');
+      } catch (err) {
+        avisarLista(err.message);
+        boton.disabled = false;
+      }
     }
 
     async function borrarMaterial(id) {
@@ -311,8 +487,64 @@
       try {
         await api('/api/cursos/materiales/' + id, { method: 'DELETE' });
         await recargar();
-      } catch (err) { alert(err.message); }
+      } catch (err) { avisarLista(err.message); }
     }
+
+    // ---------- Ajuste de la foto de portada ----------
+    let fotoVista = null;   // la foto que se ve en la vista previa (la del curso o la recién elegida)
+    function explicarAjuste() {
+      const completa = formCurso.imagen_ajuste.value === 'completa';
+      document.getElementById('ajuste-ayuda').textContent = completa
+        ? 'La foto se ve entera; lo que sobra se rellena con la misma foto difuminada.'
+        : 'La foto ocupa todo el cuadro (recorta un poco los bordes).';
+      pintarVista();
+    }
+    // Vista previa: el mismo dibujo que las tarjetas (htmlPortada, en api.js), en pequeño
+    function pintarVista() {
+      const vista = document.getElementById('ajuste-vista');
+      vista.classList.toggle('oculto', !fotoVista);
+      if (!fotoVista) return;
+      const completa = formCurso.imagen_ajuste.value === 'completa';
+      document.getElementById('ajuste-marco').innerHTML = htmlPortada({ imagen: fotoVista, imagen_ajuste: formCurso.imagen_ajuste.value,
+        imagen_x: formCurso.imagen_x.value, imagen_y: formCurso.imagen_y.value });
+      document.getElementById('ajuste-marco').classList.toggle('se-mueve', !completa);
+      document.getElementById('ajuste-pista').classList.toggle('oculto', completa);  // en «Completa» no hay nada que encuadrar
+    }
+    formCurso.querySelectorAll('[name=imagen_ajuste]').forEach(r => r.onchange = explicarAjuste);
+    // Al elegir una foto nueva, se ve al momento en la vista previa (aún sin subirla) y empieza centrada
+    formCurso.imagen.addEventListener('change', () => {
+      const archivo = formCurso.imagen.files[0];
+      if (!archivo) return;
+      fotoVista = URL.createObjectURL(archivo);
+      formCurso.imagen_x.value = 50; formCurso.imagen_y.value = 50;
+      pintarVista();
+    });
+    document.getElementById('ajuste-centrar').onclick = () => {
+      formCurso.imagen_x.value = 50; formCurso.imagen_y.value = 50; pintarVista();
+    };
+    // ARRASTRAR en la vista previa (solo en «Rellenar»): mover a la derecha enseña más de la parte izquierda
+    (() => {
+      const marco = document.getElementById('ajuste-marco');
+      let inicio = null;
+      marco.addEventListener('pointerdown', (e) => {
+        if (formCurso.imagen_ajuste.value === 'completa') return;
+        e.preventDefault();
+        inicio = { px: e.clientX, py: e.clientY, x: Number(formCurso.imagen_x.value), y: Number(formCurso.imagen_y.value) };
+        marco.setPointerCapture(e.pointerId);
+      });
+      marco.addEventListener('pointermove', (e) => {
+        if (!inicio) return;
+        const r = marco.getBoundingClientRect();
+        const limitar = n => Math.min(100, Math.max(0, n)).toFixed(1);
+        formCurso.imagen_x.value = limitar(inicio.x - (e.clientX - inicio.px) / r.width * 150);
+        formCurso.imagen_y.value = limitar(inicio.y - (e.clientY - inicio.py) / r.height * 150);
+        const img = marco.querySelector('img');
+        if (img) img.style.objectPosition = `${formCurso.imagen_x.value}% ${formCurso.imagen_y.value}%`;
+      });
+      const soltar = () => { inicio = null; };
+      marco.addEventListener('pointerup', soltar);
+      marco.addEventListener('pointercancel', soltar);
+    })();
 
     // ---------- Enviar formularios ----------
     // Formularios con archivos → FormData; el resto → JSON
@@ -323,7 +555,8 @@
         await api(id ? '/api/cursos/' + id : '/api/cursos', { method: id ? 'PUT' : 'POST', body: new FormData(formCurso) });
         modoCrear(formCurso);
         await recargar();
-        avisar(formCurso, id ? 'Cambios guardados ✅' : 'Curso creado ✅');
+        avisar(formCurso, id ? 'Cambios guardados ✅ (puedes verlo en «📚 Mis cursos»)'
+          : 'Curso creado ✅ Ahora añádele lecciones en «🎬 Nueva lección».');
       } catch (err) { avisar(formCurso, err.message, true); }
     };
 
@@ -377,50 +610,364 @@
     // ---------- Diseño del certificado ----------
     const formCertificado = document.getElementById('form-certificado');
 
-    // Enseña la imagen que hay ahora y una casilla para quitarla
-    function pintarImagenActual(contenedor, ruta, nombreCasilla) {
+    // AVISO DE RESOLUCIÓN: para imprimir bien en hoja carta (11 pulgadas de ancho) hacen falta
+    // unos 3300 px de ancho. Por debajo de 2400 px se avisa (en pantalla se ve bien, en papel no).
+    const ANCHO_MINIMO_IMPRESION = 2400;
+    function avisoResolucion(ancho, alto, esNueva) {
+      const aviso = document.getElementById('aviso-resolucion');
+      const pequena = ancho < ANCHO_MINIMO_IMPRESION;
+      aviso.classList.toggle('oculto', !pequena);
+      if (pequena) aviso.textContent = `⚠ ${esNueva ? 'La imagen elegida' : 'El fondo actual'} mide ${ancho} × ${alto} px: ` +
+        'en pantalla se ve bien, pero al imprimir puede salir borrosa. Para hoja carta, mejor 3300 × 2550 px.';
+    }
+    formCertificado.fondo.addEventListener('change', () => {
+      const archivo = formCertificado.fondo.files[0];
+      if (!archivo) return;
+      const img = new Image();
+      img.onload = () => { avisoResolucion(img.naturalWidth, img.naturalHeight, true); URL.revokeObjectURL(img.src); };
+      img.src = URL.createObjectURL(archivo);       // se mide en el navegador, sin subirla todavía
+    });
+
+    // Enseña la imagen que hay ahora y un botón para borrarla
+    function pintarImagenActual(contenedor, ruta, campoQuitar) {
       document.getElementById(contenedor).innerHTML = ruta
-        ? `<img src="${ruta}" alt="" style="max-height:70px;border-radius:6px;margin:4px 0">
-           <label class="fila"><input type="checkbox" name="${nombreCasilla}" style="width:auto"> Quitar esta imagen</label>`
+        ? `<div class="fila" style="align-items:center">
+             <img src="${ruta}" alt="" style="flex:none;width:auto;height:70px;max-width:200px;object-fit:contain;border-radius:6px;margin:4px 0;background:#f4eaf8">
+             <button type="button" class="boton secundario" data-quitar="${campoQuitar}">🗑 Borrar</button>
+           </div>`
         : 'Ahora no hay ninguna.';
     }
 
+    // BORRAR una imagen (fondo, firma o logo). Para no borrar sin querer, hay que pulsar dos veces:
+    // la primera el botón pregunta «¿Seguro?», y si no se confirma en 4 segundos vuelve a la normalidad.
+    formCertificado.addEventListener('click', async (e) => {
+      const boton = e.target.closest('[data-quitar]');
+      if (!boton) return;
+      if (!boton.dataset.seguro) {
+        boton.dataset.seguro = 'si';
+        boton.textContent = '¿Seguro? Pulsa otra vez para borrar';
+        setTimeout(() => { if (boton.isConnected) { delete boton.dataset.seguro; boton.textContent = '🗑 Borrar'; } }, 4000);
+        return;
+      }
+      // Se envían también el color y la forma del logo actuales, para que no cambien
+      const datos = new FormData();
+      datos.append('color_texto', formCertificado.color_texto.value);
+      datos.append('logo_forma', formCertificado.logo_forma.value);
+      datos.append(boton.dataset.quitar, 'on');
+      try {
+        await api('/api/academia/certificado', { method: 'PUT', body: datos });
+        await cargarDiseno();
+        avisar(formCertificado, 'Imagen borrada ✅');
+      } catch (err) { avisar(formCertificado, err.message, true); }
+    });
+
     async function cargarDiseno() {
       const d = await api('/api/academia/certificado');
-      formCertificado.directora.value = d.directora || '';
       formCertificado.color_texto.value = d.color_texto;
       pintarImagenActual('cert-fondo-actual', d.fondo, 'quitar_fondo');
+      // Resolución del fondo actual (si no hay fondo, sin aviso)
+      document.getElementById('aviso-resolucion').classList.add('oculto');
+      if (d.fondo) {
+        const img = new Image();
+        img.onload = () => { if (!formCertificado.fondo.files[0]) avisoResolucion(img.naturalWidth, img.naturalHeight, false); };
+        img.src = d.fondo;
+      }
       pintarImagenActual('cert-firma-actual', d.firma, 'quitar_firma');
+      pintarImagenActual('cert-logo-actual', d.logo, 'quitar_logo');
+      formCertificado.logo_forma.value = d.logo_forma;
+      pintarEditor(d);
     }
 
     formCertificado.onsubmit = async (e) => {
       e.preventDefault();
       try {
         await api('/api/academia/certificado', { method: 'PUT', body: new FormData(formCertificado) });
-        formCertificado.fondo.value = ''; formCertificado.firma.value = '';
+        formCertificado.fondo.value = ''; formCertificado.firma.value = ''; formCertificado.logo.value = '';
         await cargarDiseno();
-        avisar(formCertificado, 'Diseño guardado ✅ Pulsa «Vista previa» para verlo.');
+        avisar(formCertificado, 'Guardado ✅ Ahora coloca los datos abajo y pulsa «Guardar y ver vista previa».');
       } catch (err) { avisar(formCertificado, err.message, true); }
     };
 
-    // ---------- Reportes ----------
-    async function cargarReportes() {
-      const reportes = await api('/api/reportes');
-      document.getElementById('reportes').innerHTML = reportes.map(r => `
-        <div class="tarjeta" style="margin-bottom:8px">
-          <p><strong>${esc(r.tipo)} #${r.elemento_id}</strong> – ${esc(r.motivo)}</p>
-          <div class="fila">
-            <button class="chip" onclick="revisar(${r.id}, true)">Volver a mostrar</button>
-            <button class="chip" onclick="revisar(${r.id}, false)">Mantener oculto</button>
-          </div>
-        </div>`).join('') || '<p>No hay reportes pendientes.</p>';
+    // ---------- Editor de posiciones del certificado ----------
+    // Datos de ejemplo (los mismos que la vista previa) para ver cómo queda
+    const EJEMPLO_CERT = { nombre: 'Nombre de la alumna', titulo: 'Manicura básica', numero: 0, fecha: new Date().toISOString() };
+    const editorCert = document.getElementById('editor-cert');
+    const editorTamano = document.getElementById('editor-tamano');
+    const editorBorrar = document.getElementById('editor-borrar');
+    vigilarAjuste(editorCert);
+    let disenoEditor = null;   // el diseño cargado (fondo, logo, firma...)
+    let posEditor = null;      // las posiciones mientras se editan (aún sin guardar)
+    let elegido = 'nombre';    // el dato que se está moviendo
+    let sinGuardar = false;    // ¿hay posiciones movidas que aún no se han guardado?
+
+    // CAMBIOS SIN GUARDAR: se enseña «● Cambios sin guardar» y, si se intenta salir de la página,
+    // el navegador pregunta antes (así no se pierde lo movido).
+    function marcarCambios(hay = true) {
+      sinGuardar = hay;
+      document.getElementById('editor-pendiente').classList.toggle('oculto', !hay);
+    }
+    window.addEventListener('beforeunload', (e) => { if (sinGuardar) { e.preventDefault(); e.returnValue = ''; } });
+
+    function pintarEditor(d) {
+      disenoEditor = d;
+      document.getElementById('editor-posiciones').classList.remove('oculto');
+      document.getElementById('editor-sin-fondo').classList.toggle('oculto', !!d.fondo);
+      if (!sinGuardar) posEditor = mezclarPosiciones(d.posiciones);   // si hay cambios sin guardar, se conservan
+      editorCert.style.backgroundImage = d.fondo ? `url("${d.fondo}")` : 'none';
+      editorCert.style.setProperty('--texto', d.color_texto);
+      // Botones para elegir cada dato (útiles en el móvil y para los datos ocultos)
+      if ((elegido === 'logo' && !d.logo) || (elegido === 'firma' && !d.firma)) elegido = 'nombre';
+      document.getElementById('editor-chips').innerHTML = Object.keys(ELEMENTOS_CERT)
+        .filter(clave => (clave !== 'logo' || d.logo) && (clave !== 'firma' || d.firma)).map(clave =>
+        `<button type="button" class="chip" data-el="${clave}">${ELEMENTOS_CERT[clave].etiqueta}</button>`).join('');
+      redibujarEditor();
     }
 
-    async function revisar(id, mostrar) {
+    function redibujarEditor() {
+      editorCert.innerHTML = htmlPlantilla(EJEMPLO_CERT, disenoEditor, posEditor);
+      ajustarTextos(editorCert);
+      elegir(elegido);
+    }
+
+    // Marca un dato como elegido y prepara la barra de tamaño y el botón Borrar / Restaurar
+    function elegir(clave) {
+      elegido = clave;
+      const info = ELEMENTOS_CERT[clave], p = posEditor[clave];
+      editorCert.querySelectorAll('.cert-el').forEach(el => el.classList.toggle('elegido', el.dataset.el === clave));
+      // En los botones de abajo, los datos borrados salen tachados
+      document.querySelectorAll('#editor-chips .chip').forEach(b => {
+        b.classList.toggle('activo', b.dataset.el === clave);
+        b.style.textDecoration = posEditor[b.dataset.el].ver ? '' : 'line-through';
+      });
+      document.getElementById('editor-nombre-dato').textContent = info.etiqueta + (p.ver ? '' : ' (borrado: no aparece en el certificado)');
+      editorTamano.min = info.min; editorTamano.max = info.max; editorTamano.value = p.t;
+      editorTamano.closest('label').classList.toggle('oculto', !p.ver);   // borrado: no hay tamaño que cambiar
+      editorBorrar.textContent = p.ver ? '🗑 Borrar del certificado' : '↺ Restaurar';
+      editorBorrar.classList.toggle('oculto', !info.ocultable);
+      document.getElementById('editor-fijo').classList.toggle('oculto', info.ocultable);
+    }
+
+    // Borrar (o recuperar) el dato elegido. No se pierde su sitio: al restaurarlo, sale donde estaba.
+    function alternarBorrado() {
+      if (!ELEMENTOS_CERT[elegido].ocultable) return;
+      posEditor[elegido].ver = !posEditor[elegido].ver;
+      marcarCambios();
+      redibujarEditor();
+      mensajeEditor(posEditor[elegido].ver
+        ? `«${ELEMENTOS_CERT[elegido].etiqueta}» se ha restaurado. Pulsa «Guardar y ver vista previa» para aplicarlo.`
+        : `«${ELEMENTOS_CERT[elegido].etiqueta}» borrado. Pulsa «Guardar y ver vista previa» para que se quite de los certificados.`);
+    }
+
+    // Cambia el estilo del dato en pantalla sin volver a pintarlo todo (va más fluido al arrastrar)
+    function moverEnPantalla(clave) {
+      const el = editorCert.querySelector(`[data-el="${clave}"]`);
+      if (!el) return;
+      el.setAttribute('style', estiloDato(clave, posEditor[clave]));
+      el.dataset.t = posEditor[clave].t;
+      ajustarTextos(editorCert);
+    }
+
+    document.getElementById('editor-chips').onclick = (e) => {
+      const b = e.target.closest('[data-el]');
+      if (b) elegir(b.dataset.el);
+    };
+    editorTamano.oninput = () => { posEditor[elegido].t = Number(editorTamano.value); marcarCambios(); moverEnPantalla(elegido); };
+    editorBorrar.onclick = alternarBorrado;
+
+    // ARRASTRAR: con "pointer events" funciona igual con ratón, dedo o lápiz.
+    // Guardamos la distancia entre el dedo y el centro del dato para que no "salte" al empezar.
+    let arrastre = null;
+    editorCert.addEventListener('pointerdown', (e) => {
+      const el = e.target.closest('.cert-el');
+      if (!el) return;
+      e.preventDefault();
+      elegir(el.dataset.el);
+      const hoja = editorCert.getBoundingClientRect(), p = posEditor[el.dataset.el];
+      arrastre = { dx: e.clientX - (hoja.left + hoja.width * p.x / 100), dy: e.clientY - (hoja.top + hoja.height * p.y / 100) };
+      editorCert.setPointerCapture(e.pointerId);   // seguimos recibiendo el movimiento aunque el dedo salga del dato
+      el.classList.add('arrastrando');
+    });
+    editorCert.addEventListener('pointermove', (e) => {
+      if (!arrastre) return;
+      const hoja = editorCert.getBoundingClientRect();
+      const limitar = n => Math.min(100, Math.max(0, n));
+      posEditor[elegido].x = limitar((e.clientX - arrastre.dx - hoja.left) / hoja.width * 100);
+      posEditor[elegido].y = limitar((e.clientY - arrastre.dy - hoja.top) / hoja.height * 100);
+      marcarCambios();
+      moverEnPantalla(elegido);
+    });
+    const soltar = () => {
+      if (!arrastre) return;
+      arrastre = null;
+      editorCert.querySelectorAll('.arrastrando').forEach(el => el.classList.remove('arrastrando'));
+    };
+    editorCert.addEventListener('pointerup', soltar);
+    editorCert.addEventListener('pointercancel', soltar);
+
+    // Flechas del teclado: mueven el dato elegido medio punto (con Mayúsculas, 2 puntos).
+    // Solo si el editor está a la vista y no se está escribiendo en un campo.
+    // Tecla Supr: borra (o restaura) el dato elegido.
+    document.addEventListener('keydown', (e) => {
+      const movs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      if (!posEditor || editorCert.offsetParent === null) return;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if (e.key === 'Delete') { e.preventDefault(); return alternarBorrado(); }
+      if (!movs[e.key]) return;
+      e.preventDefault();
+      const paso = e.shiftKey ? 2 : 0.5, p = posEditor[elegido];
+      p.x = Math.min(100, Math.max(0, p.x + movs[e.key][0] * paso));
+      p.y = Math.min(100, Math.max(0, p.y + movs[e.key][1] * paso));
+      marcarCambios();
+      moverEnPantalla(elegido);
+    });
+
+    const mensajeEditor = (texto, error = false) => {
+      const m = document.getElementById('editor-mensaje');
+      m.textContent = texto; m.classList.remove('oculto'); m.classList.toggle('error', error);
+    };
+    async function guardarPosiciones() {
+      disenoEditor = await api('/api/academia/certificado/posiciones', { method: 'PUT', body: { posiciones: posEditor } });
+      marcarCambios(false);
+    }
+    // Guarda (si hay algo sin guardar) y abre la vista previa con lo que se acaba de colocar.
+    // La pestaña se abre ANTES de guardar: si se abriera después, el navegador la bloquearía como ventana emergente.
+    document.getElementById('editor-vista-previa').onclick = async () => {
+      const ventana = window.open('', '_blank');
       try {
-        await api('/api/reportes/' + id, { method: 'PUT', body: { mostrar } });
-        cargarReportes();
-      } catch (err) { alert(err.message); }
+        if (sinGuardar) await guardarPosiciones();
+        mensajeEditor('Guardado ✅ Ya se ve así en todos los certificados. La vista previa se ha abierto en otra pestaña.');
+        if (ventana) ventana.location = '/certificado.html?vista_previa=1';
+        else location.href = '/certificado.html?vista_previa=1';   // si el navegador no deja abrir pestañas
+      } catch (err) {
+        if (ventana) ventana.close();
+        mensajeEditor(err.message, true);
+      }
+    };
+    document.getElementById('editor-restablecer').onclick = () => {
+      posEditor = mezclarPosiciones(null);
+      marcarCambios();
+      redibujarEditor();
+      mensajeEditor('Vuelven las posiciones de por defecto. Pulsa «Guardar y ver vista previa» para quedarte con ellas.');
+    };
+
+    // ---------- Panel principal: estadísticas ----------
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const nombreMes = (aaaamm) => MESES[Number(aaaamm.slice(5, 7)) - 1] + ' ' + aaaamm.slice(2, 4);
+    const euros = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+
+    // Gráfica de barras sencilla (sin librerías): una barra por mes, el valor encima,
+    // y al pasar el ratón (o con el teclado) una pista con el detalle.
+    function pintarBarras(idCaja, meses, valor, pista) {
+      const max = Math.max(1, ...meses.map(valor));
+      document.getElementById(idCaja).innerHTML = meses.map(m => {
+        const v = valor(m);
+        return `<div class="barra-mes" tabindex="0" title="${pista(m)}" aria-label="${nombreMes(m.mes)}: ${pista(m)}">
+          <span class="barra-valor">${v}</span>
+          <span class="barra-relleno" style="height:${Math.max(v / max * 100, v ? 4 : 0)}%"></span>
+          <span class="barra-mes-nombre">${nombreMes(m.mes)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    async function cargarEstadisticas() {
+      let e;
+      try { e = await api('/api/estadisticas'); }
+      catch (err) { const p = document.getElementById('msg-resumen'); p.textContent = err.message; p.classList.remove('oculto'); return; }
+      const c = e.cifras;
+      const mesActual = e.meses[e.meses.length - 1];
+      // Cuatro tarjetas como en el diseño + las visitas y lo vendido este mes
+      const tarjetas = [
+        ['🎓', c.cursos, 'Cursos activos'], ['▶', c.lecciones, 'Lecciones'], ['👥', c.alumnas, 'Alumnas y profesionales'],
+        ['⭐', c.valoracion ? Number(c.valoracion).toLocaleString('es-ES') : '–', c.resenas ? `Valoración media (${c.resenas})` : 'Sin reseñas aún'],
+        ['👁', e.visitas.este_mes, `Visitas este mes (hoy ${e.visitas.hoy})`],
+        ['💶', euros(Number(mesActual.ingresos_cursos) + Number(mesActual.ingresos_guias)), 'Vendido este mes (simulado)']
+      ];
+      document.getElementById('cifras').innerHTML = tarjetas.map(([icono, valor, texto]) =>
+        `<div class="cifra-panel"><span class="cifra-icono" aria-hidden="true">${icono}</span>
+          <span><strong>${valor}</strong><span class="ayuda">${texto}</span></span></div>`).join('');
+
+      pintarBarras('grafica-visitas', e.meses, m => m.visitas, m => `${m.visitas} visitas`);
+      pintarBarras('grafica-ventas', e.meses, m => m.cursos_vendidos,
+        m => `${m.cursos_vendidos} cursos vendidos · ${euros(m.ingresos_cursos)}${m.guias_vendidas ? ` · ${m.guias_vendidas} guías (${euros(m.ingresos_guias)})` : ''}`);
+      document.getElementById('resumen-visitas').textContent = `${e.visitas.total} en total · ${e.visitas.personas_este_mes} personas con sesión este mes`;
+      const vendidos6 = e.meses.reduce((s, m) => s + m.cursos_vendidos, 0);
+      document.getElementById('resumen-ventas').textContent = `${vendidos6} en 6 meses · pago simulado`;
+
+      document.getElementById('tabla-meses').innerHTML = `<table class="tabla">
+        <tr><th>Mes</th><th>Visitas</th><th>Cursos vendidos</th><th>Ingresos cursos</th><th>Guías vendidas</th><th>Ingresos guías</th></tr>
+        ${e.meses.map(m => `<tr><td>${nombreMes(m.mes)}</td><td>${m.visitas}</td><td>${m.cursos_vendidos}</td><td>${euros(m.ingresos_cursos)}</td>
+          <td>${m.guias_vendidas}</td><td>${euros(m.ingresos_guias)}</td></tr>`).join('')}</table>`;
+      document.getElementById('top-cursos').innerHTML = `<h2 style="margin-top:0">🏆 Cursos más vendidos</h2>` +
+        (e.topCursos.length ? `<ol class="top-cursos">${e.topCursos.map(t =>
+          `<li><strong>${esc(t.titulo)}</strong> <span class="ayuda" style="display:inline">· ${t.ventas} ${t.ventas === 1 ? 'venta' : 'ventas'} · ${euros(t.ingresos)}</span></li>`).join('')}</ol>`
+          : '<p class="ayuda">Todavía no se ha vendido ningún curso de pago.</p>');
+    }
+
+    // ---------- Guías teóricas ----------
+    const formGuia = document.getElementById('form-guia');
+
+    async function cargarGuias() {
+      const caja = document.getElementById('lista-guias');
+      try {
+        const listas = await Promise.all(Object.values(cursos).map(c => api('/api/guias?curso=' + c.id).then(g => ({ c, g }))));
+        caja.innerHTML = listas.filter(x => x.g.length).map(({ c, g }) => `
+          <div class="tarjeta" style="margin-bottom:12px">
+            <h3 style="margin:0 0 8px">${esc(c.titulo)}</h3>
+            ${g.map(guia => `
+              <div class="fila fila-lista" style="justify-content:space-between;margin-bottom:6px">
+                <span>📖 <strong>${esc(guia.titulo)}</strong> · ${Number(guia.precio) ? euros(guia.precio) : 'Gratis'}
+                  <span class="ayuda" style="display:inline">· ${guia.ventas} ${guia.ventas === 1 ? 'compra' : 'compras'}</span></span>
+                <span class="fila">
+                  <button class="chip" onclick="verGuia(this, ${guia.id})">👁 Vista previa</button>
+                  <a class="chip" href="/api/guias/${guia.id}/descargar">⬇ Descargar</a>
+                  <button class="chip peligro" onclick="borrarGuia(this, ${guia.id})">🗑 Borrar</button>
+                </span>
+              </div>
+              <div class="vista-guia oculto" id="vista-guia-${guia.id}"></div>`).join('')}
+          </div>`).join('') || '<p class="ayuda">Todavía no hay guías. Sube la primera con el formulario de arriba.</p>';
+      } catch (err) {
+        caja.innerHTML = `<p class="mensaje error">${esc(err.message)}</p>`;
+      }
+    }
+
+    formGuia.onsubmit = async (e) => {
+      e.preventDefault();
+      const boton = formGuia.querySelector('.boton');
+      boton.disabled = true;
+      try {
+        await api('/api/guias', { method: 'POST', body: new FormData(formGuia) });
+        const curso = formGuia.curso_id.value;
+        formGuia.reset();
+        formGuia.curso_id.value = curso; // se queda el curso, por si sube varias
+        avisar(formGuia, 'Guía subida ✅ Ya se puede comprar desde la página del curso.');
+        cargarGuias();
+      } catch (err) { avisar(formGuia, err.message, true); }
+      boton.disabled = false;
+    };
+
+    // Vista previa: abre (o cierra) el PDF dentro de la tarjeta, con el visor del navegador.
+    // El <iframe> se crea solo al abrirla, para no cargar todos los PDF al entrar en la pestaña.
+    function verGuia(boton, id) {
+      const caja = document.getElementById('vista-guia-' + id);
+      const abrir = caja.classList.contains('oculto');
+      caja.classList.toggle('oculto', !abrir);
+      boton.textContent = abrir ? '✕ Cerrar vista previa' : '👁 Vista previa';
+      if (abrir && !caja.firstChild) {
+        caja.innerHTML = `<iframe src="/api/guias/${id}/descargar?ver=1#view=FitH" title="Vista previa de la guía"></iframe>
+          <p class="ayuda"><a href="/api/guias/${id}/descargar?ver=1" target="_blank" rel="noopener">Abrir en una pestaña nueva ↗</a></p>`;
+      }
+    }
+
+    async function borrarGuia(boton, id) {
+      if (!confirm('¿Borrar esta guía? Quien la compró ya no podrá descargarla. No se puede deshacer.')) return;
+      boton.disabled = true;
+      try {
+        await api('/api/guias/' + id, { method: 'DELETE' });
+        cargarGuias();
+      } catch (err) {
+        const p = document.getElementById('msg-guias'); p.textContent = err.message; p.classList.remove('oculto');
+        boton.disabled = false;
+      }
     }
 
     // ---------- Al abrir la página ----------
@@ -430,9 +977,11 @@
         document.querySelector('main').innerHTML = '<p class="mensaje">Solo la administradora puede ver este panel.</p>';
         return;
       }
+      abrirPestanaPanel(param('pestana') || 'resumen'); // la de la URL, o el Panel principal
       await recargar();
       cargarDiseno();
-      cargarReportes();
+      cargarEstadisticas();
+      cargarGuias();
     })();
   </script>
 </body>

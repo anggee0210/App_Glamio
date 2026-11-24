@@ -3,7 +3,7 @@
 // ===============================
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
+const { cargarSesion } = require('./middleware/sesiones');
 const path = require('path');
 
 const app = express();
@@ -13,12 +13,23 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'glamio-secreto',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 horas
-}));
+// Sesiones propias (tabla "sesiones" en PostgreSQL): en cada petición lee la cookie
+// glamio_sesion y, si es válida, rellena req.session.usuaria. Ver middleware/sesiones.js
+// (Va ANTES del contador de visitas, que necesita saber quién ha entrado.)
+app.use(cargarSesion);
+
+// --- Contador de visitas (estadísticas de la administradora) ---
+// Cada página que se abre (/ o un .html) suma una fila en "visitas". Datos mínimos: página, fecha y,
+// si ha entrado, quién (sin IP: RGPD). Se guarda "sin esperar": si falla, la página carga igual.
+const pool = require('./db/pool');
+app.use((req, res, next) => {
+  if (req.method === 'GET' && (req.path === '/' || req.path.endsWith('.html'))) {
+    const pagina = (req.path === '/' ? '/index.html' : req.path).slice(0, 100);
+    const usuariaId = req.session.usuaria ? req.session.usuaria.id : null;
+    pool.query('INSERT INTO visitas (pagina, usuaria_id) VALUES ($1, $2)', [pagina, usuariaId]).catch(() => {});
+  }
+  next();
+});
 
 // --- Archivos estáticos ---
 app.use(express.static(path.join(__dirname, 'public')));
@@ -36,6 +47,11 @@ app.use('/api/servicios', require('./routes/servicios'));
 app.use('/api/reportes', require('./routes/reportes'));
 app.use('/api/academia', require('./routes/academia'));
 app.use('/api/certificados', require('./routes/certificados'));
+app.use('/api/estadisticas', require('./routes/estadisticas'));
+app.use('/api/guias', require('./routes/guias'));
+app.use('/api/mi-estilo', require('./routes/mi-estilo')); // fase 2: favoritos de la clienta
+app.use('/api/perfil', require('./routes/perfil'));       // fase 2: perfil público de alumna y profesional
+app.use('/api/ficha', require('./routes/ficha'));         // ficha personal de la alumna (solo ella y la admin)
 
 // --- Ruta no encontrada en la API ---
 app.use('/api', (req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
@@ -45,7 +61,12 @@ app.use((err, req, res, next) => {
   // Errores de multer (archivo demasiado grande, etc.): son de los datos enviados → 400
   if (err.name === 'MulterError') {
     err.status = 400;
-    if (err.code === 'LIMIT_FILE_SIZE') err.message = 'El archivo es demasiado grande (máximo 50 MB). Los vídeos largos, por YouTube.';
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      // Las guías PDF tienen su propio límite (100 MB); el resto de subidas, 50 MB
+      err.message = req.originalUrl.startsWith('/api/guias')
+        ? 'La guía es demasiado grande (máximo 100 MB).'
+        : 'El archivo es demasiado grande (máximo 50 MB). Los vídeos largos, por YouTube.';
+    }
   }
   const estado = err.status || 500;
   if (estado === 500) console.error(err); // solo apuntamos los fallos de verdad del servidor

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main class="pagina-perfil">
+    <!-- Fase 2 · Perfil público: lo ve cualquiera. El servidor solo manda datos públicos (nunca el email). -->
+    <div id="contenido-perfil"><p>Cargando…</p></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const mesYAnio = (f) => { const d = new Date(f); return `${MESES[d.getMonth()]} de ${d.getFullYear()}`; };
+    const euros = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+
+    // Cabecera: círculo con la inicial · nombre · insignia · desde cuándo está en GLAMIO
+    function cabecera(p, esMiPerfil) {
+      const certificada = p.insignia.includes('certificada');
+      return `
+        <section class="perfil-cabecera">
+          <span class="perfil-avatar" aria-hidden="true">${esc(p.nombre.trim().charAt(0).toUpperCase())}</span>
+          <div class="perfil-datos">
+            <h1>${esc(p.nombre)}</h1>
+            <p><span class="etiqueta perfil-insignia${certificada ? ' certificada' : ''}">${certificada ? '🎓 ' : ''}${esc(p.insignia)}</span></p>
+            <p class="ayuda">En GLAMIO desde ${mesYAnio(p.miembro_desde)} · ${p.cursos.length} ${p.cursos.length === 1 ? 'curso terminado' : 'cursos terminados'} · ${p.trabajos.length} ${p.trabajos.length === 1 ? 'trabajo' : 'trabajos'}</p>
+          </div>
+        </section>
+        ${esMiPerfil ? `<p class="mensaje perfil-aviso">👁 Así ven tu perfil las demás personas. Tus servicios solo salen si los marcas
+          en <a href="/calculadora.html">Calculadora → Mis servicios</a> con «Mostrar en mi perfil».</p>` : ''}`;
+    }
+
+    // 🎓 Cursos terminados en GLAMIO (los mismos de su certificado)
+    function cursos(lista) {
+      return `<section class="perfil-bloque">
+        <h2>🎓 Cursos terminados en GLAMIO</h2>
+        ${lista.length ? `<div class="perfil-cursos">${lista.map(c => `
+          <span class="perfil-curso">${c.icono ? esc(c.icono) + ' ' : ''}<strong>${esc(c.titulo)}</strong>
+            ${c.categoria ? `<small>${esc(c.categoria)}</small>` : ''}</span>`).join('')}</div>`
+          : '<p class="ayuda">Todavía no ha terminado ningún curso.</p>'}
+      </section>`;
+    }
+
+    // 💅 Servicios que ella decidió enseñar: nombre, duración y precio (sin el desglose de costes)
+    function servicios(lista) {
+      if (!lista.length) return ''; // si no ha marcado ninguno, el apartado no sale
+      return `<section class="perfil-bloque">
+        <h2>💅 Servicios</h2>
+        <div class="perfil-servicios">${lista.map(s => `
+          <div class="perfil-servicio">
+            <span><strong>${esc(s.nombre)}</strong><br>
+              <span class="ayuda">${s.icono ? esc(s.icono) + ' ' : ''}${s.categoria ? esc(s.categoria) + ' · ' : ''}${s.minutos} min</span></span>
+            <span class="perfil-precio">${euros(s.precio_sugerido)}</span>
+          </div>`).join('')}</div>
+        <p class="ayuda">Precios orientativos calculados con la calculadora de GLAMIO.</p>
+      </section>`;
+    }
+
+    // 📷 Trabajos (el servidor ya aplica la regla del permiso según quién mira)
+    function trabajos(lista) {
+      return `<section class="perfil-bloque">
+        <h2>📷 Trabajos</h2>
+        ${lista.length ? `<div class="perfil-trabajos">${lista.map(t => `
+          <figure class="perfil-trabajo">
+            <a class="ver-foto" href="${esc(t.foto)}" title="Ver la foto en grande"><img src="${esc(t.foto)}" alt="Trabajo${t.curso ? ' de ' + esc(t.curso) : ''}"></a>
+            <figcaption><strong>${t.curso ? esc(t.curso) : 'Trabajo propio'}</strong>
+              ${t.descripcion ? `<span>${esc(t.descripcion)}</span>` : ''}
+              <span class="ayuda">${fechaCorta(t.fecha)}</span></figcaption>
+          </figure>`).join('')}</div>`
+          : '<p class="ayuda">Todavía no hay trabajos para enseñar.</p>'}
+      </section>`;
+    }
+
+    async function iniciar() {
+      const usuaria = await pintarCabecera();
+      const caja = document.getElementById('contenido-perfil');
+      const id = param('id');
+      try {
+        const p = await api('/api/perfil/' + encodeURIComponent(id || ''));
+        document.title = `${p.nombre} – GLAMIO`;
+        const esMiPerfil = !!usuaria && usuaria.id === p.id;
+        caja.innerHTML = cabecera(p, esMiPerfil) + cursos(p.cursos) + servicios(p.servicios) + trabajos(p.trabajos);
+      } catch (err) {
+        // 404 = no existe o no tiene perfil público (el servidor da el mismo mensaje)
+        caja.innerHTML = `<h1>Perfil</h1><p class="mensaje">${esc(err.message)}. <a href="/muro.html">Volver al muro</a></p>`;
+      }
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>

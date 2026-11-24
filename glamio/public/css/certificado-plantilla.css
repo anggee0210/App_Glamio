@@ -1,0 +1,42 @@
+/* =====================================================================
+   CERTIFICADO: la hoja y los datos encima de la plantilla.
+   Lo usan certificado.html y el editor del Panel (admin.html).
+   ===================================================================== */
+
+/* Hoja tamaño CARTA apaisada (11 × 8,5 pulgadas = 279,4 × 215,9 mm). container-type permite usar "cqw":
+   1cqw = 1 % del ancho del certificado, así el texto crece y encoge con la hoja. */
+.certificado { --texto: #3a2f36; position: relative; width: 100%; max-width: 1000px; margin: 16px auto;
+  aspect-ratio: 11 / 8.5; container-type: inline-size; color: var(--texto);
+  /* 100% 100%: el fondo se ajusta a la hoja carta ENTERO (sin recortar el marco), aunque se haya hecho en otro tamaño */
+  background: #fff center / 100% 100% no-repeat; border-radius: var(--radio); overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+
+/* Cada dato se coloca por su CENTRO (left/top vienen de la posición guardada) */
+.cert-el { position: absolute; transform: translate(-50%, -50%); text-align: center; line-height: 1.15; }
+/* Nombre y curso: siempre en una línea (si es largo, ajustarTextos() encoge la letra) */
+.cert-el-nombre, .cert-el-curso { font-family: var(--serif); font-weight: 700; white-space: nowrap; }
+.cert-el-datos { white-space: nowrap; line-height: 1.4; opacity: .75; }
+.cert-el-logo { aspect-ratio: 1; }
+.cert-el-firma { display: flex; align-items: center; justify-content: center; }
+.cert-el-firma img { height: 100%; max-width: 40cqw; object-fit: contain; }
+
+/* FORMA DEL LOGO (la elige la administradora en el Panel). La caja es cuadrada;
+   object-fit: cover llena la caja y recorta lo que sobra, sin deformar la imagen. */
+.forma-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.forma-cuadrado img { border-radius: 8%; }                       /* tal cual, esquinas suaves */
+.forma-redondo img { border-radius: 50%; }                       /* círculo */
+.forma-desvanecido img { border-radius: 50%; opacity: .9;        /* círculo con bordes que se funden */
+  -webkit-mask-image: radial-gradient(circle closest-side, #000 62%, transparent 100%);
+          mask-image: radial-gradient(circle closest-side, #000 62%, transparent 100%); }
+
+/* ---------- Solo en el editor del Panel ---------- */
+.editor-cert .cert-el { cursor: grab; touch-action: none; user-select: none; outline: 1px dashed rgba(122, 42, 140, .45);
+  outline-offset: 2px; }
+.editor-cert .cert-el img { pointer-events: none; -webkit-user-drag: none; }
+.editor-cert .cert-el:hover { outline-color: var(--principal, #7a2a8c); }
+.editor-cert .cert-el.elegido { outline: 2px solid var(--principal, #7a2a8c); background: rgba(255, 255, 255, .35); }
+.editor-cert .cert-el.arrastrando { cursor: grabbing; }
+.editor-controles { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 10px 0; }
+.editor-controles input[type=range] { width: 200px; max-width: 100%; }
+.editor-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.editor-chips button.activo { background: var(--principal, #7a2a8c); color: #fff; }

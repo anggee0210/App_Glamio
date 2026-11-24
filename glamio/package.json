@@ -7,14 +7,20 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "db:crear": "psql -U postgres -d glamio -f db/schema.sql",
-    "db:datos": "psql -U postgres -d glamio -f db/seed.sql"
+    "db:datos": "psql -U postgres -d glamio -f db/seed.sql",
+    "db:demo": "node db/datos-demo.js",
+    "test": "node test/ejecutar.js",
+    "test:simulado": "node -e \"process.env.CORREO_PRUEBAS='simulado'; require('./test/ejecutar.js')\"",
+    "db:migrar-login": "psql -U postgres -d glamio -f db/migracion-login.sql",
+    "copia": "node db/copia-seguridad.js"
   },
   "dependencies": {
+    "argon2": "^0.41.1",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "express-session": "^1.18.0",
     "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.16",
     "pg": "^8.12.0"
   }
 }

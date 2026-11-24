@@ -9,7 +9,8 @@
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
-    <div id="curso"></div>
+    <!-- Diseño "Curso": foto a la izquierda y datos a la derecha (lo pinta pintarCabeceraCurso) -->
+    <section id="curso" class="curso-cabecera"></section>
 
     <!-- Resumen del pago simulado (solo cursos de pago). No pide datos de tarjeta. -->
     <section id="resumen-pago" class="tarjeta oculto" style="margin-top:12px">
@@ -24,28 +25,66 @@
     </section>
     <p class="mensaje error oculto" id="error"></p>
 
-    <section id="zona-progreso" class="oculto">
-      <h2>Tu progreso</h2>
-      <div class="barra"><div id="barra" style="width:0%"></div></div>
+    <!-- Tarjeta "Tu progreso": barra con el % dentro, "3 de 6 lecciones" y el certificado a la derecha.
+         Solo si está inscrita; el certificado, con el curso terminado (ver cargarProgreso) -->
+    <section id="zona-progreso" class="tarjeta progreso-tarjeta oculto">
+      <div class="progreso-barra">
+        <h2>Tu progreso</h2>
+        <div class="barra barra-grande"><div id="barra" style="width:0%"><span id="porcentaje"></span></div></div>
+      </div>
       <p id="texto-progreso"></p>
-      <a id="certificado" class="boton oculto" href="#">Ver mi certificado</a>
+      <a id="certificado" class="boton-opcion oculto" href="#" title="Abre tu certificado para verlo o imprimirlo">🎓 Ver mi certificado</a>
     </section>
 
-    <h2>Lecciones</h2>
-    <ol id="lecciones" style="padding-left:20px"></ol>
+    <!-- Dos columnas: lecciones a la izquierda; materiales y reseñas a la derecha -->
+    <div class="curso-columnas">
+      <section class="tarjeta panel-lecciones">
+        <h2>Lecciones</h2>
+        <ol id="lecciones" class="lista-lecciones"></ol>
+      </section>
 
-    <h2>Materiales</h2>
-    <ul id="materiales" style="padding-left:20px"></ul>
-    <a class="boton secundario" id="ir-calculadora" href="#" style="margin-top:10px;display:inline-block">Calcular mi precio con estos materiales</a>
+      <div class="curso-lateral">
+        <section class="tarjeta">
+          <h2>📋 Materiales</h2>
+          <ul id="materiales" class="lista-materiales"></ul>
+          <!-- Solo si está inscrita (ver pintarCabeceraCurso) -->
+          <a class="boton-opcion oculto" id="ir-calculadora" href="#" title="Abre la calculadora con estos materiales ya cargados">🧮 Calcular mi precio</a>
+        </section>
+        <!-- Guías teóricas en PDF (solo sale si el curso tiene alguna) -->
+        <section class="tarjeta oculto" id="zona-guias">
+          <h2>📖 Guías teóricas</h2>
+          <p class="mensaje oculto" id="msg-guias"></p>
+          <div class="lista-guias" id="lista-guias"></div>
+        </section>
+        <!-- Resumen de reseñas: "★ 4,8 · 12 reseñas ›", lleva a la lista de abajo -->
+        <a class="tarjeta resumen-resenas" href="#zona-resenas">
+          <h2>☆ Reseñas</h2>
+          <span class="media-estrellas" id="media"></span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+      </div>
+    </div>
 
-    <h2>Reseñas</h2>
-    <form id="form-resena" class="tarjeta oculto">
-      <label>Estrellas
-        <select name="estrellas"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
-      </label>
-      <label>Comentario <textarea name="comentario" rows="3"></textarea></label>
+    <h2 class="titulo-linea" id="zona-resenas">Reseñas del curso</h2>
+    <p class="mensaje oculto" id="msg-resenas"></p>
+
+    <!-- Solo con el curso terminado y si aún no lo ha reseñado (RN-18 y RN-19) -->
+    <form id="form-resena" class="tarjeta oculto" style="margin-bottom:12px">
+      <p style="margin:0 0 6px"><strong>¿Qué te ha parecido el curso?</strong></p>
+      <!-- 5 botones en vez de un desplegable: se pulsa la estrella y se pintan hasta ahí -->
+      <div class="elegir-estrellas" id="elegir-estrellas" role="radiogroup" aria-label="Elige de 1 a 5 estrellas">
+        <button type="button" data-valor="1" aria-label="1 estrella">★</button>
+        <button type="button" data-valor="2" aria-label="2 estrellas">★</button>
+        <button type="button" data-valor="3" aria-label="3 estrellas">★</button>
+        <button type="button" data-valor="4" aria-label="4 estrellas">★</button>
+        <button type="button" data-valor="5" aria-label="5 estrellas">★</button>
+        <span class="ayuda" id="texto-estrellas" style="display:inline;margin-left:8px">Pulsa una estrella</span>
+      </div>
+      <input type="hidden" name="estrellas">
+      <label>Comentario (opcional) <textarea name="comentario" rows="3" maxlength="1000" placeholder="Cuenta qué aprendiste y qué mejorarías"></textarea></label>
       <label>Foto de tu resultado (opcional) <input type="file" name="foto" accept="image/*"></label>
-      <button class="boton">Publicar reseña</button>
+      <p class="ayuda" id="ayuda-resena"></p>
+      <button class="boton" id="publicar-resena" style="margin-top:8px">Publicar reseña</button>
     </form>
     <div id="resenas"></div>
   </main>
@@ -56,6 +95,7 @@
     let usuaria = null;
     let curso = null;
     let inscrita = false;
+    let terminado = false; // curso terminado → puede reseñar (RN-18)
     let completadas = []; // ids de las lecciones que ya ha hecho
 
     // Perfiles que pueden hacer cursos (el servidor lo comprueba también)
@@ -92,40 +132,69 @@
 
       if (usuaria) await cargarProgreso();
       pintarLecciones();
+      cargarGuias();
       cargarResenas();
     }
 
-    // Portada, título, precio y el botón (o aviso) según quién mira la página
+    // La primera lección que aún no ha hecho (para "Continuar curso"); si las hizo todas, la primera
+    function siguienteLeccion() {
+      return curso.lecciones.find(l => !completadas.includes(l.id)) || curso.lecciones[0];
+    }
+
+    // Diseño "Curso": foto a la izquierda; categoría, título, descripción, datos y el botón a la derecha.
+    // El botón depende de quién mira: entrar, inscribirse, empezar/continuar, repasar o editar.
     function pintarCabeceraCurso() {
+      const n = curso.lecciones.length;
       let accion = '';
       if (!usuaria) {
-        accion = '<p><a href="/login.html">Entra</a> o <a href="/registro.html">regístrate</a> para inscribirte.</p>';
+        accion = `<a class="boton" href="/login.html">Entra para inscribirte</a>
+          <span class="ayuda">¿No tienes cuenta? <a href="/registro.html">Regístrate</a></span>`;
       } else if (usuaria.perfil === 'administradora') {
-        accion = '<p class="ayuda">Eres la administradora: este curso se edita desde el <a href="/admin.html">Panel</a>.</p>';
+        accion = `<a class="boton secundario" href="/admin.html">✏️ Editar en el Panel</a>`;
       } else if (!PUEDEN_INSCRIBIRSE.includes(usuaria.perfil)) {
         accion = '<p class="ayuda">Los cursos son para alumnas y profesionales.</p>';
       } else if (!inscrita) {
-        accion = `<button class="boton" id="inscribirse" style="margin-top:10px">
-          ${Number(curso.precio) > 0 ? 'Inscribirme · ' + precioTexto(curso.precio) : 'Inscribirme gratis'}</button>`;
+        accion = `<button class="boton" id="inscribirse">
+          ${Number(curso.precio) > 0 ? '🎓 Inscribirme · ' + precioTexto(curso.precio) : '🎓 Inscribirme gratis'}</button>`;
+      } else if (n) {
+        const sig = siguienteLeccion();
+        const texto = terminado ? '↺ Repasar el curso' : completadas.length ? '▶ Continuar curso' : '▶ Empezar curso';
+        accion = `<a class="boton" href="/leccion.html?id=${sig.id}">${texto}</a>`;
       }
       document.getElementById('curso').innerHTML = `
-        ${curso.imagen ? `<img src="${curso.imagen}" alt="" class="portada">` : ''}
-        <span class="etiqueta">${esc(curso.categoria)}</span>
-        <h1>${esc(curso.titulo)}</h1>
-        <p>${esc(curso.descripcion)}</p>
-        <p class="precio">${precioTexto(curso.precio)}</p>
-        ${accion}`;
+        <div class="curso-foto">${curso.imagen ? htmlPortada(curso, 'Portada del curso ' + curso.titulo)
+          : '<span class="sin-foto" aria-hidden="true">💅</span>'}</div>
+        <div class="curso-info">
+          <span class="etiqueta">${esc(curso.categoria)}</span>
+          <h1>${esc(curso.titulo)}</h1>
+          <p class="curso-descripcion">${esc(curso.descripcion)}</p>
+          <p class="curso-meta">
+            <span>▶ ${n} ${n === 1 ? 'lección' : 'lecciones'}</span>
+            <span>📋 ${curso.materiales.length} ${curso.materiales.length === 1 ? 'material' : 'materiales'}</span>
+            <span class="precio">${precioTexto(curso.precio)}</span>
+          </p>
+          <div class="curso-accion">${accion}</div>
+        </div>`;
       const btn = document.getElementById('inscribirse');
       if (btn) btn.onclick = alPulsarInscribirme;
+
+      // "Calcular mi precio con estos materiales": para quien está inscrita (y la administradora,
+      // que también usa la calculadora). Sin materiales, el botón no tendría nada que cargar.
+      const puedeCalcular = inscrita || (usuaria && usuaria.perfil === 'administradora');
+      document.getElementById('ir-calculadora').classList.toggle('oculto', !puedeCalcular || curso.materiales.length === 0);
     }
 
-    // Lecciones: 🔒 si no está inscrita, ✅ si ya la ha hecho
+    // Lecciones como en el diseño: círculo (✓ morado si está hecha, vacío si no, 🔒 si no está inscrita),
+    // "1. Título" y una flecha ›
     function pintarLecciones() {
       const puedeVer = inscrita || (usuaria && usuaria.perfil === 'administradora');
-      document.getElementById('lecciones').innerHTML = curso.lecciones.map(l => {
-        if (!puedeVer) return `<li class="bloqueada">🔒 ${esc(l.titulo)}</li>`;
-        const hecha = completadas.includes(l.id) ? ' ✅' : '';
-        return `<li><a href="/leccion.html?id=${l.id}">${esc(l.titulo)}</a>${hecha}</li>`;
+      document.getElementById('lecciones').innerHTML = curso.lecciones.map((l, i) => {
+        const titulo = `<span class="leccion-nombre">${i + 1}. ${esc(l.titulo)}</span>`;
+        if (!puedeVer) return `<li class="fila-leccion bloqueada"><span class="circulo" aria-hidden="true">🔒</span>${titulo}</li>`;
+        const hecha = completadas.includes(l.id);
+        return `<li><a class="fila-leccion" href="/leccion.html?id=${l.id}">
+          <span class="circulo ${hecha ? 'hecha' : ''}" aria-label="${hecha ? 'Completada' : 'Sin hacer'}">${hecha ? '✓' : ''}</span>
+          ${titulo}<span class="flecha" aria-hidden="true">›</span></a></li>`;
       }).join('') || '<li class="ayuda">Este curso todavía no tiene lecciones.</li>';
     }
 
@@ -160,12 +229,15 @@
       try {
         const p = await api(`/api/cursos/${id}/progreso`);
         inscrita = p.terminado !== null; // null = no hay inscripción
+        terminado = p.terminado === true;
         completadas = p.completadas || [];
         pintarCabeceraCurso(); // para quitar el botón "Inscribirme" si ya lo está
         if (!inscrita) return;
         document.getElementById('zona-progreso').classList.remove('oculto');
-        document.getElementById('barra').style.width = (p.terminado ? 100 : p.porcentaje) + '%';
-        let texto = `${p.hechas} de ${p.total} lecciones (${p.porcentaje}%)`;
+        const porcentaje = p.terminado ? 100 : p.porcentaje;
+        document.getElementById('barra').style.width = Math.max(porcentaje, 8) + '%'; // un mínimo para que se lea el %
+        document.getElementById('porcentaje').textContent = porcentaje + '%';
+        let texto = `${p.hechas} de ${p.total} lecciones`;
         if (p.terminado) {
           // Si se añadieron lecciones después de terminar, el curso SIGUE terminado (decisión del proyecto)
           const nuevas = p.total - p.hechas;
@@ -173,34 +245,215 @@
           const cert = document.getElementById('certificado');
           cert.href = '/certificado.html?curso=' + id;
           cert.classList.remove('oculto');
-          document.getElementById('form-resena').classList.remove('oculto');
+          // (el formulario de reseña lo decide cargarResenas: depende de si ya la ha escrito)
         }
         document.getElementById('texto-progreso').textContent = texto;
       } catch (e) { /* sin sesión: no se muestra el progreso */ }
     }
 
-    async function cargarResenas() {
-      const resenas = await api('/api/resenas?curso=' + id);
-      document.getElementById('resenas').innerHTML = resenas.map(r => `
-        <div class="tarjeta" style="margin-bottom:10px">
-          <span class="etiqueta">${esc(r.insignia)}</span>
-          <p><strong>${esc(r.nombre)}</strong> · ${'⭐'.repeat(r.estrellas)}</p>
-          <p>${esc(r.comentario)}</p>
-          ${r.foto ? `<img src="${r.foto}" alt="" style="max-width:200px">` : ''}
-          ${r.respuesta_admin ? `<p class="mensaje"><strong>GLAMIO responde:</strong> ${esc(r.respuesta_admin)}</p>` : ''}
-        </div>`).join('') || '<p>Todavía no hay reseñas.</p>';
+    // ================= Guías teóricas (PDF, pago simulado) =================
+    async function cargarGuias() {
+      let guias;
+      try { guias = await api('/api/guias?curso=' + id); } catch (e) { return; }
+      document.getElementById('zona-guias').classList.toggle('oculto', guias.length === 0);
+      const puedeComprar = usuaria && PUEDEN_INSCRIBIRSE.includes(usuaria.perfil);
+      const esAdministradora = usuaria && usuaria.perfil === 'administradora';
+      document.getElementById('lista-guias').innerHTML = guias.map(g => {
+        const gratis = Number(g.precio) === 0;
+        let accion;
+        if (g.comprada || esAdministradora) accion = `<a class="boton-opcion" href="/api/guias/${g.id}/descargar">⬇ Descargar PDF</a>`;
+        else if (!usuaria) accion = `<a class="boton-opcion" href="/login.html">Entra para ${gratis ? 'obtenerla' : 'comprarla'}</a>`;
+        else if (puedeComprar) accion = `<button class="boton" onclick="comprarGuia(this, ${g.id}, ${gratis}, '${precioTexto(g.precio)}')">${gratis ? 'Obtener gratis' : 'Comprar · ' + precioTexto(g.precio)}</button>`;
+        else accion = '';
+        return `<div class="guia">
+          <div class="guia-datos">
+            <strong>${esc(g.titulo)}</strong>
+            ${g.descripcion ? `<span class="ayuda">${esc(g.descripcion)}</span>` : ''}
+            <span class="guia-precio">${g.comprada ? '✅ Ya la tienes' : precioTexto(g.precio)}</span>
+          </div>${accion}</div>`;
+      }).join('');
     }
 
+    async function comprarGuia(boton, guiaId, gratis, precio) {
+      // De pago: confirmación del pago simulado (no se piden datos de tarjeta)
+      if (!gratis && !confirm(`Comprar esta guía por ${precio}.\n\nℹ️ Pago simulado: es una demo, no se cobra nada.`)) return;
+      boton.disabled = true;
+      const msg = document.getElementById('msg-guias');
+      try {
+        await api(`/api/guias/${guiaId}/comprar`, { method: 'POST', body: gratis ? {} : { pago_simulado: true } });
+        msg.textContent = '✅ ¡Listo! Ya puedes descargar la guía.';
+        msg.classList.remove('oculto', 'error');
+        cargarGuias();
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.classList.add('error');
+        msg.classList.remove('oculto');
+        boton.disabled = false;
+      }
+    }
+
+    // ================= Reseñas =================
+    const esAdmin = () => usuaria && usuaria.perfil === 'administradora';
+    const esMia = (r) => usuaria && r.usuaria_id === usuaria.id;
+
+    // Aviso encima de las reseñas (rojo si es error). Sustituye al alert().
+    function avisarResenas(texto, esError = false) {
+      const p = document.getElementById('msg-resenas');
+      p.textContent = texto;
+      p.classList.toggle('error', esError);
+      p.classList.toggle('oculto', !texto);
+      if (texto) p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // 3 → "★★★☆☆" (las llenas en dorado, las vacías en gris, con CSS)
+    function estrellasTexto(n) {
+      return `<span class="estrellas" aria-label="${n} de 5 estrellas">${'★'.repeat(n)}<span class="vacias">${'★'.repeat(5 - n)}</span></span>`;
+    }
+
+    // --- Elegir estrellas en el formulario ---
+    const NOMBRES_ESTRELLAS = ['', 'Muy mal', 'Regular', 'Bien', 'Muy bien', '¡Excelente!'];
+    function pintarEleccion(valor) {
+      document.querySelector('#form-resena [name=estrellas]').value = valor || '';
+      document.querySelectorAll('#elegir-estrellas button').forEach(b =>
+        b.classList.toggle('llena', Number(b.dataset.valor) <= valor));
+      document.getElementById('texto-estrellas').textContent = valor ? NOMBRES_ESTRELLAS[valor] : 'Pulsa una estrella';
+    }
+    document.querySelectorAll('#elegir-estrellas button').forEach(b =>
+      b.onclick = () => pintarEleccion(Number(b.dataset.valor)));
+
+    // --- Una tarjeta de reseña ---
+    function tarjetaResena(r) {
+      const respuesta = r.respuesta_admin
+        ? `<div class="mensaje" style="margin-top:8px"><strong>🎓 La administradora responde:</strong> ${esc(r.respuesta_admin)}</div>` : '';
+      // La directora: responder o editar su respuesta (en la propia página, decisión del proyecto)
+      const controlesAdmin = esAdmin() ? `
+        <div class="fila" style="margin-top:8px">
+          <button class="chip" onclick="abrirRespuesta(${r.id})">${r.respuesta_admin ? '✏️ Editar respuesta' : '💬 Responder'}</button>
+        </div>
+        <form class="form-respuesta oculto" id="responder-${r.id}" onsubmit="guardarRespuesta(event, ${r.id})">
+          <textarea name="respuesta" rows="2" maxlength="1000" required placeholder="Escribe tu respuesta…">${esc(r.respuesta_admin || '')}</textarea>
+          <div class="fila" style="margin-top:6px">
+            <button class="boton">Guardar respuesta</button>
+            <button type="button" class="chip" onclick="abrirRespuesta(${r.id})">Cancelar</button>
+          </div>
+        </form>` : '';
+      // La autora borra la suya; las demás (con sesión) pueden reportarla. La directora responde, no reporta.
+      let acciones = '';
+      if (esMia(r)) acciones = `<div class="fila" style="margin-top:8px"><button class="chip peligro" onclick="borrarResena(this, ${r.id})">🗑 Borrar mi reseña</button></div>`;
+      else if (usuaria && !esAdmin()) acciones = `<div class="fila" style="margin-top:8px"><button class="chip" onclick="reportarResena(this, ${r.id})">⚑ Reportar</button></div>`;
+
+      return `
+        <div class="tarjeta ${esMia(r) ? 'destacada' : ''}" style="margin-bottom:10px">
+          <span class="etiqueta">🎓 ${esc(r.insignia)}</span>
+          <p style="margin:6px 0 0"><strong>${esc(r.nombre)}</strong>${esMia(r) ? ' <span class="ayuda" style="display:inline">(tu reseña)</span>' : ''}
+            · ${estrellasTexto(r.estrellas)}</p>
+          <p class="ayuda">${fechaCorta(r.fecha)}</p>
+          ${r.comentario ? `<p style="margin:6px 0">${esc(r.comentario)}</p>` : ''}
+          ${r.foto ? `<a class="ver-foto" href="${r.foto}" target="_blank" title="Ver la foto en grande"><img src="${r.foto}" alt="Foto de la reseña" style="max-width:200px"></a>` : ''}
+          ${respuesta}${controlesAdmin}${acciones}
+        </div>`;
+    }
+
+    async function cargarResenas() {
+      let resenas;
+      try {
+        resenas = await api('/api/resenas?curso=' + id);
+      } catch (err) {
+        return avisarResenas('No se pudieron cargar las reseñas: ' + err.message, true);
+      }
+
+      // Media: "★ 4,5 · 3 reseñas"
+      const media = resenas.length ? resenas.reduce((s, r) => s + r.estrellas, 0) / resenas.length : 0;
+      document.getElementById('media').innerHTML = resenas.length
+        ? `<span class="estrellas">★</span> <strong>${media.toLocaleString('es-ES', { maximumFractionDigits: 1 })}</strong>
+           · ${resenas.length} ${resenas.length === 1 ? 'reseña' : 'reseñas'}` : '<span class="ayuda">Sin reseñas aún</span>';
+
+      // Formulario: con el curso terminado y sin reseña suya todavía (RN-18 y RN-19)
+      const puedeResenar = terminado && PUEDEN_INSCRIBIRSE.includes(usuaria?.perfil) && !resenas.some(esMia);
+      document.getElementById('form-resena').classList.toggle('oculto', !puedeResenar);
+      if (puedeResenar) {
+        document.getElementById('ayuda-resena').textContent =
+          `Tu reseña llevará la etiqueta «${usuaria.perfil === 'profesional' ? 'Profesional' : 'Alumna'} certificada». Podrás borrarla, pero no editarla.`;
+      }
+
+      document.getElementById('resenas').innerHTML = resenas.map(tarjetaResena).join('')
+        || `<p class="ayuda">Todavía no hay reseñas.${terminado ? ' ¡Sé la primera en contar qué te pareció!' : ''}</p>`;
+
+      // Desde la 🔔 (curso.html?id=1#resenas): bajamos a las reseñas una sola vez,
+      // cuando ya están pintadas (el navegador no puede hacerlo solo porque llegan después)
+      if (location.hash === '#resenas' && !yaBajeAResenas) {
+        yaBajeAResenas = true;
+        document.getElementById('zona-resenas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    let yaBajeAResenas = false;
+
+    // --- Publicar ---
     document.getElementById('form-resena').onsubmit = async (e) => {
       e.preventDefault();
-      const datos = new FormData(e.target);
+      const form = e.target;
+      if (!form.estrellas.value) return avisarResenas('Elige de 1 a 5 estrellas', true);
+      const boton = document.getElementById('publicar-resena');
+      boton.disabled = true; // evita publicar dos veces con doble clic
+      const datos = new FormData(form);
       datos.append('curso_id', id);
       try {
         await api('/api/resenas', { method: 'POST', body: datos });
-        e.target.classList.add('oculto');
+        form.reset();
+        pintarEleccion(0);
+        avisarResenas('✅ ¡Gracias! Tu reseña ya está publicada.');
         cargarResenas();
-      } catch (err) { alert(err.message); }
+      } catch (err) {
+        avisarResenas(err.message, true); // ej. "Ya has reseñado este curso"
+      } finally {
+        boton.disabled = false;
+      }
     };
+
+    // --- La autora borra su reseña ---
+    async function borrarResena(boton, resenaId) {
+      if (!confirm('¿Borrar tu reseña? Se borra del todo (también la foto) y no se puede deshacer.')) return;
+      boton.disabled = true;
+      try {
+        await api('/api/resenas/' + resenaId, { method: 'DELETE' });
+        avisarResenas('✅ Reseña borrada. Si quieres, puedes escribir una nueva.');
+        cargarResenas();
+      } catch (err) {
+        avisarResenas(err.message, true);
+        boton.disabled = false;
+      }
+    }
+
+    // --- Reportar (menú de motivos compartido, en api.js) ---
+    function reportarResena(boton, resenaId) {
+      abrirReporte(boton, 'resena', resenaId, (mensaje) => {
+        avisarResenas('✅ ' + mensaje);
+        cargarResenas(); // la reseña reportada desaparece hasta que se revise
+      });
+    }
+
+    // --- La directora responde o edita su respuesta ---
+    function abrirRespuesta(resenaId) {
+      const form = document.getElementById('responder-' + resenaId);
+      form.classList.toggle('oculto');
+      if (!form.classList.contains('oculto')) form.respuesta.focus();
+    }
+
+    async function guardarRespuesta(e, resenaId) {
+      e.preventDefault();
+      const form = e.target;
+      const boton = form.querySelector('button.boton');
+      boton.disabled = true;
+      try {
+        await api(`/api/resenas/${resenaId}/responder`, { method: 'PUT', body: { respuesta: form.respuesta.value } });
+        avisarResenas('✅ Respuesta guardada.');
+        cargarResenas();
+        actualizarCampana(); // si era de 1-3 ⭐, sale de la 🔔
+      } catch (err) {
+        avisarResenas(err.message, true);
+        boton.disabled = false;
+      }
+    }
 
     iniciar();
   </script>

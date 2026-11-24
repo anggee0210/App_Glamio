@@ -4,7 +4,7 @@
 
 ## Introducción
 
-El diseño de GLAMIO busca que una alumna pueda completar el recorrido clave **aprendo → pregunto → sé cuánto cobrar → muestro mi resultado** desde el móvil, sin perderse y en pocos toques.
+El diseño de GLAMIO busca que una alumna pueda completar el recorrido clave **aprendo → pregunto → sé cuánto cobrar → muestro mi resultado** desde   la web y el móvil, sin perderse y en pocos toques.
 
 - **UX (experiencia de usuario):** cómo funciona la app. Quién la usa, qué necesita y en qué orden lo hace.
 - **UI (interfaz de usuario):** cómo se ve. Colores, tipografías, botones y tarjetas.

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productos en venta (simulador) – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main class="sim-pagina">
+    <!-- SIMULADOR (vista previa de la fase 3) para la ADMINISTRADORA: los productos que ve la clienta en la Tienda.
+         No usa la base de datos: lee y cambia el estado del simulador guardado en este navegador. -->
+    <p class="sim-aviso"><b>Vista previa · Fase 3</b> Es un simulador: los productos son de ejemplo y los cambios se guardan
+      solo en este navegador. <button type="button" class="sim-enlace" id="reiniciar">Reiniciar tienda</button></p>
+
+    <header class="al-titulo">
+      <p class="al-antetitulo">Tienda · Gestión</p>
+      <h1>Productos en venta</h1>
+      <p class="al-sub">Lo que ve la clienta en la Tienda. Repón el stock cuando quede poco y oculta los productos que no quieras vender.</p>
+    </header>
+
+    <p class="mensaje oculto" id="mensaje"></p>
+    <dl class="sim-cifras" id="cifras"></dl>
+    <div class="sim-tabla-caja"><table class="sim-tabla" id="tabla"></table></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/simuladores/datos-simulador.js"></script>
+  <script>
+    let estado = leerTienda();
+
+    function avisarSim(texto) {
+      const caja = document.getElementById('mensaje');
+      caja.textContent = texto;
+      caja.className = 'mensaje' + (texto ? '' : ' oculto');
+    }
+
+    function pintar() {
+      const enVenta = PRODUCTOS.filter(p => !estado.ocultos.includes(p.id));
+      const bajos = PRODUCTOS.filter(p => estado.stock[p.id] <= POCAS);
+      const unidades = PRODUCTOS.reduce((suma, p) => suma + estado.stock[p.id], 0);
+      document.getElementById('cifras').innerHTML = `
+        <div><dt>En venta</dt><dd>${enVenta.length} <small>de ${PRODUCTOS.length}</small></dd></div>
+        <div><dt>Unidades en stock</dt><dd>${unidades}</dd></div>
+        <div class="${bajos.length ? 'alerta' : ''}"><dt>Stock bajo</dt><dd>${bajos.length}</dd></div>
+        <div><dt>Pedidos simulados</dt><dd>${estado.pedidos}</dd></div>`;
+
+      document.getElementById('tabla').innerHTML = `
+        <thead><tr><th>Producto</th><th>Categoría</th><th class="num">Precio</th><th>Stock</th><th>En la tienda</th><th></th></tr></thead>
+        <tbody>${PRODUCTOS.map(p => {
+          const stock = estado.stock[p.id];
+          const oculto = estado.ocultos.includes(p.id);
+          const etiqueta = stock === 0 ? '<span class="sim-stock agotado">Agotado</span>'
+            : stock <= POCAS ? `<span class="sim-stock pocas">Bajo · ${stock}</span>` : `<span class="sim-stock">${stock}</span>`;
+          return `<tr class="${oculto ? 'apagada' : ''}">
+            <td><span class="sim-producto-fila"><span class="sim-mini ${claseCategoria(p.categoria)}">${htmlImagenProducto(p)}</span>
+              <span><b>${esc(p.nombre)}</b><small>${esc(p.detalle)}</small></span></span></td>
+            <td>${p.categoria}</td>
+            <td class="num">${euros(p.precio)}</td>
+            <td>${etiqueta}</td>
+            <td><label class="interruptor" title="Mostrar u ocultar en la Tienda">
+              <input type="checkbox" data-id="${p.id}" class="ver-en-tienda" ${oculto ? '' : 'checked'}><span class="interruptor-pista" aria-hidden="true"></span>${oculto ? 'Oculto' : 'Visible'}</label></td>
+            <td><button type="button" class="al-accion borde" data-reponer="${p.id}">+10 unidades</button></td>
+          </tr>`;
+        }).join('')}</tbody>`;
+
+      document.querySelectorAll('[data-reponer]').forEach(b => b.onclick = () => {
+        const id = Number(b.dataset.reponer);
+        estado.stock[id] += 10;
+        guardarTienda(estado);
+        avisarSim(`Repuestas 10 unidades de «${PRODUCTOS.find(p => p.id === id).nombre}» (simulado).`);
+        pintar();
+      });
+      document.querySelectorAll('.ver-en-tienda').forEach(c => c.onchange = () => {
+        const id = Number(c.dataset.id);
+        estado.ocultos = c.checked ? estado.ocultos.filter(x => x !== id) : [...estado.ocultos, id];
+        delete estado.carrito[id]; // si estaba en un carrito, sale de él
+        guardarTienda(estado);
+        avisarSim(c.checked ? 'El producto vuelve a salir en la Tienda.' : 'El producto ya no sale en la Tienda.');
+        pintar();
+      });
+    }
+
+    document.getElementById('reiniciar').onclick = () => {
+      borrarSim(CLAVE_TIENDA);
+      estado = leerTienda();
+      avisarSim('Tienda reiniciada: stock y productos como al principio.');
+      pintar();
+    };
+
+    (async () => {
+      const usuaria = await pintarCabecera();
+      if (!usuaria || usuaria.perfil !== 'administradora') {
+        document.querySelector('main').innerHTML = '<p class="mensaje">Esta página es solo para la administradora.</p>';
+        return;
+      }
+      pintar();
+    })();
+  </script>
+</body>
+</html>

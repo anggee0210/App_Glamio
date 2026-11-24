@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Estilo – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main class="pagina-estilo">
+    <!-- Fase 2 · Mi Estilo: catálogo de una foto grande que se desliza + Mis favoritos -->
+    <h1>💜 Mi Estilo</h1>
+    <p class="estilo-intro">Inspírate con los trabajos de las alumnas y profesionales de GLAMIO.
+      Desliza las fotos y guarda con ♡ las que te gusten para enseñarlas en tu próxima cita.</p>
+    <p id="msg" class="mensaje oculto" role="status"></p>
+
+    <section id="catalogo" class="estilo-catalogo" aria-label="Catálogo de trabajos" aria-roledescription="carrusel">
+      <p>Cargando…</p>
+    </section>
+
+    <section class="estilo-favoritos">
+      <h2 id="titulo-favoritos">Mis favoritos</h2>
+      <div id="favoritos" class="favoritos-rejilla"></div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    let catalogo = [];        // los trabajos que puede ver la clienta (con permiso y sin reportar)
+    let favoritos = [];       // los que ha guardado con ♡
+    let actual = 0;           // posición de la foto que se ve ahora en el catálogo
+    const guardados = new Set(); // ids guardados: para saber rápido si una foto tiene ♡
+
+    function avisar(texto, esError = false) {
+      const p = document.getElementById('msg');
+      p.textContent = texto;
+      p.classList.toggle('error', esError);
+      p.classList.toggle('oculto', !texto);
+    }
+
+    // ---------- Catálogo: una foto grande cada vez ----------
+    function pintarCatalogo() {
+      const caja = document.getElementById('catalogo');
+      if (!catalogo.length) {
+        caja.innerHTML = '<p class="ayuda">Todavía no hay trabajos en Mi Estilo. ¡Vuelve pronto! 💅</p>';
+        return;
+      }
+      const t = catalogo[actual];
+      const tiene = guardados.has(t.id);
+      caja.innerHTML = `
+        <div class="estilo-visor">
+          <button class="estilo-flecha" id="anterior" aria-label="Foto anterior" title="Anterior (←)">‹</button>
+          <a class="ver-foto estilo-foto" href="${esc(t.foto)}" title="Ver la foto en grande">
+            <img src="${esc(t.foto)}" alt="Trabajo de ${esc(t.nombre)}${t.curso ? ' · ' + esc(t.curso) : ''}">
+          </a>
+          <button class="estilo-flecha" id="siguiente" aria-label="Foto siguiente" title="Siguiente (→)">›</button>
+        </div>
+        <div class="estilo-datos">
+          <div>
+            <p class="estilo-autora"><a class="enlace-autora" href="/perfil.html?id=${t.usuaria_id}" title="Ver su perfil">${esc(t.nombre)}</a></p>
+            <p class="estilo-curso">${t.curso ? esc(t.curso) : 'Trabajo propio'}</p>
+            ${t.descripcion ? `<p class="estilo-descripcion">${esc(t.descripcion)}</p>` : ''}
+          </div>
+          <div class="estilo-acciones">
+            <button class="boton-corazon${tiene ? ' guardado' : ''}" id="corazon" aria-pressed="${tiene}">
+              ${tiene ? '♥ Guardado' : '♡ Guardar'}
+            </button>
+            <span class="estilo-posicion" aria-live="polite">${actual + 1} / ${catalogo.length}</span>
+          </div>
+        </div>`;
+      document.getElementById('anterior').onclick = () => mover(-1);
+      document.getElementById('siguiente').onclick = () => mover(1);
+      document.getElementById('corazon').onclick = (e) => alternarFavorito(e.currentTarget, t.id);
+    }
+
+    // Ir a la foto anterior o siguiente. Al llegar al final vuelve a empezar (como un carrusel).
+    function mover(paso) {
+      if (!catalogo.length) return;
+      actual = (actual + paso + catalogo.length) % catalogo.length;
+      pintarCatalogo();
+    }
+
+    // Flechas del teclado ← → (si no está escribiendo en un cuadro de texto)
+    document.addEventListener('keydown', (e) => {
+      if (document.querySelector('.visor-foto')) return; // con la foto ampliada abierta, no
+      if (e.key === 'ArrowLeft') mover(-1);
+      if (e.key === 'ArrowRight') mover(1);
+    });
+
+    // Deslizar con el dedo en el móvil: si el dedo se mueve más de 50 px de lado, cambia de foto
+    let inicioX = null;
+    const zona = document.getElementById('catalogo');
+    zona.addEventListener('touchstart', (e) => { inicioX = e.touches[0].clientX; }, { passive: true });
+    zona.addEventListener('touchend', (e) => {
+      if (inicioX === null) return;
+      const distancia = e.changedTouches[0].clientX - inicioX;
+      inicioX = null;
+      if (Math.abs(distancia) > 50) mover(distancia < 0 ? 1 : -1); // dedo a la izquierda = siguiente
+    });
+
+    // ---------- ♡ Guardar / quitar ----------
+    async function alternarFavorito(boton, id) {
+      boton.disabled = true; // evita guardar dos veces con doble clic
+      const quitar = guardados.has(id);
+      try {
+        await api('/api/mi-estilo/' + id, { method: quitar ? 'DELETE' : 'POST' });
+        avisar('');
+        await cargarFavoritos(); // la lista de abajo y el corazón se ponen al día
+        pintarCatalogo();
+      } catch (err) {
+        avisar(err.message, true);
+        boton.disabled = false;
+      }
+    }
+
+    // ---------- Mis favoritos ----------
+    async function cargarFavoritos() {
+      favoritos = await api('/api/mi-estilo');
+      guardados.clear();
+      favoritos.forEach(f => guardados.add(f.id));
+      document.getElementById('titulo-favoritos').textContent = `Mis favoritos (${favoritos.length})`;
+      document.getElementById('favoritos').innerHTML = favoritos.map(f => `
+        <div class="favorito">
+          <button class="favorito-foto" onclick="irA(${f.id})" title="Verlo en grande arriba">
+            <img src="${esc(f.foto)}" alt="Trabajo de ${esc(f.nombre)}">
+          </button>
+          <div class="favorito-datos">
+            <span><a class="enlace-autora" href="/perfil.html?id=${f.usuaria_id}" title="Ver su perfil"><strong>${esc(f.nombre)}</strong></a><br><span class="ayuda">${f.curso ? esc(f.curso) : 'Trabajo propio'}</span></span>
+            <button class="boton-quitar" onclick="alternarFavorito(this, ${f.id})" aria-label="Quitar de Mis favoritos" title="Quitar">♥</button>
+          </div>
+        </div>`).join('') ||
+        '<p class="ayuda favoritos-vacio">Aún no has guardado ninguno. Pulsa ♡ Guardar en una foto que te guste.</p>';
+    }
+
+    // Al pulsar un favorito, se ve en grande en el catálogo de arriba
+    function irA(id) {
+      const i = catalogo.findIndex(t => t.id === id);
+      if (i === -1) return;
+      actual = i;
+      pintarCatalogo();
+      document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function iniciar() {
+      const usuaria = await pintarCabecera();
+      const main = document.querySelector('main');
+      // Mi Estilo es de la clienta (el servidor también lo comprueba: no basta con esconder la página)
+      if (!usuaria) {
+        main.innerHTML = '<h1>💜 Mi Estilo</h1><p class="mensaje"><a href="/login.html">Entra</a> con tu cuenta de clienta para guardar tus estilos favoritos.</p>';
+        return;
+      }
+      if (usuaria.perfil !== 'clienta') {
+        main.innerHTML = '<h1>💜 Mi Estilo</h1><p class="mensaje">Mi Estilo es el espacio de las clientas. Tus trabajos y los de la comunidad están en <a href="/muro.html">Comunidad</a>.</p>';
+        return;
+      }
+      try {
+        // A la clienta, /api/trabajos ya le llega filtrado: solo con permiso de la autora y sin reportar
+        [catalogo] = await Promise.all([api('/api/trabajos'), cargarFavoritos()]);
+        // Si viene del muro con ?trabajo=N, empieza en esa foto
+        const desde = catalogo.findIndex(t => String(t.id) === param('trabajo'));
+        if (desde !== -1) actual = desde;
+        pintarCatalogo();
+      } catch (err) {
+        document.getElementById('catalogo').innerHTML = '';
+        avisar('No se pudo cargar Mi Estilo: ' + err.message, true);
+      }
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>

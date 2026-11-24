@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main style="max-width:760px">
+    <h1>⚑ Reportes pendientes</h1>
+    <p class="ayuda">Lo reportado ya está oculto para todas. Revísalo y decide si vuelve a publicarse.
+      Las reseñas no se borran: si incumplen las normas, se quedan ocultas (RN-21).</p>
+    <p class="mensaje oculto" id="msg-reportes"></p>
+    <div id="reportes" style="margin-top:12px"><p>Cargando…</p></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    // Página de moderación de la directora (antes era una sección del Panel).
+    // La seguridad está en el servidor: /api/reportes solo responde a la administradora.
+    const TIPOS_REPORTE = { trabajo: '📷 Trabajo del muro', duda: '❓ Duda', respuesta: '💬 Respuesta', resena: '⭐ Reseña de curso' };
+
+    function avisarReportes(texto, esError = false) {
+      const p = document.getElementById('msg-reportes');
+      p.textContent = texto;
+      p.classList.toggle('error', esError);
+      p.classList.toggle('oculto', !texto);
+    }
+
+    // Una tarjeta por publicación reportada, con lo necesario para decidir:
+    // qué es, quién lo publicó, dónde está, el contenido y por qué lo han reportado.
+    function tarjetaReporte(r) {
+      const c = r.contenido;
+      const donde = c.leccion ? `${esc(c.curso)} › ${esc(c.leccion)}` : c.curso ? esc(c.curso) : 'Sin curso';
+      const motivos = r.motivos.map((m, i) => `<li><strong>${esc(r.quienes[i])}:</strong> ${esc(m)}</li>`).join('');
+      return `
+        <div class="tarjeta reporte" style="margin-bottom:10px">
+          <div class="fila" style="justify-content:space-between;flex-wrap:wrap">
+            <span class="etiqueta">${TIPOS_REPORTE[r.tipo]}</span>
+            <span class="ayuda">${r.veces} ${r.veces === 1 ? 'reporte' : 'reportes'} · desde ${fechaCorta(r.fecha)}</span>
+          </div>
+          <div class="reporte-contenido">
+            ${c.foto ? `<a class="ver-foto" href="${c.foto}" target="_blank" title="Ver en grande"><img src="${c.foto}" alt=""></a>` : ''}
+            <div>
+              <p style="margin:0"><strong>${esc(c.nombre)}</strong> · <span class="ayuda" style="display:inline">${donde}</span></p>
+              ${c.duda ? `<p class="ayuda">En respuesta a: «${esc(c.duda)}»</p>` : ''}
+              ${c.estrellas ? `<p style="margin:4px 0" aria-label="${c.estrellas} de 5 estrellas"><span class="estrellas">${'★'.repeat(c.estrellas)}<span class="vacias">${'★'.repeat(5 - c.estrellas)}</span></span></p>` : ''}
+              <p style="margin:6px 0">${c.texto ? esc(c.texto) : '<span class="ayuda">(sin texto)</span>'}</p>
+            </div>
+          </div>
+          <p class="ayuda" style="margin-top:8px">Motivo${r.veces === 1 ? '' : 's'}:</p>
+          <ul style="padding-left:20px;margin:4px 0 10px">${motivos}</ul>
+          <div class="fila" style="flex-wrap:wrap">
+            <button class="chip" onclick="revisar(this, '${r.tipo}', ${r.elemento_id}, true)">✅ Está bien: volver a mostrar</button>
+            <button class="chip peligro" onclick="revisar(this, '${r.tipo}', ${r.elemento_id}, false)">🚫 Mantener oculto</button>
+          </div>
+        </div>`;
+    }
+
+    async function cargarReportes() {
+      const caja = document.getElementById('reportes');
+      try {
+        const reportes = await api('/api/reportes');
+        caja.innerHTML = reportes.map(tarjetaReporte).join('') || '<p class="mensaje">🎉 No hay reportes pendientes.</p>';
+      } catch (err) {
+        caja.innerHTML = '';
+        avisarReportes('No se pudieron cargar los reportes: ' + err.message, true);
+      }
+    }
+
+    // Decide sobre TODOS los reportes de esa publicación a la vez
+    async function revisar(boton, tipo, elementoId, mostrar) {
+      boton.disabled = true; // evita el doble clic
+      try {
+        await api(`/api/reportes/${tipo}/${elementoId}`, { method: 'PUT', body: { mostrar } });
+        avisarReportes(mostrar ? '✅ Vuelve a estar publicado.' : '✅ Se queda oculto.');
+        cargarReportes();
+        actualizarCampana(); // el número rojo de "⚑ Reportes" del menú baja
+      } catch (err) {
+        avisarReportes(err.message, true);
+        boton.disabled = false;
+      }
+    }
+
+    (async () => {
+      const usuaria = await pintarCabecera();
+      if (!usuaria || usuaria.perfil !== 'administradora') {
+        document.querySelector('main').innerHTML = '<p class="mensaje">Esta página es solo para la administradora.</p><a href="/index.html">← Volver</a>';
+        return;
+      }
+      cargarReportes();
+    })();
+  </script>
+</body>
+</html>

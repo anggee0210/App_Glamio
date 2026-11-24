@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tienda (simulador) – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main class="sim-pagina">
+    <!-- FASE 3 · TIENDA — SOLO SIMULADOR.
+         No usa la base de datos ni el servidor: los productos están escritos aquí abajo
+         y el carrito y el stock viven solo en este navegador (localStorage). Sirve para enseñar la idea. -->
+    <p class="sim-aviso"><b>Vista previa · Fase 3</b> Es un simulador: los productos son de ejemplo, no se cobra nada
+      y no se guarda nada en GLAMIO. Fotos: Unsplash. <button type="button" class="sim-enlace" id="reiniciar">Reiniciar simulador</button></p>
+
+    <header class="catalogo-cabecera">
+      <p class="catalogo-antetitulo">Tienda GLAMIO</p>
+      <h1 class="catalogo-titulo">Materiales para tus servicios</h1>
+      <p class="catalogo-sub">Los productos que usas en los cursos y en la calculadora. Cuando quedan pocas unidades, te avisamos.</p>
+    </header>
+
+    <nav class="catalogo-pestanas" id="pestanas" aria-label="Categorías"></nav>
+
+    <div class="sim-tienda">
+      <div class="sim-productos" id="productos"></div>
+
+      <!-- El carrito: a la derecha en el PC, debajo en el móvil -->
+      <aside class="sim-carrito" id="carrito" aria-label="Carrito"></aside>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/simuladores/datos-simulador.js"></script>
+  <script>
+    // Productos, iconos y estado: en /simuladores/datos-simulador.js (los comparte con la página de la administradora)
+    let estado = leerTienda();
+    let categoria = 'Todos';
+    let mensaje = ''; // el aviso de «pedido confirmado»
+    const guardarEstado = () => guardarTienda(estado);
+    // Solo los productos que la administradora no ha ocultado
+    const enVenta = () => PRODUCTOS.filter(p => !estado.ocultos.includes(p.id));
+
+    // ---------- Pestañas por categoría (mismo estilo que Cursos) ----------
+    function pintarPestanas() {
+      const categorias = ['Todos', 'Uñas', 'Cabello', 'Cejas'];
+      document.getElementById('pestanas').innerHTML = categorias.map(c => {
+        const n = c === 'Todos' ? enVenta().length : enVenta().filter(p => p.categoria === c).length;
+        return `<button type="button" class="${c === categoria ? 'activa' : ''}" data-cat="${c}">${c} <span class="catalogo-cuenta">${n}</span></button>`;
+      }).join('');
+      document.querySelectorAll('#pestanas button').forEach(b => b.onclick = () => { categoria = b.dataset.cat; pintarTodo(); });
+    }
+
+    // ---------- Tarjetas de producto ----------
+    function pintarProductos() {
+      const lista = enVenta().filter(p => categoria === 'Todos' || p.categoria === categoria);
+      document.getElementById('productos').innerHTML = lista.map(p => {
+        const quedan = estado.stock[p.id] - (estado.carrito[p.id] || 0); // lo que aún se puede añadir
+        const stock = estado.stock[p.id];
+        const etiqueta = stock === 0 ? '<span class="sim-stock agotado">Agotado</span>'
+          : stock <= POCAS ? `<span class="sim-stock pocas">¡${stock === 1 ? "Queda" : "Quedan"} ${stock}!</span>`
+          : `<span class="sim-stock">${stock} en stock</span>`;
+        return `
+          <article class="sim-producto">
+            <div class="sim-dibujo ${claseCategoria(p.categoria)}">
+              ${htmlImagenProducto(p)}
+              ${etiqueta}
+            </div>
+            <div class="sim-producto-cuerpo">
+              <span class="catalogo-categoria">${p.categoria}</span>
+              <strong class="sim-producto-nombre">${esc(p.nombre)}</strong>
+              <span class="sim-detalle">${esc(p.detalle)}</span>
+              <div class="sim-producto-pie">
+                <span class="catalogo-precio">${euros(p.precio)}</span>
+                <button type="button" class="boton sim-anadir" data-id="${p.id}" ${quedan <= 0 ? 'disabled' : ''}>
+                  ${stock === 0 ? 'Agotado' : quedan <= 0 ? 'Todo en el carrito' : 'Añadir'}</button>
+              </div>
+            </div>
+          </article>`;
+      }).join('');
+      document.querySelectorAll('.sim-anadir').forEach(b => b.onclick = () => cambiarCantidad(Number(b.dataset.id), +1));
+    }
+
+    // ---------- Carrito ----------
+    function cambiarCantidad(id, cambio) {
+      const actual = estado.carrito[id] || 0;
+      const nueva = Math.max(0, Math.min(estado.stock[id], actual + cambio)); // nunca más que el stock
+      if (nueva === 0) delete estado.carrito[id]; else estado.carrito[id] = nueva;
+      mensaje = '';
+      guardarEstado();
+      pintarTodo();
+    }
+
+    function pintarCarrito() {
+      const lineas = Object.entries(estado.carrito).map(([id, cantidad]) => ({ p: PRODUCTOS.find(x => x.id === Number(id)), cantidad }));
+      const total = lineas.reduce((suma, l) => suma + l.p.precio * l.cantidad, 0);
+      const unidades = lineas.reduce((suma, l) => suma + l.cantidad, 0);
+      document.getElementById('carrito').innerHTML = `
+        <h2 class="sim-carrito-titulo">Tu carrito <span class="catalogo-cuenta">${unidades}</span></h2>
+        ${mensaje ? `<p class="sim-ok">${mensaje}</p>` : ''}
+        ${lineas.length ? `
+          <ul class="sim-lineas">
+            ${lineas.map(l => `
+              <li>
+                <span class="sim-linea-nombre">${esc(l.p.nombre)}<small>${euros(l.p.precio)} / ud.</small></span>
+                <span class="sim-cantidad">
+                  <button type="button" data-id="${l.p.id}" data-cambio="-1" aria-label="Quitar una">−</button>
+                  <b>${l.cantidad}</b>
+                  <button type="button" data-id="${l.p.id}" data-cambio="1" aria-label="Añadir una" ${l.cantidad >= estado.stock[l.p.id] ? 'disabled' : ''}>+</button>
+                </span>
+              </li>`).join('')}
+          </ul>
+          <p class="sim-total"><span>Total</span><b>${euros(total)}</b></p>
+          <button type="button" class="boton sim-pagar" id="pagar">Pagar (simulado)</button>
+          <p class="sim-nota">No se pide ninguna tarjeta: es una simulación.</p>`
+        : `<p class="sim-vacio">Todavía no has añadido nada.</p>`}`;
+      document.querySelectorAll('.sim-cantidad button').forEach(b => b.onclick = () => cambiarCantidad(Number(b.dataset.id), Number(b.dataset.cambio)));
+      const pagar = document.getElementById('pagar');
+      if (pagar) pagar.onclick = pagarSimulado;
+    }
+
+    // Pago simulado: baja el stock (como haría el inventario de la fase 3) y vacía el carrito
+    function pagarSimulado() {
+      const avisos = [];
+      for (const [id, cantidad] of Object.entries(estado.carrito)) {
+        estado.stock[id] -= cantidad;
+        const p = PRODUCTOS.find(x => x.id === Number(id));
+        if (estado.stock[id] <= POCAS) avisos.push(`${p.nombre} (${estado.stock[id]})`);
+      }
+      estado.carrito = {};
+      estado.pedidos += 1;
+      mensaje = `✓ Pedido nº ${String(estado.pedidos).padStart(4, '0')} confirmado (simulado).` +
+        (avisos.length ? ` Stock bajo: ${esc(avisos.join(', '))}.` : '');
+      guardarEstado();
+      pintarTodo();
+    }
+
+    function pintarTodo() { pintarPestanas(); pintarProductos(); pintarCarrito(); }
+
+    document.getElementById('reiniciar').onclick = () => {
+      borrarSim(CLAVE_TIENDA);
+      estado = leerTienda();
+      mensaje = 'Simulador reiniciado: stock y carrito como al principio.';
+      pintarTodo();
+    };
+
+    pintarCabecera();
+    pintarTodo();
+  </script>
+</body>
+</html>

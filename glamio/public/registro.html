@@ -3,39 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registro – GLAMIO</title>
+  <title>Registrarme – GLAMIO</title>
   <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
 </head>
-<body>
-  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
-  <main style="max-width:420px">
-    <h1>Crear cuenta</h1>
-    <form id="form">
-      <label>Nombre <input name="nombre" required></label>
-      <label>Email <input type="email" name="email" required></label>
-      <label>Contraseña <input type="password" name="password" minlength="6" required></label>
-      <label>Soy...
-        <select name="perfil">
-          <option value="alumna">Alumna – quiero aprender</option>
-          <option value="profesional">Profesional – ya trabajo en belleza</option>
-          <option value="clienta">Clienta – busco ideas y profesionales</option>
-        </select>
-      </label>
-      <button class="boton">Registrarme</button>
-    </form>
-    <p class="mensaje oculto" id="msg"></p>
-  </main>
+<body class="cuerpo-acceso">
+  <!-- Misma estructura que "Entrar", para que las dos pantallas vayan a juego -->
+  <div class="pantalla-acceso">
+    <!-- A la izquierda, el logo de GLAMIO sobre morado oscuro (antes había una foto) -->
+    <div class="acceso-foto acceso-logo"><img src="/img/logo-grande.jpg" alt="GLAMIO, Academia de belleza: formación que transforma tu talento en belleza profesional"></div>
+
+    <div class="acceso-panel">
+      <a href="/index.html" class="logo logo-grande" aria-label="GLAMIO, ir al inicio">
+        <img src="/img/logo-g.png" alt="">
+        <span class="logo-texto"><span class="logo-nombre">GLAMIO</span><span class="logo-lema">ACADEMIA DE BELLEZA</span></span>
+      </a>
+
+      <h1 class="acceso-titulo">Crear cuenta</h1>
+      <p class="acceso-sub">Únete a GLAMIO y empieza tu formación</p>
+
+      <form id="form" class="acceso-form">
+        <label class="campo-icono">
+          <span class="visualmente-oculto">Nombre</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <input name="nombre" placeholder="Nombre" autocomplete="name" maxlength="100" required>
+        </label>
+        <label class="campo-icono">
+          <span class="visualmente-oculto">Email</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <input type="email" name="email" placeholder="Email" autocomplete="email" required>
+        </label>
+        <label class="campo-icono">
+          <span class="visualmente-oculto">Contraseña</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          <input type="password" name="password" placeholder="Contraseña (mínimo 8, con letras y números)" autocomplete="new-password" minlength="8" required>
+          <button type="button" class="ver-contrasena" aria-label="Mostrar la contraseña" title="Mostrar la contraseña">👁</button>
+        </label>
+
+        <!-- El perfil se elige con tarjetas (botones de opción), más claro que un desplegable -->
+        <fieldset class="elegir-perfil">
+          <legend>Soy…</legend>
+          <label class="opcion-perfil"><input type="radio" name="perfil" value="alumna" checked>
+            <span>
+              <i class="perfil-check" aria-hidden="true"></i>
+              <i class="perfil-icono" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/></svg></i>
+              <strong>Alumna</strong><small>Quiero aprender</small>
+            </span></label>
+          <label class="opcion-perfil"><input type="radio" name="perfil" value="profesional">
+            <span>
+              <i class="perfil-check" aria-hidden="true"></i>
+              <i class="perfil-icono" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12.5h18"/><path d="M11 12.5v1.5h2v-1.5"/></svg></i>
+              <strong>Profesional</strong><small>Ya trabajo en belleza</small>
+            </span></label>
+          <label class="opcion-perfil"><input type="radio" name="perfil" value="clienta">
+            <span>
+              <i class="perfil-check" aria-hidden="true"></i>
+              <i class="perfil-icono" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i>
+              <strong>Clienta</strong><small>Busco ideas y profesionales</small>
+            </span></label>
+        </fieldset>
+
+        <p class="mensaje error oculto" id="msg"></p>
+        <button class="boton boton-ancho" id="registrarme">✨ Registrarme</button>
+      </form>
+
+      <a class="boton-contorno" href="/login.html">🔑 ¿Ya tienes cuenta? <strong>Entrar</strong></a>
+      <a class="volver-inicio" href="/index.html">← Volver al inicio</a>
+    </div>
+  </div>
+
   <script src="/js/api.js"></script>
   <script>
-    pintarCabecera();
+    api('/api/auth/yo').then(u => { if (u) location.replace(paginaInicio(u)); }).catch(() => {});
+
+    activarVerContrasena(); // el 👁 (está en api.js)
+
     document.getElementById('form').onsubmit = async (e) => {
       e.preventDefault();
+      const boton = document.getElementById('registrarme');
+      const msg = document.getElementById('msg');
+      boton.disabled = true;
       try {
-        const usuaria = await api('/api/auth/registro', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
-        location.href = paginaInicio(usuaria); // la clienta va al muro, el resto a los cursos
+        // Ya no entra directamente: primero tiene que confirmar su email con el enlace del correo
+        const res = await api('/api/auth/registro', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
+        // Escondemos los campos (el mensaje está dentro del formulario, así que el formulario se queda)
+        e.target.querySelectorAll('label, fieldset, button').forEach(el => el.classList.add('oculto'));
+        msg.classList.remove('error', 'oculto');
+        msg.innerHTML = `📧 ${esc(res.mensaje)}<br><small>¿No te llega? Mira en spam o pide otro desde
+          <a href="/login.html">Entrar</a>.</small>`;
       } catch (err) {
-        const msg = document.getElementById('msg');
-        msg.textContent = err.message; msg.classList.remove('oculto');
+        msg.textContent = err.message; // ej. "Ese email ya está registrado"
+        msg.classList.remove('oculto');
+        boton.disabled = false;
       }
     };
   </script>

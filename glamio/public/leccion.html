@@ -9,18 +9,28 @@
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
+    <!-- Diseño "Lección": título arriba; vídeo a la izquierda y explicación + botones a la derecha -->
     <div id="leccion"></div>
-    <button class="boton oculto" id="completar" style="margin:12px 0">Marcar como completada ✔</button>
-    <p class="mensaje oculto" id="msg"></p>
-    <!-- "← Anterior · Lección 2 de 5 · Siguiente →" -->
-    <nav class="navegacion" id="navegacion"></nav>
+    <div class="leccion-columnas">
+      <div id="video-zona"></div>
+      <div class="leccion-lado">
+        <p id="contenido" class="leccion-texto"></p>
+        <button class="boton oculto" id="completar">Marcar como completada ✓</button>
+        <p class="mensaje oculto" id="msg"></p>
+        <!-- "← Anterior · Lección 2 de 5 · Siguiente →" -->
+        <nav class="navegacion" id="navegacion"></nav>
+      </div>
+    </div>
 
-    <h2>Dudas de esta lección</h2>
-    <form id="form-duda" class="tarjeta">
-      <textarea name="texto" rows="2" placeholder="Escribe tu duda..." required></textarea>
-      <label>Foto (opcional) <input type="file" name="foto" accept="image/*"></label>
+    <hr class="separador">
+    <h2 class="titulo-dudas">Dudas de esta lección</h2>
+    <!-- Formulario en una fila: duda · foto · Preguntar -->
+    <form id="form-duda" class="form-duda-fila">
+      <textarea name="texto" rows="3" placeholder="Escribe tu duda..." required maxlength="1000" aria-label="Tu duda"></textarea>
+      <label class="campo-foto">Foto (opcional) <input type="file" name="foto" accept="image/*"></label>
       <button class="boton">Preguntar</button>
     </form>
+    <p class="mensaje error oculto" id="error-dudas"></p>
     <div id="dudas" style="margin-top:12px"></div>
   </main>
 
@@ -52,8 +62,10 @@
       if (l.video_local) video = `<div class="video"><video src="${l.video_local}" controls></video></div>`;
       else if (l.video_url) video = `<div class="video"><iframe src="${enlaceEmbed(l.video_url)}" allowfullscreen></iframe></div>`;
       document.getElementById('leccion').innerHTML = `
-        <a href="/curso.html?id=${l.curso_id}">← Volver al curso</a>
-        <h1>${esc(l.titulo)}</h1>${video}<p style="margin-top:10px">${esc(l.contenido)}</p>`;
+        <a class="volver" href="/curso.html?id=${l.curso_id}">← Volver al curso</a>
+        <h1>${esc(l.titulo)}</h1>`;
+      document.getElementById('video-zona').innerHTML = video || '<div class="video sin-video"><span>Esta lección no tiene vídeo</span></div>';
+      document.getElementById('contenido').textContent = l.contenido || '';
       pintarBoton(l.completada);
       await cargarNavegacion();
       cargarDudas();
@@ -66,7 +78,7 @@
       boton.classList.remove('oculto');
       boton.disabled = completada;
       boton.classList.toggle('secundario', completada);
-      boton.textContent = completada ? '✅ Lección completada' : 'Marcar como completada ✔';
+      boton.textContent = completada ? '✅ Lección completada' : 'Marcar como completada ✓';
     }
 
     // "← Anterior · Lección 2 de 5 · Siguiente →" usando las lecciones del curso en orden
@@ -77,9 +89,9 @@
       const anterior = lista[pos - 1];
       siguiente = lista[pos + 1] || null;
       document.getElementById('navegacion').innerHTML = `
-        ${anterior ? `<a class="chip" href="/leccion.html?id=${anterior.id}">← Anterior</a>` : '<span></span>'}
-        <span class="ayuda">Lección ${pos + 1} de ${lista.length}</span>
-        ${siguiente ? `<a class="chip" href="/leccion.html?id=${siguiente.id}">Siguiente →</a>` : '<span></span>'}`;
+        ${anterior ? `<a class="boton-opcion" href="/leccion.html?id=${anterior.id}">← Anterior</a>` : '<span></span>'}
+        <span class="lecciones-de">Lección ${pos + 1} de ${lista.length}</span>
+        ${siguiente ? `<a class="boton-opcion" href="/leccion.html?id=${siguiente.id}">Siguiente →</a>` : '<span></span>'}`;
     }
 
     document.getElementById('completar').onclick = async () => {
@@ -102,55 +114,158 @@
       msg.classList.remove('oculto');
     };
 
+    // (fechaCorta() está en api.js: la usan varias páginas)
+
+    // Nombre + etiqueta del perfil + fecha. La directora académica se distingue
+    // para que la alumna sepa qué respuesta viene de la academia.
+    function autoria(x) {
+      const etiqueta = x.perfil === 'administradora' ? ' <span class="etiqueta">🎓 Administradora</span>'
+        : x.perfil === 'profesional' ? ' <span class="etiqueta gris">Profesional</span>' : '';
+      return `<strong>${esc(x.nombre)}</strong>${etiqueta} <span class="ayuda" style="display:inline" title="${fechaCorta(x.fecha)}">· ${haceCuanto(x.fecha)}</span>`;
+    }
+
+    // Círculo con la inicial (la directora académica, con 🎓)
+    function avatar(x) {
+      const dentro = x.perfil === 'administradora' ? '🎓' : esc(String(x.nombre || '?').trim().charAt(0).toUpperCase());
+      return `<span class="avatar ${x.perfil === 'administradora' ? 'avatar-directora' : ''}" aria-hidden="true">${dentro}</span>`;
+    }
+
+    // Aviso encima de las dudas: rojo si es un error, rosa si es una confirmación
+    function mostrarErrorDudas(texto, esError = true) {
+      const p = document.getElementById('error-dudas');
+      p.textContent = texto;
+      p.classList.toggle('oculto', !texto);
+      p.classList.toggle('error', esError);
+      // Si el error viene de una duda de más abajo, llevamos la vista hasta el aviso
+      if (texto) p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     async function cargarDudas() {
-      const dudas = await api('/api/dudas?leccion=' + id);
+      let dudas;
+      try {
+        dudas = await api('/api/dudas?leccion=' + id);
+      } catch (err) {
+        mostrarErrorDudas('No se pudieron cargar las dudas: ' + err.message);
+        return;
+      }
       const esAdmin = usuaria && usuaria.perfil === 'administradora';
+      // Como en el diseño: círculo con la inicial, nombre y "hace 2 días", el texto y "Reportar" a la derecha.
+      // Las respuestas van debajo, con sangría y fondo lila; la de la directora lleva 🎓 en el círculo.
       document.getElementById('dudas').innerHTML = dudas.map(d => `
-        <div class="tarjeta" style="margin-bottom:10px">
-          <p><strong>${esc(d.nombre)}:</strong> ${esc(d.texto)}</p>
-          ${d.foto ? `<img src="${d.foto}" alt="" style="max-width:220px">` : ''}
-          ${d.respuestas.map(r => `
-            <div class="tarjeta ${r.destacada ? 'destacada' : ''}" style="margin-top:8px">
-              ${r.destacada ? '<span class="etiqueta">⭐ Respuesta destacada</span>' : ''}
-              <p><strong>${esc(r.nombre)}:</strong> ${esc(r.texto)}</p>
-              <div class="fila">
-                ${esAdmin && !r.destacada ? `<button class="chip" onclick="destacar(${r.id})">Destacar</button>` : ''}
-                <button class="chip" onclick="reportar('respuesta', ${r.id})">Reportar</button>
-              </div>
-            </div>`).join('')}
-          <form class="fila" style="flex-direction:row;margin-top:8px" onsubmit="responder(event, ${d.id})">
-            <input name="texto" placeholder="Responder..." required>
-            <button class="boton">Enviar</button>
-          </form>
-          <button class="chip" style="margin-top:6px" onclick="reportar('duda', ${d.id})">Reportar</button>
-        </div>`).join('') || '<p>Nadie ha preguntado todavía.</p>';
+        <div class="duda" id="duda-${d.id}">
+          ${avatar(d)}
+          <div class="duda-cuerpo">
+            <div class="duda-cabeza fila">
+              <p>${autoria(d)}</p>
+              ${puedeReportar(d) ? `<button class="enlace-reportar" onclick="reportar(this, 'duda', ${d.id})">Reportar</button>` : ''}
+            </div>
+            <p class="duda-texto">${esc(d.texto)}</p>
+            ${d.foto ? `<a class="ver-foto" href="${d.foto}" target="_blank" title="Ver la foto en grande"><img class="duda-foto" src="${d.foto}" alt="Foto de la duda"></a>` : ''}
+            ${d.respuestas.length ? '' : '<p class="ayuda">Aún sin respuestas. ¿Sabes la solución? ¡Ayuda a tu compañera!</p>'}
+            ${d.respuestas.map(r => `
+              <div class="respuesta ${r.destacada ? 'destacada' : ''}">
+                ${avatar(r)}
+                <div class="duda-cuerpo">
+                  ${r.destacada ? '<span class="etiqueta">⭐ Respuesta destacada</span>' : ''}
+                  <p>${autoria(r)}</p>
+                  <p class="duda-texto">${esc(r.texto)}</p>
+                  <div class="fila">
+                    ${esAdmin && !r.destacada ? `<button class="chip" onclick="destacar(${r.id})">⭐ Destacar</button>` : ''}
+                    ${esAdmin && r.destacada ? `<button class="chip peligro" onclick="quitarDestacada(${r.id})">Quitar destacada</button>` : ''}
+                    ${puedeReportar(r) ? `<button class="enlace-reportar" onclick="reportar(this, 'respuesta', ${r.id})">Reportar</button>` : ''}
+                  </div>
+                </div>
+              </div>`).join('')}
+            <form class="form-responder" onsubmit="responder(event, ${d.id})">
+              <textarea name="texto" rows="2" placeholder="Responder..." required maxlength="1000" aria-label="Tu respuesta"></textarea>
+              <button class="boton">Enviar</button>
+            </form>
+          </div>
+        </div>`).join('') || '<p class="ayuda">Nadie ha preguntado todavía. ¡Sé la primera!</p>';
+
+      // Si venimos de la campana (…#duda-5), bajamos hasta esa duda. El navegador no lo hace
+      // solo porque las dudas llegan DESPUÉS de cargar la página. (Solo la primera vez.)
+      if (location.hash && !yaBajeALaDuda) {
+        yaBajeALaDuda = true;
+        const destino = document.querySelector(location.hash);
+        if (destino) destino.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      // 🔔 La alumna ya está viendo las respuestas a sus dudas de esta lección:
+      // las marcamos como vistas y la campana del menú se actualiza.
+      if (usuaria && ['alumna', 'profesional'].includes(usuaria.perfil)) {
+        api('/api/dudas/mis-avisos/leidos', { method: 'PUT', body: { leccion_id: Number(id) } })
+          .then(actualizarCampana)
+          .catch(() => {}); // si falla, solo significa que el aviso sigue en la campana
+      }
+    }
+    let yaBajeALaDuda = false;
+
+    // Envía un formulario sin que el doble clic lo mande dos veces:
+    // el botón se desactiva mientras espera al servidor y se reactiva al terminar.
+    async function enviarSinRepetir(formulario, accion) {
+      const boton = formulario.querySelector('button');
+      boton.disabled = true;
+      try {
+        await accion();
+        mostrarErrorDudas('');
+        return true;
+      } catch (err) {
+        mostrarErrorDudas(err.message); // ej. "Escribe tu duda" o "La foto de la duda tiene que ser una imagen"
+        return false;
+      } finally {
+        boton.disabled = false;
+      }
     }
 
     document.getElementById('form-duda').onsubmit = async (e) => {
       e.preventDefault();
-      const datos = new FormData(e.target);
+      const form = e.target;
+      const datos = new FormData(form);
       datos.append('leccion_id', id);
-      await api('/api/dudas', { method: 'POST', body: datos });
-      e.target.reset();
-      cargarDudas();
+      const bien = await enviarSinRepetir(form, () => api('/api/dudas', { method: 'POST', body: datos }));
+      if (bien) { form.reset(); cargarDudas(); }
     };
 
     async function responder(e, dudaId) {
       e.preventDefault();
-      await api(`/api/dudas/${dudaId}/respuestas`, { method: 'POST', body: { texto: e.target.texto.value } });
-      cargarDudas();
+      const form = e.target;
+      const bien = await enviarSinRepetir(form, () =>
+        api(`/api/dudas/${dudaId}/respuestas`, { method: 'POST', body: { texto: form.texto.value } }));
+      if (bien) cargarDudas(); // si falla, no recargamos: así no se pierde lo escrito
     }
 
+    // Destacar y quitar usan la misma dirección: PUT pone la estrella, DELETE la quita
     async function destacar(respuestaId) {
-      await api(`/api/dudas/respuestas/${respuestaId}/destacar`, { method: 'PUT' });
+      await cambiarDestacada(respuestaId, 'PUT');
+    }
+
+    async function quitarDestacada(respuestaId) {
+      if (!confirm('¿Quitar la estrella de esta respuesta? La duda se quedará sin respuesta destacada.')) return;
+      await cambiarDestacada(respuestaId, 'DELETE');
+    }
+
+    async function cambiarDestacada(respuestaId, metodo) {
+      try {
+        await api(`/api/dudas/respuestas/${respuestaId}/destacar`, { method: metodo });
+        mostrarErrorDudas('');
+      } catch (err) {
+        mostrarErrorDudas(err.message); // ej. "Esa respuesta no estaba destacada"
+      }
       cargarDudas();
     }
 
-    async function reportar(tipo, elementoId) {
-      const motivo = prompt('¿Por qué lo reportas?');
-      if (motivo === null) return;
-      await api('/api/reportes', { method: 'POST', body: { tipo, elemento_id: elementoId, motivo } });
-      cargarDudas();
+    // Lo propio no se reporta (el servidor tampoco lo deja): para eso no sale el botón
+    function puedeReportar(x) {
+      return usuaria && x.usuaria_id !== usuaria.id;
+    }
+
+    // Abre el menú de motivos (abrirReporte está en api.js, lo comparte con el muro)
+    function reportar(boton, tipo, elementoId) {
+      abrirReporte(boton, tipo, elementoId, (mensaje) => {
+        mostrarErrorDudas('✅ ' + mensaje, false); // confirmación en rosa, no en rojo
+        cargarDudas(); // lo reportado desaparece de la lista
+      });
     }
 
     iniciar();

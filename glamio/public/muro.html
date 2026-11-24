@@ -9,74 +9,290 @@
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
-    <h1>Muro de trabajos</h1>
+    <h1 id="titulo">Muro de trabajos</h1>
 
-    <form id="form" class="tarjeta oculto" style="margin-bottom:16px">
-      <h2 style="margin-top:0">Publicar mi resultado</h2>
-      <label>Foto <input type="file" name="foto" accept="image/*" required></label>
-      <label>Curso <select name="curso_id" id="curso"><option value="">Sin curso</option></select></label>
-      <label>Descripción <textarea name="descripcion" rows="2"></textarea></label>
-      <label class="fila"><input type="checkbox" name="permiso_mi_estilo" style="width:auto">
-        Doy permiso para que las clientas vean esta foto (muro de clientas y, más adelante, Mi Estilo)</label>
-      <button class="boton">Publicar</button>
+    <!-- Pestañas (solo para quien hace cursos; la clienta y sin cuenta ven solo los trabajos) -->
+    <nav class="catalogo-pestanas comunidad-pestanas oculto" id="pestanas" role="tablist">
+      <button type="button" class="activa" data-pestana="trabajos"><svg class="icono-linea" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8.5 5l1.2-2h4.6l1.2 2"/></svg>Trabajos</button>
+      <button type="button" data-pestana="dudas"><svg class="icono-linea" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z"/><path d="M10 8.2a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.4"/><path d="M12 13.4h.01"/></svg>Dudas</button>
+    </nav>
+
+    <!-- Pestaña Dudas: las últimas de mis cursos -->
+    <section id="zona-dudas" class="oculto">
+      <p class="ayuda">Las últimas dudas de los cursos en los que estás inscrita. Entra en la lección para responder.</p>
+      <p class="mensaje error oculto" id="msg-dudas"></p>
+      <div id="lista-dudas" style="margin-top:12px"></div>
+    </section>
+
+    <!-- Pestaña Trabajos: el muro de siempre -->
+    <section id="zona-trabajos">
+
+    <!-- Diseño "Galería de trabajos": formulario en horizontal (foto · curso · descripción) -->
+    <form id="form" class="form-publicar oculto">
+      <h2>Publicar mi resultado</h2>
+      <div class="publicar-campos">
+        <label>Foto * <input type="file" name="foto" accept="image/*" required></label>
+        <label>Curso
+          <select name="curso_id" id="curso"><option value="">Sin curso</option></select>
+          <span class="ayuda">Solo tus cursos: así la etiqueta es de fiar.</span>
+        </label>
+        <label>Descripción <textarea name="descripcion" rows="2" maxlength="500" placeholder="Cuenta brevemente tu trabajo…"></textarea></label>
+      </div>
+      <div class="publicar-pie">
+        <label class="interruptor permiso-casilla"><input type="checkbox" name="permiso_mi_estilo">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+          <span>Visible para clientas <small class="ayuda" style="display:inline">(muro de clientas y Mi Estilo)</small></span></label>
+        <button class="boton" id="publicar">Publicar</button>
+      </div>
+      <p class="ayuda">Podrás cambiar este permiso o borrar la foto cuando quieras.</p>
+      <p class="mensaje oculto" id="msg-form"></p>
     </form>
 
-    <div class="filtros" id="filtros"></div>
-    <div class="rejilla" id="trabajos"></div>
+    <p class="mensaje oculto" id="msg"></p>
+    <nav class="catalogo-pestanas comunidad-filtros" id="filtros" aria-label="Filtrar por categoría"></nav>
+    <div class="galeria" id="trabajos"><p>Cargando…</p></div>
+    </section>
   </main>
 
   <script src="/js/api.js"></script>
   <script>
     let usuaria = null;
+    let categoriaActual = '';
+    const misFavoritos = new Set(); // fase 2 · Mi Estilo: ids que la clienta guardó con ♡
+
+    // Mensaje en la página (rojo si es un error). Sustituye a los alert().
+    function avisar(idElemento, texto, esError = false) {
+      const p = document.getElementById(idElemento);
+      p.textContent = texto;
+      p.classList.toggle('error', esError);
+      p.classList.toggle('oculto', !texto);
+    }
+
+    const esMio = (t) => usuaria && t.usuaria_id === usuaria.id;
 
     // Etiqueta para saber si las clientas ven la foto. Solo la ve quien ve todo el muro:
     // a la clienta ya le llegan solo las fotos con permiso, así que para ella no hace falta.
     function etiquetaPermiso(t) {
-      if (!usuaria || usuaria.perfil === 'clienta') return '';
+      if (!usuaria || usuaria.perfil === 'clienta' || esMio(t)) return '';
       return t.permiso_mi_estilo
-        ? '<span class="etiqueta">👁 Visible para clientas</span>'
-        : '<span class="etiqueta gris">🔒 Solo la comunidad</span>';
+        ? '<span class="estado-permiso si">Visible para clientas</span>'
+        : '<span class="estado-permiso">Solo la comunidad</span>';
     }
 
-    async function cargarTrabajos(categoria = '') {
-      const trabajos = await api('/api/trabajos' + (categoria ? '?categoria=' + categoria : ''));
-      document.getElementById('trabajos').innerHTML = trabajos.map(t => `
-        <div class="tarjeta">
-          <img src="${t.foto}" alt="">
-          ${t.curso ? `<span class="etiqueta">${esc(t.curso)}</span>` : ''}
-          ${etiquetaPermiso(t)}
-          <p><strong>${esc(t.nombre)}</strong> ${esc(t.descripcion)}</p>
-          <button class="chip" onclick="reportar(${t.id})">Reportar</button>
-        </div>`).join('') || '<p>Todavía no hay trabajos publicados.</p>';
+    // Botones de cada tarjeta: la autora gestiona su foto; las demás (con sesión) pueden reportarla
+    function botones(t) {
+      if (esMio(t)) {
+        return `<div class="trabajo-acciones">
+          <label class="interruptor" title="Si está encendido, las clientas pueden ver esta foto">
+            <input type="checkbox" ${t.permiso_mi_estilo ? 'checked' : ''} onchange="cambiarPermiso(this, ${t.id}, this.checked)">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+            <span>Visible para clientas</span>
+          </label>
+          <button type="button" class="boton-icono peligro" title="Borrar esta foto (pulsa dos veces)" aria-label="Borrar esta foto"
+            onclick="borrarTrabajo(this, ${t.id})"><svg class="icono-linea" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10 11v5.5M14 11v5.5"/></svg><span class="boton-icono-texto"></span></button>
+        </div>`;
+      }
+      if (!usuaria) return ''; // sin cuenta no se reporta (el servidor pide sesión)
+      const reportarBoton = `<button type="button" class="boton-reportar" onclick="reportar(this, ${t.id})"><svg class="icono-linea" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4.5c4-2 7 2 14 0v9c-7 2-10-2-14 0"/></svg>Reportar</button>`;
+      // La clienta, además, puede guardarlo en Mi Estilo con ♡
+      if (usuaria.perfil === 'clienta') {
+        const tiene = misFavoritos.has(t.id);
+        return `<div class="fila fila-reportar fila-clienta">
+          <button class="boton-corazon pequeno${tiene ? ' guardado' : ''}" aria-pressed="${tiene}"
+            onclick="alternarFavorito(this, ${t.id})">${tiene ? '♥ Guardado' : '♡ Guardar'}</button>
+          ${reportarBoton}
+        </div>`;
+      }
+      return `<div class="fila fila-reportar">${reportarBoton}</div>`;
     }
 
-    async function reportar(id) {
-      const motivo = prompt('¿Por qué lo reportas?');
-      if (motivo === null) return;
-      await api('/api/reportes', { method: 'POST', body: { tipo: 'trabajo', elemento_id: id, motivo } });
-      cargarTrabajos();
+    // ♡ en el muro: guarda o quita el trabajo de Mi Estilo sin recargar la página
+    async function alternarFavorito(boton, id) {
+      boton.disabled = true; // evita guardar dos veces con doble clic
+      const quitar = misFavoritos.has(id);
+      try {
+        await api('/api/mi-estilo/' + id, { method: quitar ? 'DELETE' : 'POST' });
+        quitar ? misFavoritos.delete(id) : misFavoritos.add(id);
+        boton.textContent = quitar ? '♡ Guardar' : '♥ Guardado';
+        boton.classList.toggle('guardado', !quitar);
+        boton.setAttribute('aria-pressed', String(!quitar));
+        avisar('msg', quitar ? 'Quitado de Mi Estilo' : '♥ Guardado en Mi Estilo');
+      } catch (err) {
+        avisar('msg', err.message, true);
+      } finally {
+        boton.disabled = false;
+      }
     }
+
+    async function cargarTrabajos(categoria = categoriaActual) {
+      categoriaActual = categoria; // lo recordamos para recargar con el mismo filtro
+      const caja = document.getElementById('trabajos');
+      let trabajos;
+      try {
+        trabajos = await api('/api/trabajos' + (categoria ? '?categoria=' + categoria : ''));
+      } catch (err) {
+        caja.innerHTML = '';
+        return avisar('msg', 'No se pudo cargar el muro: ' + err.message, true);
+      }
+      // Tarjeta del diseño: foto grande · nombre (serif) + permiso a la derecha · curso · descripción · Reportar
+      caja.innerHTML = trabajos.map(t => `
+        <div class="trabajo">
+          <a class="ver-foto" href="${t.foto}" target="_blank" title="Ver la foto en grande"><img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}"></a>
+          <div class="trabajo-datos">
+            <div class="trabajo-cabeza">
+              <strong><a class="enlace-autora" href="/perfil.html?id=${t.usuaria_id}" title="Ver su perfil">${esc(t.nombre)}</a>${esMio(t) ? ' <span class="ayuda" style="display:inline">(tú)</span>' : ''}</strong>
+              ${etiquetaPermiso(t)}
+            </div>
+            <p class="trabajo-curso">${t.curso ? esc(t.curso) : 'Sin curso'}</p>
+            ${t.descripcion ? `<p>${esc(t.descripcion)}</p>` : ''}
+            <p class="ayuda">${fechaCorta(t.fecha)}</p>
+            ${botones(t)}
+          </div>
+        </div>`).join('') || '<p class="ayuda">Todavía no hay trabajos publicados en esta categoría.</p>';
+    }
+
+    // Filtros por categoría: botones limpios (como en Cursos). El servidor filtra los trabajos.
+    async function pintarFiltrosComunidad() {
+      const caja = document.getElementById('filtros');
+      let categorias = [];
+      try { categorias = await api('/api/categorias'); } catch (e) { /* sin categorías: solo «Todas» */ }
+      caja.innerHTML = '<button type="button" class="activa" data-id="">Todas</button>' +
+        categorias.map(c => `<button type="button" data-id="${c.id}">${esc(c.nombre)}</button>`).join('');
+      caja.onclick = (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        caja.querySelectorAll('button').forEach(x => x.classList.toggle('activa', x === b));
+        cargarTrabajos(b.dataset.id);
+      };
+    }
+
+    // ---------- Acciones de la autora ----------
+    async function cambiarPermiso(casilla, id, permiso) {
+      casilla.disabled = true;
+      try {
+        await api(`/api/trabajos/${id}/permiso`, { method: 'PUT', body: { permiso_mi_estilo: permiso } });
+        avisar('msg', permiso ? '✅ Ahora las clientas pueden ver tu foto.' : '✅ Tu foto ya solo la ve la comunidad.');
+      } catch (err) {
+        casilla.checked = !permiso;          // si falla, el interruptor vuelve a como estaba
+        avisar('msg', err.message, true);
+      } finally {
+        casilla.disabled = false;
+      }
+    }
+
+    async function borrarTrabajo(boton, id) {
+      if (!boton.classList.contains('seguro')) {
+        boton.classList.add('seguro');
+        boton.querySelector('.boton-icono-texto').textContent = '¿Borrar?';
+        setTimeout(() => { if (boton.isConnected) { boton.classList.remove('seguro'); boton.querySelector('.boton-icono-texto').textContent = ''; } }, 4000);
+        return;
+      }
+      boton.disabled = true;
+      try {
+        await api('/api/trabajos/' + id, { method: 'DELETE' });
+        avisar('msg', '✅ Foto borrada.');
+        cargarTrabajos();
+      } catch (err) {
+        avisar('msg', err.message, true);
+        boton.disabled = false;
+      }
+    }
+
+    // ---------- Reportar (menú de motivos compartido, en api.js) ----------
+    function reportar(boton, id) {
+      abrirReporte(boton, 'trabajo', id, (mensaje) => {
+        avisar('msg', '✅ ' + mensaje);
+        cargarTrabajos(); // lo reportado desaparece del muro
+      });
+    }
+
+    // ---------- Publicar ----------
+    document.getElementById('form').onsubmit = async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const boton = document.getElementById('publicar');
+      boton.disabled = true; // evita publicar dos veces con doble clic
+      try {
+        await api('/api/trabajos', { method: 'POST', body: new FormData(form) });
+        form.reset();
+        avisar('msg-form', '✅ ¡Publicado! Ya está en el muro.');
+        cargarTrabajos();
+      } catch (err) {
+        avisar('msg-form', err.message, true); // ej. "Solo puedes etiquetar cursos en los que estás inscrita"
+      } finally {
+        boton.disabled = false;
+      }
+    };
+
+    // ---------- Pestaña Dudas ----------
+    const PERFILES = { alumna: 'Alumna', profesional: 'Profesional', administradora: 'Administradora' };
+    let dudasCargadas = false; // se piden al servidor solo la primera vez que se abre la pestaña
+
+    async function cargarDudasComunidad() {
+      const caja = document.getElementById('lista-dudas');
+      caja.innerHTML = '<p>Cargando…</p>';
+      try {
+        const dudas = await api('/api/dudas/comunidad');
+        dudasCargadas = true;
+        caja.innerHTML = dudas.map(d => `
+          <div class="tarjeta aviso-duda" style="margin-bottom:10px">
+            <div>
+              <strong>${esc(d.nombre)}</strong>
+              <span class="${d.perfil === 'administradora' ? 'etiqueta' : 'etiqueta gris'}">${PERFILES[d.perfil] || ''}</span>
+              <p class="ayuda">${esc(d.curso)} › ${esc(d.leccion)} · ${fechaCorta(d.fecha)}</p>
+              <p class="texto">«${esc(d.texto)}»${d.foto ? ' <span class="con-foto">· Con foto</span>' : ''}</p>
+              <p class="ayuda">${d.respuestas
+                ? `${d.respuestas} ${d.respuestas === 1 ? 'respuesta' : 'respuestas'}${d.tiene_destacada ? ' · Respuesta destacada' : ''}`
+                : 'Aún sin respuestas: ¡ayuda a tu compañera!'}</p>
+            </div>
+            <a class="boton-opcion" href="/leccion.html?id=${d.leccion_id}#duda-${d.id}">Ver duda →</a>
+          </div>`).join('')
+          || '<p class="ayuda">Todavía no hay dudas en tus cursos. Si tienes una, pregúntala dentro de la lección.</p>';
+      } catch (err) {
+        caja.innerHTML = '';
+        avisar('msg-dudas', err.message, true);
+      }
+    }
+
+    // Cambia de pestaña. Se guarda en la URL (?pestana=dudas) para que "atrás" y recargar funcionen.
+    function abrirPestana(nombre, guardarEnUrl = true) {
+      document.querySelectorAll('#pestanas button').forEach(b => b.classList.toggle('activa', b.dataset.pestana === nombre));
+      document.getElementById('zona-trabajos').classList.toggle('oculto', nombre !== 'trabajos');
+      document.getElementById('zona-dudas').classList.toggle('oculto', nombre !== 'dudas');
+      if (guardarEnUrl) history.replaceState(null, '', nombre === 'dudas' ? '?pestana=dudas' : location.pathname);
+      if (nombre === 'dudas' && !dudasCargadas) cargarDudasComunidad();
+    }
+    document.querySelectorAll('#pestanas button').forEach(b => b.onclick = () => abrirPestana(b.dataset.pestana));
 
     async function iniciar() {
       usuaria = await pintarCabecera();
+      // Comunidad (con pestaña de dudas) solo para quien hace cursos y la directora.
+      // La clienta y quien entra sin cuenta siguen viendo solo el muro de trabajos.
+      if (usuaria && ['alumna', 'profesional', 'administradora'].includes(usuaria.perfil)) {
+        document.getElementById('titulo').textContent = 'Comunidad';
+        document.title = 'Comunidad – GLAMIO';
+        document.getElementById('pestanas').classList.remove('oculto');
+        if (param('pestana') === 'dudas') abrirPestana('dudas', false);
+      }
       // Solo publican quienes hacen los trabajos (el servidor también lo comprueba)
       if (usuaria && ['alumna', 'profesional'].includes(usuaria.perfil)) {
         document.getElementById('form').classList.remove('oculto');
-        const cursos = await api('/api/cursos');
-        document.getElementById('curso').innerHTML += cursos.map(c => `<option value="${c.id}">${esc(c.titulo)}</option>`).join('');
+        try {
+          const cursos = await api('/api/trabajos/mis-cursos');
+          document.getElementById('curso').innerHTML += cursos.map(c => `<option value="${c.id}">${esc(c.titulo)}</option>`).join('');
+        } catch (err) {
+          avisar('msg-form', 'No se pudieron cargar tus cursos: ' + err.message, true);
+        }
       }
-      pintarFiltros(document.getElementById('filtros'), cargarTrabajos);
+      // La clienta: antes de pintar el muro, saber cuáles tiene ya guardados (para el ♥)
+      if (usuaria && usuaria.perfil === 'clienta') {
+        try {
+          (await api('/api/mi-estilo')).forEach(f => misFavoritos.add(f.id));
+        } catch (err) { /* si falla, los corazones salen vacíos: no es grave */ }
+      }
+      pintarFiltrosComunidad();
       cargarTrabajos();
     }
-
-    document.getElementById('form').onsubmit = async (e) => {
-      e.preventDefault();
-      try {
-        await api('/api/trabajos', { method: 'POST', body: new FormData(e.target) });
-        e.target.reset();
-        cargarTrabajos();
-      } catch (err) { alert(err.message); }
-    };
 
     iniciar();
   </script>

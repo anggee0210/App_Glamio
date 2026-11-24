@@ -1,36 +1,99 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Entrar – GLAMIO</title>
   <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
 </head>
-<body>
-  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
-  <main style="max-width:420px">
-    <h1>Entrar</h1>
-    <form id="form">
-      <label>Email <input type="email" name="email" required></label>
-      <label>Contraseña <input type="password" name="password" required></label>
-      <button class="boton">Entrar</button>
-    </form>
-    <p class="mensaje oculto" id="msg"></p>
-    <p style="margin-top:12px">¿No tienes cuenta? <a href="/registro.html">Regístrate</a></p>
-  </main>
+
+<body class="cuerpo-acceso">
+  <!-- Diseño "Inicia sesión": pantalla partida, foto a la izquierda y formulario a la derecha (sin la cabecera normal) -->
+  <div class="pantalla-acceso">
+    <!-- A la izquierda, el logo de GLAMIO sobre morado oscuro (antes había una foto) -->
+    <div class="acceso-foto acceso-logo"><img src="/img/logo-grande.jpg"
+        alt="GLAMIO, Academia de belleza: formación que transforma tu talento en belleza profesional"></div>
+
+    <div class="acceso-panel">
+      <a href="/index.html" class="logo logo-grande" aria-label="GLAMIO, ir al inicio">
+        <img src="/img/logo-g.png" alt="">
+        <span class="logo-texto"><span class="logo-nombre">GLAMIO</span><span class="logo-lema">ACADEMIA DE
+            BELLEZA</span></span>
+      </a>
+
+      <h1 class="acceso-titulo">Entrar</h1>
+      <p class="acceso-sub">Accede a tu cuenta y continúa tu formación</p>
+
+      <form id="form" class="acceso-form" autocomplete="off">
+        <label class="campo-icono">
+          <span class="visualmente-oculto">Email</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="m3 7 9 6 9-6" />
+          </svg>
+          <input type="email" name="email" placeholder="Email" autocomplete="off" readonly required>
+        </label>
+        <label class="campo-icono">
+          <span class="visualmente-oculto">Contraseña</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+          </svg>
+          <input type="password" name="password" placeholder="Contraseña" autocomplete="new-password" readonly required>
+          <button type="button" class="ver-contrasena" aria-label="Mostrar la contraseña"
+            title="Mostrar la contraseña">👁</button>
+        </label>
+        <p class="mensaje error oculto" id="msg"></p>
+        <!-- Solo aparece si la cuenta aún no ha confirmado su email -->
+        <button type="button" class="boton-contorno oculto" id="reenviar">📧 Enviarme otro correo de
+          confirmación</button>
+        <button class="boton boton-ancho" id="entrar">➜ Entrar</button>
+      </form>
+
+      <a class="volver-inicio" href="/recuperar.html">¿Olvidaste tu contraseña?</a>
+      <p class="volver-inicio">Por seguridad, tienes 3 intentos.</p>
+
+      <a class="boton-contorno" href="/registro.html">👤 ¿No tienes cuenta? <strong>Regístrate</strong></a>
+      <a class="volver-inicio" href="/index.html">← Volver al inicio</a>
+    </div>
+  </div>
+
   <script src="/js/api.js"></script>
   <script>
-    pintarCabecera();
+    // Si ya hay sesión, no tiene sentido entrar otra vez: a su página de inicio
+    api('/api/auth/yo').then(u => { if (u) location.replace(paginaInicio(u)); }).catch(() => { });
+
+    activarVerContrasena(); // el 👁 (está en api.js)
+    camposEnBlanco(document.getElementById('form')); // que no salgan los datos de la vez anterior (api.js)
+
     document.getElementById('form').onsubmit = async (e) => {
       e.preventDefault();
+      const boton = document.getElementById('entrar');
+      const msg = document.getElementById('msg');
+      boton.disabled = true; // evita entrar dos veces con doble clic
       try {
         const usuaria = await api('/api/auth/login', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
-        location.href = paginaInicio(usuaria); // la clienta va al muro, el resto a los cursos
+        location.href = paginaInicio(usuaria); // la clienta va al muro, el resto al inicio
       } catch (err) {
-        const msg = document.getElementById('msg');
-        msg.textContent = err.message; msg.classList.remove('oculto');
+        msg.textContent = err.message; // ej. "Email o contraseña incorrectos"
+        msg.classList.remove('oculto');
+        boton.disabled = false;
+        // Si no ha confirmado su email, le ofrecemos otro correo
+        document.getElementById('reenviar').classList.toggle('oculto', !(err.datos && err.datos.sin_verificar));
       }
+    };
+
+    document.getElementById('reenviar').onclick = async () => {
+      const email = document.querySelector('[name=email]').value;
+      const res = await api('/api/auth/reenviar-verificacion', { method: 'POST', body: { email } });
+      const msg = document.getElementById('msg');
+      msg.textContent = res.mensaje + '. Mira también en spam.';
+      msg.classList.remove('error');
+      document.getElementById('reenviar').classList.add('oculto');
     };
   </script>
 </body>
+
 </html>

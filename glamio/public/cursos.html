@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cursos – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main>
+    <!-- Página solo de cursos (la Academia): título, pestañas por categoría y las tarjetas -->
+    <header class="catalogo-cabecera">
+      <p class="catalogo-antetitulo">Academia GLAMIO</p>
+      <h1 class="catalogo-titulo">Nuestros cursos</h1>
+      <p class="catalogo-sub">Formación práctica con lecciones en vídeo, lista de materiales y certificado al terminar.</p>
+    </header>
+
+    <!-- Pestañas: «Todos» y cada categoría que tiene cursos, con cuántos hay -->
+    <nav class="catalogo-pestanas" id="pestanas" role="tablist" aria-label="Categorías"></nav>
+
+    <div class="catalogo-rejilla" id="lista-cursos"><p class="ayuda">Cargando…</p></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/catalogo.js"></script>
+  <script>
+    // Botones de categoría, tarjetas y «Próximamente»: todo en /js/catalogo.js (lo comparte con el Inicio)
+    pintarCabecera();
+    pintarCatalogo(document.getElementById('pestanas'), document.getElementById('lista-cursos'));
+  </script>
+</body>
+</html>
