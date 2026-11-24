@@ -94,6 +94,7 @@ glamio/
 ├── package.json
 ├── .env.example           # Copiar como .env
 ├── CLAUDE.md              # Guía del proyecto para Claude (reglas, stack, tablas)
+├── .claude/agents/        # Agentes de Claude Code: desarrollador (Opus 5.5) y revisor (Fable 5.2)
 ├── db/
 │   ├── pool.js            # Conexión a PostgreSQL
 │   ├── schema.sql         # Tablas, índices y trigger (¡borra todo! ver abajo)
@@ -166,8 +167,7 @@ glamio/
 │   ├── LOGIN-SEGURO.md    # Cómo funciona el login, flujo a flujo
 │   ├── GLAMIO_casos_de_uso.md # Casos de uso (actores, flujos y reglas)
 │   ├── GLAMIO-Diseno-UX-UI.md # Diseño de pantallas y estilo
-│   ├── GLAMIO_instrucciones.md # Resumen corto del proyecto
-│   └── agentes/           # Instrucciones de los agentes Revisor y Autenticador
+│   └── GLAMIO_instrucciones.md # Resumen corto del proyecto
 ├── uploads/               # Fotos y vídeos subidos (imagenes/ y videos/), fuera de git
 └── privado/guias/         # PDF de las guías: NO es pública, fuera de git
 ```
