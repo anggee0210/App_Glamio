@@ -221,7 +221,7 @@ body { overflow-wrap: anywhere; }
 
 /* Pantallas medianas: el círculo del perfil sin el nombre al lado, para que quepa el menú */
 @media (max-width: 1500px) { .nombre-perfil { display: none; } }
-@media (max-width: 1340px) {
+@media (max-width: 1420px) {
   /* Cabecera en UNA línea: el logo a la izquierda y "☰ Menú" a la derecha */
   .cabecera { flex-wrap: wrap; padding: 10px 16px; gap: 8px; justify-content: space-between; }
   .boton-menu { display: inline-flex; }
@@ -1402,10 +1402,10 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .lateral a { font-size: 1.05rem; padding: 10px 14px; }
   .lateral a svg { width: 21px; height: 21px; }
 }
-@media (max-width: 1340px) {
+@media (max-width: 1420px) {
   .menu a { font-size: 1.2rem; }
 }
-/* El logo nunca se aplasta: si no cabe todo, sale el botón ☰ (ahora desde 1340px, porque las opciones son más grandes) */
+/* El logo nunca se aplasta: si no cabe todo, sale el botón ☰ (desde 1420px: con las letras más grandes y la opción Tienda no cabe todo) */
 .cabecera .logo { flex-shrink: 0; }
 
 /* =====================================================================
@@ -1479,3 +1479,103 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 /* El nombre no pasa por debajo de la ✕ */
 .al-zona.con-ficha .al-cabeza { padding-right: 84px; }
 @media (max-width: 640px) { .al-cerrar { top: 12px; right: 12px; width: 42px; height: 42px; } .al-zona.con-ficha .al-cabeza { padding-right: 64px; } }
+
+/* =====================================================================
+   SIMULADORES (solo vista previa): TIENDA (fase 3) y CITAS (fase 2)
+   No guardan nada en GLAMIO: todo vive en el navegador.
+   ===================================================================== */
+.sim-aviso { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 18px; padding: 12px 18px;
+  border: 1px dashed #d4a03c; border-radius: 14px; background: #fffaf0; color: #6b4e14; font-size: 1rem; }
+.sim-aviso b { color: #8a5d0c; }
+.sim-aviso-perfil { border-style: solid; border-color: var(--borde); background: var(--principal-claro); color: var(--principal-oscuro); }
+.sim-aviso.oculto { display: none; }
+.sim-enlace { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--principal); text-decoration: underline; cursor: pointer; }
+.sim-enlace.peligro { color: #a12622; }
+.sim-ok { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: #eaf6ee; color: #1f6b3a; font-weight: 600; }
+.sim-vacio { margin: 0; color: var(--gris); }
+.sim-nota { margin: 10px 0 0; font-size: .92rem; color: var(--gris); }
+
+/* --- Tienda: productos a la izquierda, carrito a la derecha --- */
+.sim-tienda { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 23rem); gap: 28px; align-items: start; }
+.sim-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 22px; }
+.sim-producto { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--borde); border-radius: 18px; overflow: hidden;
+  transition: transform .25s, box-shadow .25s; }
+.sim-producto:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(61, 23, 71, .10); }
+.sim-dibujo { position: relative; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; }
+.sim-dibujo svg { width: 42%; height: auto; fill: none; stroke: var(--principal-oscuro); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.sim-unas { background: linear-gradient(140deg, #f8e6f1, #efd9f6); }
+.sim-cabello { background: linear-gradient(140deg, #f6ebe2, #efdcef); }
+.sim-cejas { background: linear-gradient(140deg, #efe6f7, #f7efe6); }
+.sim-stock { position: absolute; top: 12px; left: 12px; padding: 4px 11px; border-radius: 999px; background: rgba(255, 255, 255, .9);
+  font-size: .85rem; font-weight: 700; color: var(--gris); }
+.sim-stock.pocas { background: #fff3dc; color: #8a5d0c; }
+.sim-stock.agotado { background: #fdeeee; color: #a12622; }
+.sim-producto-cuerpo { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px 18px; flex: 1; }
+.sim-producto-nombre { font-family: var(--serif); font-size: 1.25rem; line-height: 1.25; color: var(--principal-oscuro);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; }
+.sim-detalle { color: var(--gris); font-size: .98rem; }
+.sim-producto-pie { margin-top: auto; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sim-anadir { padding: 9px 16px; font-size: 1rem; }
+.sim-carrito, .sim-caja { position: sticky; top: 100px; background: #fff; border: 1px solid var(--borde); border-radius: 18px; padding: 22px; box-shadow: var(--sombra); }
+.sim-carrito-titulo { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 1.5rem; }
+.sim-lineas { list-style: none; margin: 0; padding: 0; }
+.sim-lineas li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--borde); }
+.sim-linea-nombre { display: flex; flex-direction: column; min-width: 0; font-weight: 600; }
+.sim-linea-nombre small { font-weight: 400; color: var(--gris); }
+.sim-cantidad { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.sim-cantidad button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--borde); background: #fff; color: var(--principal);
+  font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.sim-cantidad button:disabled { opacity: .4; cursor: not-allowed; }
+.sim-total { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0; font-size: 1.1rem; }
+.sim-total b { font-family: var(--serif); font-size: 1.7rem; color: var(--principal-oscuro); }
+.sim-pagar { width: 100%; }
+.sim-pagar:disabled { opacity: .5; cursor: not-allowed; }
+
+/* --- Citas: los 4 pasos a la izquierda, resumen y Mis citas a la derecha --- */
+.sim-citas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 24rem); gap: 28px; align-items: start; }
+.sim-pasos { display: flex; flex-direction: column; gap: 18px; }
+.sim-paso { background: #fff; border: 1px solid var(--borde); border-radius: 18px; padding: 20px 22px; }
+.sim-paso h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; font-size: 1.35rem; }
+.sim-paso h2 span { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--principal-oscuro); color: #fff; font-family: inherit; font-size: 1rem; }
+.sim-profesionales, .sim-servicios { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+.sim-opcion { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; padding: 12px 14px; border-radius: 14px;
+  border: 1.5px solid var(--borde); background: #fff; font: inherit; color: var(--oscuro); cursor: pointer; transition: border-color .15s, background .15s; }
+.sim-opcion > span:not(.al-avatar):not(.catalogo-precio) { display: flex; flex-direction: column; min-width: 0; }
+.sim-opcion small { color: var(--gris); }
+.sim-opcion:hover { border-color: var(--principal); }
+.sim-opcion.elegida { border-color: var(--principal-oscuro); background: var(--principal-claro); box-shadow: inset 0 0 0 1px var(--principal-oscuro); }
+.sim-servicio { justify-content: space-between; }
+.sim-servicio .catalogo-precio { font-size: 1.2rem; }
+.sim-dias { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+.sim-dia { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 70px; padding: 10px 8px; border-radius: 14px;
+  border: 1.5px solid var(--borde); background: #fff; font: inherit; color: var(--oscuro); cursor: pointer; text-transform: capitalize; }
+.sim-dia b { font-family: var(--serif); font-size: 1.5rem; line-height: 1.1; }
+.sim-dia small { font-size: .85rem; color: var(--gris); }
+.sim-dia.elegida { background: var(--principal-oscuro); border-color: var(--principal-oscuro); color: #fff; }
+.sim-dia.elegida small { color: #e9d7f1; }
+.sim-horas { display: flex; flex-wrap: wrap; gap: 10px; }
+.sim-horas .sim-nota { flex-basis: 100%; }
+.sim-hora { min-width: 86px; padding: 10px 14px; border-radius: 999px; border: 1.5px solid var(--borde); background: #fff; font: inherit; font-weight: 600;
+  color: var(--principal-oscuro); cursor: pointer; }
+.sim-hora:hover:not(:disabled) { border-color: var(--principal); }
+.sim-hora.elegida { background: var(--principal-oscuro); border-color: var(--principal-oscuro); color: #fff; }
+.sim-hora:disabled { color: #b9adbd; text-decoration: line-through; background: #faf6fb; cursor: not-allowed; }
+.sim-resumen { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 100px; }
+.sim-resumen .sim-caja { position: static; }
+.sim-datos { margin: 0; display: grid; gap: 10px; }
+.sim-datos div { display: flex; justify-content: space-between; gap: 12px; }
+.sim-datos dt { color: var(--gris); }
+.sim-datos dd { margin: 0; font-weight: 600; text-align: right; }
+
+@media (max-width: 1100px) {
+  .sim-tienda, .sim-citas { grid-template-columns: minmax(0, 1fr); }
+  .sim-carrito, .sim-resumen { position: static; }
+}
+@media (max-width: 640px) {
+  .sim-productos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .sim-producto-cuerpo { padding: 12px; }
+  .sim-producto-nombre { font-size: 1.05rem; }
+  .sim-producto-pie { flex-direction: column; align-items: stretch; }
+}
+.sim-servicios .sim-vacio, .sim-profesionales .sim-vacio { grid-column: 1 / -1; }

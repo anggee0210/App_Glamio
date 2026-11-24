@@ -120,6 +120,8 @@ function seccionActual() {
   if (p.endsWith('/bloqueadas.html')) return 'bloqueadas';
   if (p.endsWith('/alumnas.html')) return 'alumnas';
   if (p.endsWith('/mi-estilo.html')) return 'miestilo';
+  if (p.endsWith('/simuladores/tienda.html')) return 'tienda';
+  if (p.endsWith('/simuladores/citas.html')) return 'citas';
   if (p.endsWith('/perfil.html')) return 'perfil'; // ninguna opción del menú se resalta
   return 'inicio';
 }
@@ -161,9 +163,10 @@ function activarPerfil() {
 function pintarPie(usuaria) {
   if (document.querySelector('.pie') || !document.querySelector('.cabecera')) return;
   const esClienta = usuaria && usuaria.perfil === 'clienta';
-  const enlaces = esClienta ? '<a href="/muro.html">Muro</a><a href="/mi-estilo.html">Mi Estilo</a>'
+  const enlaces = esClienta ? '<a href="/muro.html">Muro</a><a href="/mi-estilo.html">Mi Estilo</a><a href="/simuladores/citas.html">Citas</a><a href="/simuladores/tienda.html">Tienda</a>'
     : `<a href="/index.html">Inicio</a><a href="/cursos.html">Cursos</a><a href="/muro.html">${usuaria ? 'Comunidad' : 'Muro'}</a>` +
-      (usuaria ? '<a href="/calculadora.html">Calculadora</a>' : '<a href="/login.html">Entrar</a>');
+      (usuaria ? '<a href="/calculadora.html">Calculadora</a>' : '<a href="/login.html">Entrar</a>') +
+      '<a href="/simuladores/tienda.html">Tienda</a>'; // el simulador, al final
   document.body.insertAdjacentHTML('beforeend', `
     <footer class="pie"><div class="pie-dentro">
       <span class="pie-logo"><img src="/img/logo-g.png" alt="">
@@ -254,9 +257,10 @@ function pintarLateral() {
 async function pintarCabecera() {
   const usuaria = await api('/api/auth/yo');
 
-  // La clienta solo puede estar en el muro, en Mi Estilo, en los perfiles públicos (fase 2) y en Mi cuenta:
+  // La clienta solo puede estar en el muro, en Mi Estilo, en los perfiles públicos (fase 2), en Mi cuenta
+  // y en los dos simuladores (Tienda y Citas):
   // si abre otra página, la llevamos al muro. (Es para que la app se vea bien; la seguridad de verdad está en el servidor.)
-  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo|perfil|cuenta)\.html$/.test(location.pathname)) {
+  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo|perfil|cuenta|tienda|citas)\.html$/.test(location.pathname)) {
     location.replace('/muro.html');
     return usuaria;
   }
@@ -275,7 +279,9 @@ async function pintarCabecera() {
   if (usuaria && usuaria.perfil === 'clienta') {
     // La clienta: el Muro (mirar) y Mi Estilo (fase 2: sus favoritos guardados con ♡)
     menu.innerHTML = opcion('comunidad', '/muro.html', 'Muro') +
-      opcion('miestilo', '/mi-estilo.html', '💜 Mi Estilo') + htmlDerecha(usuaria);
+      opcion('miestilo', '/mi-estilo.html', '💜 Mi Estilo') +
+      // Simuladores (vista previa): Citas solo para la clienta; Tienda para todos
+      opcion('citas', '/simuladores/citas.html', 'Citas') + opcion('tienda', '/simuladores/tienda.html', 'Tienda') + htmlDerecha(usuaria);
     activarSalir();
     activarPerfil();
     return usuaria;
@@ -295,6 +301,8 @@ async function pintarCabecera() {
       html += opcion('panel', '/admin.html', 'Panel');
     }
   }
+  // Al final del menú: el simulador de la Tienda (vista previa de la fase 3, carpeta /simuladores/), para todos
+  html += opcion('tienda', '/simuladores/tienda.html', 'Tienda');
   menu.innerHTML = html + htmlDerecha(usuaria);
   activarSalir();
   activarPerfil();
