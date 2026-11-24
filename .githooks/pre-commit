@@ -1,0 +1,27 @@
+#!/bin/sh
+# =========================================
+# Hook de Git (pre-commit): pasa las pruebas ANTES de cada commit.
+# Si alguna falla, el commit se cancela, así nunca se sube algo roto a GitHub.
+#
+# Se activa una sola vez por ordenador con:
+#   git config core.hooksPath .githooks
+# =========================================
+
+# Solo si el commit toca la aplicación (glamio/); si solo cambia el README de fuera, no hace falta
+if ! git diff --cached --name-only | grep -q '^glamio/'; then
+  exit 0
+fi
+
+echo "🧪 Pasando las pruebas antes del commit (npm run test:simulado)..."
+cd "$(git rev-parse --show-toplevel)/glamio" || exit 1
+
+if npm run test:simulado > /dev/null 2>&1; then
+  echo "✅ Todas las pruebas pasan. Sigue el commit."
+  exit 0
+fi
+
+echo ""
+echo "❌ Alguna prueba falla: el commit se ha CANCELADO."
+echo "   Para ver cuál:  cd glamio && npm run test:simulado"
+echo "   (Si dice ECONNREFUSED, PostgreSQL está parado: arráncalo y vuelve a probar.)"
+exit 1

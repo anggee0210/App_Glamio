@@ -253,7 +253,16 @@ Guarda en **`Documentos\GLAMIO-copias\glamio-AAAA-MM-DD_HH-MM\`** la base de dat
 npm test              # con correos reales (si el .env tiene Gmail)
 npm run test:simulado # sin enviar correos, más rápido
 ```
-Usan una base de datos aparte (`glamio_test`): **no tocan tus datos**. Ahora mismo pasan **105 pruebas** (login, bloqueo, recuperación, Mi cuenta, permisos, comunidad, reseñas, calculadora y ficha de la alumna).
+Usan una base de datos aparte (`glamio_test`): **no tocan tus datos**. Ahora mismo pasan **106 pruebas** (login, bloqueo, recuperación, Mi cuenta, permisos, comunidad, reseñas, calculadora, ficha de la alumna y guías).
+
+## Hooks (protecciones automáticas)
+
+| Hook | Dónde | Qué hace |
+|---|---|---|
+| **Proteger la BD real** | `.claude/settings.json` + `.claude/hooks/proteger-bd.js` | Antes de cada orden de Claude Code, **bloquea** ejecutar `schema.sql` (o `npm run db:crear`) en la BD `glamio`, porque empieza con `DROP TABLE`. En `glamio_test` sí se permite. |
+| **Pruebas antes del commit** | `../.githooks/pre-commit` | Antes de cada commit que toque `glamio/`, pasa `npm run test:simulado`. Si alguna falla, **cancela el commit**. |
+
+El hook de Git se activa una vez por ordenador, desde la carpeta del repositorio: `git config core.hooksPath .githooks`
 
 ---
 

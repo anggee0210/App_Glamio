@@ -1,0 +1,2 @@
+# Los scripts de los hooks de Git necesitan saltos de línea de Linux (LF)
+.githooks/* text eol=lf

@@ -23,6 +23,8 @@ No añadas frameworks, ORMs ni servicios externos que no estén en esta lista sa
 
 **Pruebas:** `npm run test:simulado` (106 pruebas en la BD `glamio_test`, con correos simulados). `npm test` envía correos de verdad. Copia de seguridad: `npm run copia`.
 
+**Hooks:** `.claude/hooks/proteger-bd.js` bloquea ejecutar `schema.sql` en la BD real; `../.githooks/pre-commit` pasa las pruebas antes de cada commit. **Agentes:** `.claude/agents/` (desarrollador con Opus 5.5, revisor con Fable 5.2).
+
 ## Estructura de carpetas
 ```
 public/     # HTML, CSS, JS del cliente e imágenes
