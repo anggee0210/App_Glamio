@@ -32,12 +32,13 @@ La cuenta de la administradora no se puede crear desde la web: se crea con `db/c
   - **Certificado con la plantilla de la administradora**: sube su fondo, su firma y su logo (cuadrado, redondo o desvanecido) y, en un editor, **arrastra** el nombre, el curso, la firma, el logo y la fecha/Nº a su sitio, les cambia el tamaño o los borra. Hoja **carta** horizontal en pantalla, al imprimir y en PDF. Los nombres largos se encogen para caber en una línea.
   - **📖 Guías teóricas en PDF** en cada curso: se compran con pago simulado y **solo las descarga quien las compró**.
 - **Calculadora «Calcular mi precio»**
-  - Desde un curso carga sus materiales. La alumna pone el coste, los minutos, el valor de su hora y el margen.
-  - Fórmula: `(materiales + minutos/60 × precio_hora) × (1 + margen/100)`.
-  - Los servicios se guardan en «Mis servicios» y se pueden borrar.
+  - Desde un curso carga sus materiales. De cada uno, la alumna pone **lo que costó el producto entero** y **para cuántos servicios le da**: GLAMIO calcula el **coste por sesión** (ej. esmalte de 12 € para 30 servicios = 0,40 €).
+  - Después pone los minutos, el valor de su hora y el margen, y ve el **desglose**: materiales por sesión + su tiempo + margen = **precio del servicio**.
+  - Fórmula: `(Σ precio_producto / servicios_que_salen + minutos/60 × precio_hora) × (1 + margen/100)`.
+  - Los servicios se guardan en «Mis servicios» y se pueden borrar. Al guardar, la calculadora **queda en blanco** para no guardar el mismo servicio dos veces.
 - **Comunidad** (pestañas Trabajos y Dudas)
   - **Dudas**: con foto en cada lección. Tienen respuestas y una **respuesta destacada** que solo marca la administradora.
-  - **Trabajos**: muro etiquetado por curso. La autora decide con un **interruptor** «Visible para clientas» si las clientas ven su foto, y puede borrarla (la papelera pide pulsar dos veces).
+  - **Trabajos**: muro etiquetado por curso. Antes de publicar, la alumna puede **recortar la foto** (arrastrar y zoom, en un marco con la forma de la casilla) o publicarla **completa**; en el muro las fotos se ven siempre enteras. La autora decide con un **interruptor** «Visible para clientas» si las clientas ven su foto, y puede borrarla (la papelera pide pulsar dos veces).
 - **Reseñas**
   - Solo de cursos terminados y una por persona, de 1 a 5 ⭐, con foto opcional.
   - La administradora las responde. La autora puede borrarla, pero no editarla.
@@ -46,16 +47,16 @@ La cuenta de la administradora no se puede crear desde la web: se crea con `db/c
   - Alumna y profesional: respuestas nuevas a sus dudas.
 - **⚑ Reportes**: lo reportado se oculta al momento; la administradora decide en su página si vuelve a publicarse.
 - **Cuenta y seguridad**
-  - Registro con **verificación de email**, «¿Olvidaste tu contraseña?» con enlace al correo y **⚙️ Mi cuenta** (cambiar contraseña, ver las sesiones abiertas y cerrarlas).
+  - Registro con **verificación de email** (la alumna rellena ahí su **ficha personal**, obligatoria), «¿Olvidaste tu contraseña?» con enlace al correo y **⚙️ Mi cuenta** (cambiar contraseña, ver las sesiones abiertas y cerrarlas).
   - Al **3.er intento fallido** la cuenta se bloquea y solo la administradora la desbloquea. La página de entrar sale siempre **en blanco**.
 - **👩‍🎓 Ficha personal de la alumna**
   - Nombre completo, lugar de nacimiento (país y ciudad), **documento de identidad según el país** (España → DNI, Colombia → Cédula de ciudadanía, México → CURP… y «Otro país» → Pasaporte; si nació fuera de España puede dar su **NIE**), fecha de nacimiento, dirección y teléfono.
   - Se comprueba la **letra del DNI/NIE**, el formato del documento de cada país y la **edad mínima de 14 años**.
-  - **Solo la administradora** la crea y la modifica; la alumna la ve en **Mi cuenta → Mis datos**. Nunca sale en el perfil público.
+  - La alumna la rellena **al registrarse** (obligatoria: la cuenta y la ficha se guardan juntas o ninguna). Después **solo la administradora** la modifica; la alumna la ve en **Mi cuenta → Mis datos**. Nunca sale en el perfil público.
 - **Panel de la administradora** con **menú lateral** agrupado (Academia · Comunidad · Personas):
   - **🏠 Panel principal** con **estadísticas**: cursos, lecciones, alumnas, valoración media, **visitas a la app** y **cursos vendidos por mes** (gráficas y tabla), y los cursos más vendidos;
   - Mis cursos (editar y **borrar**, con doble confirmación si hay inscritas), Nuevo curso (con el ajuste de la portada), Nueva lección, Materiales, Certificado (con el editor de posiciones), Guías teóricas y Reportes;
-  - **Alumnas**: lista con buscador y filtro (con o sin ficha) y, de cada una, **toda su información** (cuenta, ficha personal, cursos con su progreso y lo que ha hecho en la Comunidad). Desde ahí se **modifica** su ficha o el nombre/email con el que entra, se **borra la ficha** o se **borra la cuenta** entera (enseña antes lo que se perdería y pide confirmar);
+  - **Alumnas**: lista con buscador y filtro (con o sin ficha) y, de cada una, **toda su información** (cuenta, ficha personal, cursos con su progreso, lo que ha hecho en la Comunidad y su **historial de dudas**: solo las suyas, con su lección, si tienen respuesta y si alguna es la destacada). Desde ahí se **modifica** su ficha o el nombre/email con el que entra, se **borra la ficha** o se **borra la cuenta** entera (enseña antes lo que se perdería y pide confirmar);
   - **Cuentas bloqueadas**: tabla con quién está bloqueada y desde cuándo, y el botón Desbloquear.
 - **Diseño**: morado y lila con detalles dorados, logo de la G dorada (en la cabecera y en el pie), botones limpios sin emojis, menú lateral del Panel en degradado claro con la palabra GLAMIO de fondo e iconos de línea, pantalla completa en el PC (letra más grande en monitores grandes) y menú ☰ en el móvil.
 
@@ -105,6 +106,7 @@ glamio/
 │   ├── migracion-login.sql # Login seguro: sesiones, tokens y email verificado (no borra nada)
 │   ├── migracion-ficha-alumna.sql # Ficha personal: países con su documento y fichas_alumnas (no borra nada)
 │   ├── migracion-mas-paises.sql   # 31 países más para la ficha (48 en total; no borra nada)
+│   ├── migracion-calculadora.sql  # Calculadora: precio del producto y servicios que salen (no borra nada)
 │   ├── seed.sql           # Categorías, academia y cursos de ejemplo
 │   ├── datos-demo.js      # Cuentas demo con datos para la presentación (npm run db:demo)
 │   ├── copia-seguridad.js # Copia de la BD, uploads y privado (npm run copia)
@@ -161,6 +163,7 @@ glamio/
 │   ├── js/api.js          # fetch, cabecera, menú lateral, notificaciones, reportar, portadas… (funciones comunes)
 │   ├── js/catalogo.js     # Botones de categoría y tarjetas de curso (Cursos e Inicio)
 │   ├── js/ficha-form.js   # Formulario de la ficha (el documento cambia con el país) y la ficha para leer
+│   ├── js/recortar-foto.js # Recortar la foto antes de publicar un trabajo (canvas, sin librerías)
 │   └── js/certificado-plantilla.js # Dónde va cada dato del certificado (certificado y editor del Panel)
 ├── test/                  # Harness de pruebas (npm test): login, permisos, reseñas, calculadora, ficha…
 ├── docs/                  # Documentación del proyecto
@@ -201,8 +204,9 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
    >   Las cuentas que ya existían quedan verificadas, y sus contraseñas pasan solas a Argon2id al entrar.
    > - ficha personal de la alumna (países y documentos): `psql -U postgres -d glamio -f db/migracion-ficha-alumna.sql`
    > - más países para la ficha (después de la anterior): `psql -U postgres -d glamio -f db/migracion-mas-paises.sql`
+   > - calculadora por producto (precio del producto y servicios que salen): `psql -U postgres -d glamio -f db/migracion-calculadora.sql`
    >
-   > Si falta alguna, la parte que la usa (certificado, portadas, login o ficha) dará error. Se pueden ejecutar más de una vez sin problema.
+   > Si falta alguna, la parte que la usa (certificado, portadas, login, ficha o calculadora) dará error. Se pueden ejecutar más de una vez sin problema.
    >
    > En Windows, si `psql` o `createdb` no se encuentran, están en `C:\Program Files\PostgreSQL\18\bin\`.
 4. Crear la cuenta de la administradora (con una contraseña segura, no la de ejemplo):
@@ -253,7 +257,7 @@ Guarda en **`Documentos\GLAMIO-copias\glamio-AAAA-MM-DD_HH-MM\`** la base de dat
 npm test              # con correos reales (si el .env tiene Gmail)
 npm run test:simulado # sin enviar correos, más rápido
 ```
-Usan una base de datos aparte (`glamio_test`): **no tocan tus datos**. Ahora mismo pasan **106 pruebas** (login, bloqueo, recuperación, Mi cuenta, permisos, comunidad, reseñas, calculadora, ficha de la alumna y guías).
+Usan una base de datos aparte (`glamio_test`): **no tocan tus datos**. Ahora mismo pasan **116 pruebas** (login, bloqueo, recuperación, Mi cuenta, permisos, comunidad, reseñas, calculadora, ficha de la alumna y guías).
 
 ## Hooks (protecciones automáticas)
 
@@ -271,11 +275,11 @@ El hook de Git se activa una vez por ordenador, desde la carpeta del repositorio
 1. **Aprendo**: como alumna, ir a **Cursos**, abrir uno, inscribirse (pago simulado si es de pago), ver las lecciones y marcarlas como completadas. Al terminar, **🎓 Ver mi certificado**. Comprar una **📖 guía teórica** y descargarla.
 2. **Pregunto**: en una lección, hacer una duda con foto. Como administradora, **🔔 Notificaciones** avisa: responder y marcar **⭐ destacada**. La alumna recibe la notificación.
 3. **Sé cuánto cobrar**: en el curso, **🧮 Calcular mi precio**. Se cargan los materiales; poner los costes, los minutos, el €/h y el margen, y guardar.
-4. **Muestro mi resultado**: en **Comunidad → 📷 Trabajos**, publicar una foto etiquetada con el curso y dar permiso 👁. Como clienta, verla en el muro, guardarla con **♡** y abrirla en **💜 Mi Estilo**. Pulsar el nombre de la autora para ver su **👤 perfil público** (cursos terminados, trabajos y los servicios que haya marcado en la calculadora).
+4. **Muestro mi resultado**: en **Comunidad → 📷 Trabajos**, publicar una foto (recortándola a su gusto) etiquetada con el curso y dar permiso 👁. Como clienta, verla en el muro, guardarla con **♡** y abrirla en **💜 Mi Estilo**. Pulsar el nombre de la autora para ver su **👤 perfil público** (cursos terminados, trabajos y los servicios que haya marcado en la calculadora).
 5. **Reseña**: dejar ⭐ en el curso terminado. La administradora responde.
 6. **Moderación**: reportar algo con un motivo. Se oculta, y la administradora lo revisa en **⚑ Reportes**.
 7. **Estadísticas**: como administradora, **Panel → Panel principal**: visitas y cursos vendidos por mes.
-8. **Alumnas**: **Panel → Alumnas**, elegir una y **Rellenar** su ficha (al elegir el país cambia el documento que se pide). Entrar como esa alumna y verla en **Mi cuenta → Mis datos**, sin poder cambiarla.
+8. **Alumnas**: registrarse como alumna rellenando la ficha (al elegir el país cambia el documento que se pide). En **Panel → Alumnas** abrirla: su ficha, sus cursos y su **historial de dudas**. Entrar como esa alumna y ver la ficha en **Mi cuenta → Mis datos**, sin poder cambiarla.
 
 ---
 
@@ -296,7 +300,7 @@ El hook de Git se activa una vez por ordenador, desde la carpeta del repositorio
 | Las guías solo las descarga quien las compró | `privado/guias` (no pública) + comprobación de compra en `routes/guias.js` |
 | Borrar un curso con inscritas pide una segunda confirmación | `DELETE /api/cursos/:id` responde 409 hasta `?confirmar=si` |
 | Pago simulado | `routes/cursos.js` y `routes/guias.js` (`pago_simulado: true`) |
-| Ficha personal: solo de alumnas, una por alumna; solo la administradora la crea, modifica y borra (la alumna recibe 403) | `routes/ficha.js` + clave primaria `usuaria_id` + trigger `ficha_solo_alumna` |
+| Ficha personal: solo de alumnas, una por alumna; obligatoria al registrarse (cuenta + ficha en una transacción); después solo la administradora la modifica y borra (la alumna recibe 403) | `routes/ficha.js` + clave primaria `usuaria_id` + trigger `ficha_solo_alumna` |
 | El documento cumple el formato de su país (o NIE si nació fuera de España); letra del DNI/NIE correcta; edad mínima 14 años; el mismo documento no se repite | Tabla `paises` (patrón) + `validarFicha()` + `UNIQUE (pais_nacimiento, numero_documento)` e índice `un_nie_por_ficha` |
 | Borrar la cuenta de una alumna pide confirmar y se lleva todo lo suyo (también sus fotos y los reportes sobre sus publicaciones) | `DELETE /api/ficha/alumnas/:id` responde 409 hasta `?confirmar=si` |
 
