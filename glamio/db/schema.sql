@@ -3,7 +3,7 @@
 -- Ejecutar: psql -U postgres -d glamio -f db/schema.sql
 -- =========================================
 
-DROP TABLE IF EXISTS fichas_alumnas, paises, sesiones, tokens_recuperacion, tokens_verificacion, favoritos, compras_guias, guias, visitas, reportes, materiales_servicio, servicios, resenas_cursos,
+DROP TABLE IF EXISTS fichas_profesionales, fichas_alumnas, paises, sesiones, tokens_recuperacion, tokens_verificacion, favoritos, compras_guias, guias, visitas, reportes, materiales_servicio, servicios, resenas_cursos,
   trabajos, respuestas, dudas, progreso_lecciones, inscripciones,
   materiales_curso, lecciones, cursos, academias, usuarias, categorias CASCADE;
 
@@ -417,8 +417,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS un_nie_por_ficha ON fichas_alumnas (numero_doc
 -- (La letra del DNI/NIE y la edad mínima se comprueban en el servidor.)
 CREATE OR REPLACE FUNCTION comprobar_ficha() RETURNS trigger AS $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM usuarias WHERE id = NEW.usuaria_id AND perfil = 'alumna') THEN
-    RAISE EXCEPTION 'Solo las alumnas tienen ficha personal';
+  IF NOT EXISTS (SELECT 1 FROM usuarias WHERE id = NEW.usuaria_id AND perfil IN ('alumna', 'profesional')) THEN
+    RAISE EXCEPTION 'Solo las alumnas y las profesionales tienen ficha personal';
   END IF;
   IF NEW.usa_nie THEN
     -- NIE: X, Y o Z + 7 cifras + letra. Las nacidas en España tienen DNI, no NIE.
@@ -488,3 +488,37 @@ INSERT INTO paises (codigo, nombre, documento, patron, ejemplo, orden) VALUES
 ON CONFLICT (codigo) DO UPDATE SET
   nombre = EXCLUDED.nombre, documento = EXCLUDED.documento,
   patron = EXCLUDED.patron, ejemplo = EXCLUDED.ejemplo, orden = EXCLUDED.orden;
+
+-- ===== Ficha de la profesional: Mi negocio (25/11, igual que db/migracion-ficha-profesional.sql) =====
+-- 2. Mi negocio (pública)
+CREATE TABLE fichas_profesionales (
+  usuaria_id        INT PRIMARY KEY REFERENCES usuarias(id) ON DELETE CASCADE,
+  nombre_negocio    VARCHAR(100),                       -- salón o marca (opcional: puede trabajar por su cuenta)
+  ciudad            VARCHAR(80) NOT NULL,               -- dónde la puede encontrar una clienta
+  zona              VARCHAR(80),                        -- barrio o zona (nunca la dirección exacta)
+  especialidades    INT[] NOT NULL DEFAULT '{}',        -- ids de categorias (Uñas, Cabello, Cejas)
+  anios_experiencia INT CHECK (anios_experiencia BETWEEN 0 AND 60),
+  a_domicilio       BOOLEAN NOT NULL DEFAULT FALSE,     -- ¿va a casa de la clienta?
+  instagram         VARCHAR(60),                        -- solo el usuario, sin @
+  sobre_mi          VARCHAR(400),                       -- presentación corta
+  actualizada_en    TIMESTAMP DEFAULT NOW()
+);
+
+-- Solo una profesional tiene «Mi negocio» y debe tener al menos una especialidad
+CREATE OR REPLACE FUNCTION comprobar_negocio() RETURNS trigger AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM usuarias WHERE id = NEW.usuaria_id AND perfil = 'profesional') THEN
+    RAISE EXCEPTION 'Solo las profesionales tienen «Mi negocio»';
+  END IF;
+  IF cardinality(NEW.especialidades) = 0 THEN
+    RAISE EXCEPTION 'Elige al menos una especialidad';
+  END IF;
+  NEW.actualizada_en := NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS negocio_solo_profesional ON fichas_profesionales;
+CREATE TRIGGER negocio_solo_profesional
+  BEFORE INSERT OR UPDATE ON fichas_profesionales
+  FOR EACH ROW EXECUTE FUNCTION comprobar_negocio();

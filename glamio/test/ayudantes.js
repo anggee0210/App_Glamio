@@ -85,11 +85,18 @@ function fichaDePrueba(cambios = {}) {
   };
 }
 
+// «Mi negocio» de una profesional de prueba (25/11); cada prueba cambia lo que quiera probar
+function negocioDePrueba(cambios = {}) {
+  return { ciudad: 'Madrid', zona: 'Chamberí', especialidades: [1], anios_experiencia: 5, a_domicilio: false, ...cambios };
+}
+
 // Registra una usuaria SIN confirmar el email. Devuelve sus datos y la sesión (sin entrar).
 async function registrarSinVerificar(perfil = 'alumna') {
   const sesion = new Sesion();
   const datos = { nombre: `Prueba ${perfil}`, email: emailUnico(perfil), password: 'clave1234', perfil };
-  if (perfil === 'alumna') datos.ficha = fichaDePrueba();
+  // Alumna y profesional mandan su ficha personal; la profesional, también «Mi negocio» (25/11)
+  if (perfil === 'alumna' || perfil === 'profesional') datos.ficha = fichaDePrueba();
+  if (perfil === 'profesional') datos.negocio = negocioDePrueba();
   const res = await sesion.post('/api/auth/registro', datos);
   if (res.estado !== 201) throw new Error(`No se pudo registrar: ${JSON.stringify(res.datos)}`);
   // El correo de verificación tiene que haber salido (con correos reales: Gmail lo aceptó)
@@ -128,5 +135,5 @@ async function terminarCurso(sesion, cursoId) {
 
 module.exports = {
   Sesion, nuevaUsuaria, registrarSinVerificar, sesionAdmin, emailUnico,
-  terminarCurso, ultimoCorreo, tokenDelCorreo, fichaDePrueba
+  terminarCurso, ultimoCorreo, tokenDelCorreo, fichaDePrueba, negocioDePrueba
 };

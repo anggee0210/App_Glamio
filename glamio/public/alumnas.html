@@ -12,8 +12,8 @@
   <main>
     <header class="al-titulo">
       <p class="al-antetitulo">Gestión de la academia</p>
-      <h1>Alumnas</h1>
-      <p class="al-sub">Cuenta, ficha personal y cursos de cada alumna. Solo tú puedes crear y modificar su ficha;
+      <h1 id="titulo-pagina">Alumnas</h1>
+      <p class="al-sub" id="sub-pagina">Cuenta, ficha personal y cursos de cada alumna. Solo tú puedes crear y modificar su ficha;
         ella la ve en <em>Mi cuenta</em> sin poder cambiarla. Nunca sale en su perfil público.</p>
     </header>
     <p class="mensaje oculto" id="msg"></p>
@@ -38,7 +38,7 @@
       <section class="al-panel" id="detalle" aria-live="polite">
         <div class="al-vacio">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-          <p>Elige una alumna de la lista para ver su información.</p>
+          <p id="vacio-texto">Elige una alumna de la lista para ver su información.</p>
         </div>
       </section>
     </div>
@@ -46,11 +46,27 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/ficha-form.js"></script>
+  <script src="/js/negocio-form.js"></script>
   <script>
     // Página de la administradora. La seguridad está en el servidor: /api/ficha/alumnas solo responde a la administradora.
     let alumnas = [];       // la lista completa (el buscador y el filtro trabajan aquí, sin volver a pedirla)
     let abierta = null;     // id de la alumna que se está viendo
     let filtro = 'todas';   // todas | con | sin
+
+    // Esta misma página sirve para las PROFESIONALES (25/11): alumnas.html?perfil=profesional.
+    // Cambian los textos, la lista que se pide y, en cada una, sale también su «Mi negocio».
+    const ES_PRO = param('perfil') === 'profesional';
+    const PALABRA = ES_PRO
+      ? { titulo: 'Profesionales', una: 'una profesional', ninguna: 'Ninguna profesional coincide.', vacia: 'Todavía no hay profesionales.', desde: 'Profesional desde' }
+      : { titulo: 'Alumnas', una: 'una alumna', ninguna: 'Ninguna alumna coincide.', vacia: 'Todavía no hay alumnas.', desde: 'Alumna desde' };
+    if (ES_PRO) {
+      document.title = 'Profesionales – GLAMIO';
+      document.getElementById('titulo-pagina').textContent = 'Profesionales';
+      document.getElementById('sub-pagina').innerHTML = 'Cuenta, ficha personal, negocio y cursos de cada profesional. La ficha personal la modificas tú; '
+        + 'su negocio lo cambia ella desde <em>Mi negocio</em>. Su ficha personal nunca sale en su perfil público.';
+      document.getElementById('vacio-texto').textContent = 'Elige una profesional de la lista para ver su información.';
+      document.querySelector('.al-lista') && document.querySelector('.al-lista').setAttribute('aria-label', 'Lista de profesionales');
+    }
 
     // Iconos de línea (sin emojis, como en Comunidad y Cursos)
     const ICONO = {
@@ -93,7 +109,7 @@
 
     // ---------- Lista ----------
     async function cargarLista() {
-      alumnas = await api('/api/ficha/alumnas');
+      alumnas = await api('/api/ficha/alumnas' + (ES_PRO ? '?perfil=profesional' : ''));
       pintarLista();
     }
 
@@ -109,7 +125,7 @@
         (!texto || [a.nombre, a.email, a.nombre_completo, a.numero_documento].some(x => (x || '').toLowerCase().includes(texto))));
       const lista = document.getElementById('lista');
       if (!vistas.length) {
-        lista.innerHTML = `<p class="al-nada">${alumnas.length ? 'Ninguna alumna coincide.' : 'Todavía no hay alumnas.'}</p>`;
+        lista.innerHTML = `<p class="al-nada">${alumnas.length ? PALABRA.ninguna : PALABRA.vacia}</p>`;
         return;
       }
       lista.innerHTML = vistas.map(a => `
@@ -150,7 +166,7 @@
       document.querySelector('.al-zona').classList.remove('con-ficha');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       document.getElementById('detalle').innerHTML =
-        '<div class="al-vacio"><p>Elige una alumna de la lista para ver su información.</p></div>';
+        `<div class="al-vacio"><p>Elige ${PALABRA.una} de la lista para ver su información.</p></div>`;
       pintarLista();
     }
 
@@ -183,7 +199,16 @@
         </li>`).join('')}</ul>`;
     }
 
-    function pintarDetalle({ cuenta, ficha, cursos, actividad, dudas = [] }) {
+    // Profesional: su «Mi negocio» (lo edita ella; aquí solo se ve)
+    function htmlSeccionNegocio(negocio) {
+      if (!ES_PRO) return '';
+      return `<section class="al-seccion" id="bloque-negocio">
+        <div class="al-seccion-cabeza"><h3>Su negocio</h3><span class="al-nota">Lo cambia ella desde «Mi negocio»</span></div>
+        ${negocio ? htmlVerNegocio(negocio) : '<p class="al-nada izq">Todavía no ha rellenado su negocio: no sale en el directorio.</p>'}
+      </section>`;
+    }
+
+    function pintarDetalle({ cuenta, ficha, cursos, actividad, dudas = [], negocio = null }) {
       const terminados = cursos.filter(c => c.terminado).length;
       const caja = document.getElementById('detalle');
       caja.innerHTML = `
@@ -194,7 +219,7 @@
             <h2>${esc(ficha ? ficha.nombre_completo : cuenta.nombre)}</h2>
             <p>${esc(cuenta.email)}</p>
             <p class="al-marcas">
-              <span>Alumna desde ${fecha(cuenta.creada_en)}</span>
+              <span>${PALABRA.desde} ${fecha(cuenta.creada_en)}</span>
               <span class="al-marca ${cuenta.email_verificado_en ? 'ok' : ''}">${cuenta.email_verificado_en ? 'Email confirmado' : 'Email sin confirmar'}</span>
               ${cuenta.bloqueada_en ? '<span class="al-marca mal">Cuenta bloqueada</span>' : ''}
             </p>
@@ -228,6 +253,8 @@
           ${ficha ? htmlVerFicha(ficha) + `<p class="al-nota">Actualizada el ${fecha(ficha.actualizada_en)}</p>`
                   : '<p class="al-nada izq">Todavía no tiene ficha personal.</p>'}
         </section>
+
+        ${htmlSeccionNegocio(negocio)}
 
         <section class="al-seccion">
           <div class="al-seccion-cabeza"><h3>Cursos</h3></div>

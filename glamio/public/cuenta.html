@@ -12,7 +12,7 @@
   <main style="max-width:720px">
     <h1>⚙️ Mi cuenta</h1>
 
-    <!-- Mis datos: la ficha personal (solo la alumna). La ven ella y la administradora, nunca el perfil público. -->
+    <!-- Mis datos: la ficha personal (alumna y, desde el 25/11, profesional). La ven ella y la administradora, nunca el perfil público. -->
     <section class="tarjeta oculto" id="mis-datos" style="margin-bottom:20px">
       <h2>Mis datos</h2>
       <p class="ayuda" style="margin-bottom:12px">Son privados: solo los ves tú y la administradora de la academia.
@@ -45,7 +45,7 @@
   <script src="/js/api.js"></script>
   <script src="/js/ficha-form.js"></script>
   <script>
-    // ---------- Mis datos (solo alumna, SOLO PARA LEER) ----------
+    // ---------- Mis datos (alumna y profesional, SOLO PARA LEER) ----------
     // Decisión del 18/11: la ficha la crea y la modifica solo la administradora (Panel → Alumnas).
     // La alumna la ve aquí sin formulario. (El servidor también se lo impide: PUT /api/ficha responde 403.)
     async function cargarMisDatos() {
@@ -93,7 +93,7 @@
       const usuaria = await pintarCabecera();
       if (!usuaria) return location.replace('/login.html');
       cargarSesiones();
-      if (usuaria.perfil === 'alumna') cargarMisDatos().catch(err => mostrar('msgDatos', err.message, true));
+      if (['alumna', 'profesional'].includes(usuaria.perfil)) cargarMisDatos().catch(err => mostrar('msgDatos', err.message, true));
     })();
 
     document.getElementById('formPassword').onsubmit = async (e) => {

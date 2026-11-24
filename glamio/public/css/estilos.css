@@ -2065,3 +2065,247 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 /* Registrarme: «¿Quisiste decir …@gmail.com?» con sus dos botones (25/11) */
 .sugerencia-email { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .sugerencia-email .boton { padding: 9px 16px; font-size: .95rem; }
+
+
+/* =====================================================================
+   PROFESIONAL (25/11): «Mi negocio», directorio de Profesionales y su bloque en el perfil
+   ===================================================================== */
+/* Formulario «Mi negocio» (registro y mi-negocio.html) */
+.negocio-especialidades { border: 1px solid var(--borde); border-radius: 10px; padding: 8px 14px 12px; margin: 0; }
+.negocio-especialidades legend { font-size: .85rem; font-weight: 600; color: var(--gris); padding: 0 4px; }
+.negocio-casillas { display: flex; flex-wrap: wrap; gap: 8px; }
+.negocio-casilla { flex-direction: row !important; align-items: center; gap: 8px !important; cursor: pointer;
+  border: 1px solid #ddd0e3; border-radius: 8px; padding: 7px 12px; color: var(--oscuro) !important; font-weight: 600 !important; }
+.negocio-casilla input, .negocio-domicilio input { width: auto; accent-color: var(--boton, #4a1a57); }
+.negocio-casilla:has(input:checked) { border-color: var(--boton, #4a1a57); background: var(--boton-suave, #f6f0f8); }
+.negocio-domicilio { flex-direction: row !important; align-items: center; gap: 10px !important; color: var(--oscuro) !important; }
+.negocio-rejilla textarea { width: 100%; font: inherit; border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.pagina-negocio { max-width: 900px; }
+.negocio-form { padding: 24px 26px; }
+.negocio-pie { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+
+/* Tarjeta para leer el negocio (perfil público y Panel) */
+.negocio-tarjeta { display: flex; flex-direction: column; gap: 6px; }
+.negocio-tarjeta p { margin: 0; }
+.negocio-nombre { font-family: var(--serif); font-size: 1.35rem; font-weight: 700; color: var(--principal-oscuro); }
+.negocio-lugar { color: var(--oscuro); font-weight: 600; }
+.negocio-datos { color: var(--gris); font-size: .95rem; }
+.negocio-sobre { color: var(--oscuro); line-height: 1.55; max-width: 62ch; }
+.negocio-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.negocio-chip { font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--principal);
+  background: var(--principal-claro); border-radius: 999px; padding: 3px 10px; }
+.negocio-instagram { font-weight: 600; color: var(--principal); }
+
+/* Directorio de Profesionales */
+.prof-buscar { display: flex; gap: 10px; max-width: 560px; margin: 0 0 16px; }
+.prof-buscar input { flex: 1; min-width: 0; }
+.prof-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 24px; margin-top: 8px; }
+.prof-tarjeta { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--borde); border-radius: 18px; overflow: hidden;
+  color: inherit; text-decoration: none; transition: box-shadow .25s, transform .25s; }
+.prof-tarjeta:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(61, 23, 71, .12); }
+.prof-foto { position: relative; display: block; aspect-ratio: 4 / 3; background: linear-gradient(150deg, #3d1747, #24092c); overflow: hidden; }
+.prof-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prof-iniciales { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 3rem; color: #e3c27f; letter-spacing: .06em; }
+.prof-sello { position: absolute; left: 12px; top: 12px; background: #fff; color: var(--principal-oscuro); border-radius: 999px;
+  padding: 5px 12px; font-size: .78rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 0, 0, .15); }
+.prof-cuerpo { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 18px; flex: 1; }
+.prof-nombre { font-family: var(--serif); font-size: 1.35rem; color: var(--principal-oscuro); }
+.prof-negocio { font-weight: 600; color: var(--oscuro); }
+.prof-lugar { color: var(--gris); font-size: .95rem; }
+.prof-pie { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--borde); display: flex; justify-content: space-between;
+  align-items: center; gap: 10px; color: var(--gris); font-size: .92rem; }
+@media (max-width: 640px) {
+  .prof-buscar { max-width: none; }
+  .prof-lista { gap: 14px; }
+  .negocio-form { padding: 16px; }
+}
+
+
+/* =====================================================================
+   MI NEGOCIO más profesional (25/11): bloques con título, especialidades como botones,
+   vista previa en vivo a la derecha (PC) y una sola columna ajustada en el móvil
+   ===================================================================== */
+.pagina-negocio { max-width: 1240px; }
+.nf-cabecera { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.nf-cabecera h1 { margin: 2px 0 6px; }
+.nf-cabecera .al-sub { margin: 0; }
+.nf-estado { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 7px 14px; font-size: .88rem; font-weight: 700; white-space: nowrap; }
+.nf-estado::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.nf-estado.ok { background: #e8f5ec; color: #1f6b41; }
+.nf-estado.pendiente { background: #fdf3e3; color: #8a5d0c; }
+
+.nf-zona { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 28px; align-items: start; }
+.nf-form { background: #fff; border: 1px solid var(--borde); border-radius: 18px; overflow: hidden; }
+
+/* Cada bloque: título serif, ayuda gris y sus campos; separados por una línea fina */
+.nf-bloque { padding: 22px 26px; border-top: 1px solid var(--borde); display: flex; flex-direction: column; gap: 12px; }
+.nf-bloque:first-child { border-top: none; }
+.nf-titulo { margin: 0; font-family: var(--serif); font-size: 1.25rem; color: var(--principal-oscuro); }
+.nf-ayuda { margin: -6px 0 0; color: var(--gris); font-size: .92rem; }
+.nf-dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+.nf-campo { display: flex; flex-direction: column; gap: 6px; font-size: .88rem; font-weight: 600; color: var(--oscuro); min-width: 0; }
+.nf-campo small { font-weight: 400; color: var(--gris); }
+.nf-campo input, .nf-campo textarea { width: 100%; font: inherit; font-weight: 400; font-size: 1rem; color: var(--oscuro);
+  border: 1px solid #d9cce0; border-radius: 10px; padding: 11px 13px; background: #fff; }
+.nf-campo textarea { resize: vertical; min-height: 104px; line-height: 1.5; }
+.nf-campo input:focus, .nf-campo textarea:focus { outline: none; border-color: var(--boton, #4a1a57); box-shadow: 0 0 0 3px rgba(74, 26, 87, .12); }
+.nf-contador { align-self: flex-end; font-weight: 400; color: var(--gris); font-size: .82rem; }
+/* Instagram con la @ delante, dentro de la casilla */
+.nf-prefijo { position: relative; display: block; }
+.nf-prefijo > span { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--gris); font-weight: 600; }
+.nf-prefijo input { padding-left: 30px; }
+.nf-interruptor { align-self: flex-start; font-weight: 600; }
+/* Especialidades: botones que se encienden */
+.nf-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.nf-pill { position: relative; cursor: pointer; }
+.nf-pill input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.nf-pill span { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px;
+  border: 1px solid #d9cce0; background: #fff; color: var(--oscuro); font-weight: 600; transition: background .2s, border-color .2s, color .2s; }
+.nf-pill span::before { content: '+'; font-weight: 700; color: var(--gris); }
+.nf-pill input:checked + span { background: var(--boton, #4a1a57); border-color: var(--boton, #4a1a57); color: #fff; }
+.nf-pill input:checked + span::before { content: '✓'; color: #e3c27f; }
+.nf-pill input:focus-visible + span { outline: 2px solid #b48ac2; outline-offset: 2px; }
+.nf-acciones { display: flex; gap: 12px; flex-wrap: wrap; padding: 18px 26px; background: #faf6fb; border-top: 1px solid var(--borde); }
+
+/* Vista previa: la tarjeta del directorio, pegada arriba al bajar */
+.nf-vista { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 12px; }
+.nf-vista-titulo { margin: 0; font-size: .8rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--principal); }
+.nf-vista-nota { margin: 0; font-size: .85rem; color: var(--gris); }
+.nf-tarjeta { pointer-events: none; }
+.nf-tarjeta .prof-foto { aspect-ratio: 16 / 9; }
+.nf-sobre { color: var(--oscuro); font-size: .92rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.nf-tarjeta em { font-style: normal; color: #b3a6b8; }
+
+/* Dentro del registro (Tu negocio): sin el fondo blanco propio, ya está en su tarjeta */
+.registro-ficha .nf-bloque { padding: 16px 0 4px; }
+.registro-ficha .nf-bloque:first-child { padding-top: 4px; }
+
+@media (max-width: 980px) {
+  .nf-zona { grid-template-columns: minmax(0, 1fr); }
+  .nf-vista { position: static; }
+}
+@media (max-width: 640px) {
+  .nf-cabecera { margin-bottom: 14px; }
+  .nf-estado { font-size: .8rem; padding: 6px 12px; }
+  .nf-bloque { padding: 18px 16px; gap: 10px; }
+  .nf-dos { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .nf-titulo { font-size: 1.12rem; }
+  .nf-campo input, .nf-campo textarea { font-size: 16px; } /* 16 px: el iPhone no hace zoom */
+  .nf-acciones { padding: 16px; flex-direction: column; }
+  .nf-acciones .boton { width: 100%; text-align: center; }
+  .nf-pill span { padding: 8px 14px; }
+}
+/* El interruptor «A domicilio»: la pista al lado del texto (una regla general de label lo ponía en columna) */
+.nf-interruptor { display: inline-flex; flex-direction: row !important; align-items: center; gap: 12px; color: var(--oscuro); }
+
+
+/* =====================================================================
+   MI NEGOCIO ajustado a la pantalla (25/11, 2.ª versión):
+   PC → letra más pequeña, bloques en dos columnas como tarjetas, vista previa compacta.
+   Móvil → una columna ajustada. Todo limitado a .pagina-negocio (no toca el registro).
+   ===================================================================== */
+.pagina-negocio { max-width: 1180px; font-size: .9rem; }
+.pagina-negocio .nf-cabecera { margin-bottom: 16px; align-items: center; }
+.pagina-negocio .nf-cabecera h1 { font-size: 2rem; margin: 0 0 4px; }
+.pagina-negocio .al-sub { font-size: .95rem; }
+.pagina-negocio .al-antetitulo { font-size: .72rem; }
+.pagina-negocio .nf-estado { font-size: .78rem; padding: 6px 12px; }
+.pagina-negocio .nf-zona { grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; }
+
+/* El formulario: los bloques son tarjetas pequeñas en dos columnas; «Sobre mí» a todo el ancho */
+.pagina-negocio .nf-form { background: none; border: none; border-radius: 0; overflow: visible; }
+.pagina-negocio .nf { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.pagina-negocio .nf-bloque { background: #fff; border: 1px solid var(--borde); border-radius: 14px; padding: 16px 18px; gap: 10px; }
+.pagina-negocio .nf-bloque:last-child { grid-column: 1 / -1; }
+.pagina-negocio .nf-titulo { font-size: 1.05rem; }
+.pagina-negocio .nf-ayuda { font-size: .82rem; margin-top: -4px; }
+.pagina-negocio .nf-campo { font-size: .8rem; gap: 5px; }
+.pagina-negocio .nf-campo input, .pagina-negocio .nf-campo textarea { font-size: .9rem; padding: 8px 11px; border-radius: 8px; }
+.pagina-negocio .nf-campo textarea { min-height: 72px; }
+.pagina-negocio .nf-dos { gap: 10px 12px; }
+.pagina-negocio .nf-pill span { padding: 6px 12px; font-size: .85rem; }
+.pagina-negocio .nf-interruptor { font-size: .85rem; }
+.pagina-negocio .nf-prefijo > span { left: 11px; }
+.pagina-negocio .nf-prefijo input { padding-left: 26px; }
+.pagina-negocio .nf-acciones { background: none; border: none; padding: 14px 0 0; justify-content: flex-end; }
+.pagina-negocio .nf-acciones .boton { padding: 9px 18px; font-size: .9rem; }
+
+/* Vista previa compacta: como una tarjeta de contacto */
+.pagina-negocio .nf-vista { top: 96px; gap: 8px; }
+.pagina-negocio .nf-vista-titulo { font-size: .7rem; }
+.pagina-negocio .nf-vista-nota { font-size: .75rem; }
+.nf-mini { background: #fff; border: 1px solid var(--borde); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.nf-mini p { margin: 0; }
+.nf-mini-cabeza { display: flex; align-items: center; gap: 12px; }
+.nf-mini-avatar { flex: none; width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(150deg, #3d1747, #24092c); color: #e3c27f; font-family: var(--serif); font-size: 1.05rem; letter-spacing: .04em; }
+.nf-mini-cabeza strong { display: block; font-family: var(--serif); font-size: 1.05rem; color: var(--principal-oscuro); line-height: 1.2; }
+.nf-mini-cabeza small { display: block; color: var(--oscuro); font-size: .82rem; font-weight: 600; }
+.nf-mini-lugar { font-size: .85rem; color: var(--gris); }
+.nf-mini-dato { font-size: .82rem; color: var(--gris); }
+.nf-mini .negocio-chip { font-size: .68rem; padding: 2px 8px; }
+.nf-mini .nf-sobre { font-size: .82rem; }
+.nf-mini .negocio-instagram { font-size: .85rem; }
+.nf-mini em { font-style: normal; color: #b3a6b8; font-size: .82rem; }
+
+@media (max-width: 980px) {
+  .pagina-negocio .nf-zona { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .pagina-negocio { font-size: .95rem; }
+  .pagina-negocio .nf-cabecera h1 { font-size: 1.6rem; }
+  .pagina-negocio .al-sub { font-size: .9rem; }
+  .pagina-negocio .nf { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .pagina-negocio .nf-bloque { padding: 14px; border-radius: 12px; }
+  .pagina-negocio .nf-dos { grid-template-columns: minmax(0, 1fr); }
+  .pagina-negocio .nf-campo input, .pagina-negocio .nf-campo textarea { font-size: 16px; } /* el iPhone no hace zoom */
+  .pagina-negocio .nf-acciones { flex-direction: column; }
+  .pagina-negocio .nf-acciones .boton { width: 100%; text-align: center; padding: 11px; }
+}
+/* Mi negocio a TODO el ancho de la pantalla en el PC (25/11, pedido): sin el máximo de 1180 px y
+   los bloques en tres columnas: Tu negocio | Dónde trabajas | Especialidades
+                                Experiencia y redes | Sobre mí (dos columnas) */
+@media (min-width: 981px) {
+  main.pagina-negocio { max-width: none; margin: 0; padding-left: 48px; padding-right: 48px; }
+  .pagina-negocio .nf-zona { grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
+  .pagina-negocio .nf { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pagina-negocio .nf-bloque:last-child { grid-column: span 2; }
+}
+@media (min-width: 981px) and (max-width: 1280px) {
+  .pagina-negocio .nf { grid-template-columns: repeat(2, minmax(0, 1fr)); } /* portátil pequeño: dos columnas */
+  .pagina-negocio .nf-bloque:last-child { grid-column: 1 / -1; }
+}
+/* Casillas de la misma fila siempre alineadas, aunque una etiqueta ocupe dos líneas;
+   en «Experiencia y redes», los años en una casilla estrecha e Instagram con más sitio */
+.pagina-negocio .nf-dos { align-items: end; }
+.pagina-negocio .nf-bloque:nth-child(4) .nf-dos { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr); }
+@media (max-width: 640px) {
+  .pagina-negocio .nf-bloque:nth-child(4) .nf-dos { grid-template-columns: minmax(0, 1fr); }
+}
+/* Mi negocio: letras un poquito más grandes (25/11, pedido). Solo tamaños; nada más cambia. */
+.pagina-negocio { font-size: 1rem; }
+.pagina-negocio .nf-cabecera h1 { font-size: 2.2rem; }
+.pagina-negocio .al-sub { font-size: 1.05rem; }
+.pagina-negocio .al-antetitulo { font-size: .78rem; }
+.pagina-negocio .nf-estado { font-size: .85rem; }
+.pagina-negocio .nf-titulo { font-size: 1.18rem; }
+.pagina-negocio .nf-ayuda { font-size: .9rem; }
+.pagina-negocio .nf-campo { font-size: .9rem; }
+.pagina-negocio .nf-campo input, .pagina-negocio .nf-campo textarea { font-size: 1rem; }
+.pagina-negocio .nf-pill span { font-size: .95rem; }
+.pagina-negocio .nf-interruptor { font-size: .95rem; }
+.pagina-negocio .nf-contador { font-size: .85rem; }
+.pagina-negocio .nf-acciones .boton { font-size: 1rem; }
+.pagina-negocio .nf-vista-titulo { font-size: .76rem; }
+.pagina-negocio .nf-vista-nota { font-size: .82rem; }
+.nf-mini-cabeza strong { font-size: 1.15rem; }
+.nf-mini-cabeza small { font-size: .9rem; }
+.nf-mini-lugar { font-size: .92rem; }
+.nf-mini-dato, .nf-mini .nf-sobre { font-size: .9rem; }
+.nf-mini .negocio-chip { font-size: .74rem; }
+.nf-mini .negocio-instagram { font-size: .92rem; }
+@media (max-width: 640px) {
+  .pagina-negocio .nf-cabecera h1 { font-size: 1.75rem; }
+  .pagina-negocio .nf-campo input, .pagina-negocio .nf-campo textarea { font-size: 16px; }
+}

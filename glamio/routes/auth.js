@@ -33,6 +33,7 @@ const {
 const { enviarCorreo, urlApp } = require('../middleware/correo');
 const { validarFicha, escribirFicha } = require('./ficha'); // ficha personal de la alumna
 const { comprobarEmail } = require('../middleware/comprobar-email'); // erratas y dominios sin correo
+const { validarNegocio, escribirNegocio } = require('./profesionales'); // «Mi negocio» de la profesional
 const router = express.Router();
 
 // Perfiles que se pueden registrar solas (la admin se crea con db/crear-admin.js)
@@ -97,10 +98,10 @@ async function apuntarFalloCuenta(usuaria) {
 
 // -----------------------------------------
 // Crear una cuenta (la usa el registro).
-// TRANSACCIÓN: la cuenta y la ficha se guardan juntas. Si la ficha falla
-// (p. ej. el documento ya está en otra cuenta), tampoco se crea la cuenta.
+// TRANSACCIÓN: la cuenta, la ficha y (profesional) «Mi negocio» se guardan juntas.
+// Si algo falla (p. ej. el documento ya está en otra cuenta), tampoco se crea la cuenta.
 // -----------------------------------------
-async function crearCuenta({ nombre, email, hash, perfil, ficha }) {
+async function crearCuenta({ nombre, email, hash, perfil, ficha, negocio }) {
   const cliente = await pool.connect();
   try {
     await cliente.query('BEGIN');
@@ -109,6 +110,7 @@ async function crearCuenta({ nombre, email, hash, perfil, ficha }) {
        VALUES ($1, $2, $3, $4) RETURNING *`,
       [String(nombre).trim(), email, hash, perfil]);
     if (ficha) await escribirFicha(cliente, rows[0].id, ficha);
+    if (negocio) await escribirNegocio(cliente, rows[0].id, negocio);
     await cliente.query('COMMIT');
     return rows[0];
   } catch (err) {
@@ -119,10 +121,17 @@ async function crearCuenta({ nombre, email, hash, perfil, ficha }) {
   }
 }
 
-// Alumna: valida su ficha (obligatoria, 24/11). Devuelve { error } o { ficha } (null si no es alumna)
+// Ficha personal: obligatoria para la alumna (24/11) y la profesional (25/11); la clienta no tiene.
+// Devuelve { error } o { ficha } (null si es clienta)
 async function fichaDelRegistro(perfil, cuerpo) {
-  if (perfil !== 'alumna') return { ficha: null };
+  if (!['alumna', 'profesional'].includes(perfil)) return { ficha: null };
   return validarFicha(cuerpo);
+}
+
+// «Mi negocio»: obligatorio solo para la profesional (25/11). { error } o { negocio } (null si no es profesional)
+async function negocioDelRegistro(perfil, cuerpo) {
+  if (perfil !== 'profesional') return { negocio: null };
+  return validarNegocio(cuerpo);
 }
 
 // Errores al crear la cuenta → mensaje claro
@@ -158,10 +167,12 @@ router.post('/registro', async (req, res, next) => {
     // Se comprueba con las mismas reglas que usa el Panel (routes/ficha.js), ANTES de crear nada.
     const { error: errorFicha, ficha } = await fichaDelRegistro(perfil, req.body.ficha);
     if (errorFicha) return res.status(400).json({ error: errorFicha });
+    const { error: errorNegocio, negocio } = await negocioDelRegistro(perfil, req.body.negocio);
+    if (errorNegocio) return res.status(400).json({ error: errorNegocio });
 
     const email = normalizarEmail(req.body.email);
     const hash = await cifrarPassword(password); // Argon2id
-    const usuaria = await crearCuenta({ nombre, email, hash, perfil, ficha });
+    const usuaria = await crearCuenta({ nombre, email, hash, perfil, ficha, negocio });
 
     const enviado = await enviarVerificacion(usuaria);
     res.status(201).json({

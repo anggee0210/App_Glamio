@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profesionales – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main>
+    <!-- Directorio de profesionales (25/11): lo ve cualquiera, también sin cuenta.
+         Solo salen las que han rellenado «Mi negocio». Nunca sus datos personales. -->
+    <header class="catalogo-cabecera">
+      <p class="catalogo-antetitulo">Directorio GLAMIO</p>
+      <h1 class="catalogo-titulo">Encuentra tu profesional</h1>
+      <p class="catalogo-sub">Profesionales de uñas, cabello y cejas. «Certificada GLAMIO» = ha terminado cursos en nuestra academia.</p>
+    </header>
+
+    <form class="prof-buscar" id="buscar" role="search">
+      <label class="visualmente-oculto" for="ciudad">Ciudad o zona</label>
+      <input id="ciudad" name="ciudad" placeholder="Ciudad o zona (ej. Madrid)" autocomplete="off">
+      <button class="boton">Buscar</button>
+    </form>
+    <nav class="catalogo-pestanas" id="pestanas" aria-label="Especialidad"></nav>
+
+    <div class="prof-lista" id="lista"><p class="ayuda">Cargando…</p></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    let categoria = '';   // id de la especialidad elegida ('' = todas)
+
+    const euros = n => Number(n).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+    const iniciales = nombre => nombre.trim().split(/\s+/).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+
+    // Una tarjeta: foto de su último trabajo (con permiso) o sus iniciales, nombre, negocio, lugar, especialidades
+    function tarjeta(p) {
+      const lugar = [p.zona, p.ciudad].filter(Boolean).map(esc).join(', ');
+      return `<a class="prof-tarjeta" href="/perfil.html?id=${p.id}">
+        <span class="prof-foto">${p.foto ? `<img src="${esc(p.foto)}" alt="Trabajo de ${esc(p.nombre)}" loading="lazy">`
+                                         : `<span class="prof-iniciales" aria-hidden="true">${esc(iniciales(p.nombre))}</span>`}
+          ${p.certificada ? '<span class="prof-sello">Certificada GLAMIO</span>' : ''}</span>
+        <span class="prof-cuerpo">
+          <strong class="prof-nombre">${esc(p.nombre)}</strong>
+          ${p.nombre_negocio ? `<span class="prof-negocio">${esc(p.nombre_negocio)}</span>` : ''}
+          <span class="prof-lugar">${lugar}${p.a_domicilio ? ' · A domicilio' : ''}</span>
+          <span class="negocio-chips">${p.especialidades.map(e => `<span class="negocio-chip">${esc(e)}</span>`).join('')}</span>
+          <span class="prof-pie">
+            <span>${p.servicios ? `${p.servicios} ${p.servicios === 1 ? 'servicio' : 'servicios'} · desde ${euros(p.desde)}` : 'Ver su trabajo'}</span>
+            <span class="catalogo-ver">Ver perfil <span aria-hidden="true">→</span></span>
+          </span>
+        </span>
+      </a>`;
+    }
+
+    async function cargar() {
+      const caja = document.getElementById('lista');
+      const ciudad = document.getElementById('ciudad').value.trim();
+      const datos = new URLSearchParams();
+      if (ciudad) datos.set('ciudad', ciudad);
+      if (categoria) datos.set('categoria', categoria);
+      try {
+        const lista = await api('/api/profesionales?' + datos);
+        // Mensaje según lo que se ha buscado (sin filtros = el directorio aún está vacío)
+        const vacio = ciudad || categoria
+          ? `No hay profesionales${ciudad ? ` en «${esc(ciudad)}»` : ''}${categoria ? ' con esa especialidad' : ''} todavía.`
+          : 'Todavía no hay profesionales en el directorio.';
+        caja.innerHTML = lista.map(tarjeta).join('') || `<p class="al-nada izq">${vacio}</p>`;
+      } catch (err) {
+        caja.innerHTML = `<p class="mensaje error">No se pudo cargar el directorio: ${esc(err.message)}</p>`;
+      }
+    }
+
+    async function iniciar() {
+      await pintarCabecera();
+      const categorias = await api('/api/categorias');
+      const pestanas = document.getElementById('pestanas');
+      const boton = (id, nombre) => `<button type="button" data-id="${id}">${esc(nombre)}</button>`;
+      pestanas.innerHTML = boton('', 'Todas') + categorias.map(c => boton(c.id, c.nombre)).join('');
+      const marcar = () => pestanas.querySelectorAll('button').forEach(b => b.classList.toggle('activa', b.dataset.id === categoria));
+      pestanas.onclick = (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        categoria = b.dataset.id;
+        marcar();
+        cargar();
+      };
+      marcar();
+      cargar();
+    }
+
+    document.getElementById('buscar').onsubmit = (e) => { e.preventDefault(); cargar(); };
+    iniciar();
+  </script>
+</body>
+</html>

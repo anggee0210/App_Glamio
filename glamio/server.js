@@ -51,6 +51,7 @@ app.use('/api/estadisticas', require('./routes/estadisticas'));
 app.use('/api/guias', require('./routes/guias'));
 app.use('/api/mi-estilo', require('./routes/mi-estilo')); // fase 2: favoritos de la clienta
 app.use('/api/perfil', require('./routes/perfil'));       // fase 2: perfil público de alumna y profesional
+app.use('/api/profesionales', require('./routes/profesionales')); // Mi negocio y directorio de profesionales (25/11)
 app.use('/api/ficha', require('./routes/ficha'));         // ficha personal de la alumna (solo ella y la admin)
 
 // --- Ruta no encontrada en la API ---

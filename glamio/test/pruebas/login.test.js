@@ -146,8 +146,8 @@ test('registro con un documento que ya tiene otra alumna → 409 y NO se crea la
   assert.equal(rows.length, 0, 'la cuenta no se queda creada sin su ficha');
 });
 
-test('profesional y clienta se registran sin ficha (y si la mandan, se ignora)', async () => {
-  for (const perfil of ['profesional', 'clienta']) {
+test('la clienta se registra sin ficha (y si la manda, se ignora)', async () => {
+  for (const perfil of ['clienta']) {
     const email = emailUnico(perfil);
     const res = await new Sesion().post('/api/auth/registro',
       { nombre: 'Sin Ficha', email, password: 'clave1234', perfil, ficha: fichaDePrueba() });

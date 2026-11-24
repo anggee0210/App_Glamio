@@ -5,6 +5,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { esId } = require('../middleware/permisos');
+const { leerNegocio } = require('./profesionales'); // «Mi negocio» (25/11)
 const router = express.Router();
 
 // Perfiles que tienen página pública (la clienta y la administradora no publican trabajos)
@@ -52,6 +53,9 @@ router.get('/:id', async (req, res, next) => {
        WHERE s.usuaria_id = $1 AND s.publico = TRUE
        ORDER BY s.nombre`, [id])).rows;
 
+    // Profesional: su «Mi negocio» (ciudad, zona, especialidades…). Nunca sus datos personales.
+    const negocio = persona.perfil === 'profesional' ? await leerNegocio(id) : null;
+
     // Insignia: "certificada" solo si de verdad ha terminado algún curso
     const nombrePerfil = persona.perfil === 'profesional' ? 'Profesional' : 'Alumna';
     res.json({
@@ -60,7 +64,7 @@ router.get('/:id', async (req, res, next) => {
       perfil: persona.perfil,
       insignia: cursos.length ? `${nombrePerfil} certificada` : nombrePerfil,
       miembro_desde: persona.creada_en,
-      cursos, trabajos, servicios
+      cursos, trabajos, servicios, negocio
     });
   } catch (err) { next(err); }
 });

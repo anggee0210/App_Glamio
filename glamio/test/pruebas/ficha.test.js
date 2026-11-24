@@ -184,13 +184,17 @@ test('datos mal escritos → 400 con un mensaje claro', async () => {
   assert.deepEqual((await ana.get('/api/ficha')).datos, antes, 'nada de eso se guardó');
 });
 
-test('solo la alumna tiene ficha: profesional y clienta → 403; sin sesión → 401', async () => {
-  for (const perfil of ['profesional', 'clienta']) {
-    const s = await nuevaUsuaria(perfil);
-    assert.equal((await s.get('/api/ficha')).estado, 403);
-    assert.equal((await s.put('/api/ficha', fichaBuena())).estado, 403);
-  }
+test('la clienta no tiene ficha → 403; sin sesión → 401; la profesional VE la suya (25/11) pero no la cambia', async () => {
+  const clienta = await nuevaUsuaria('clienta');
+  assert.equal((await clienta.get('/api/ficha')).estado, 403);
+  assert.equal((await clienta.put('/api/ficha', fichaBuena())).estado, 403);
   assert.equal((await new Sesion().get('/api/ficha')).estado, 401);
+
+  const pro = await nuevaUsuaria('profesional');
+  const suya = await pro.get('/api/ficha');
+  assert.equal(suya.estado, 200);
+  assert.equal(suya.datos.nombre_completo, 'Prueba Alumna García', 'la ficha que mandó al registrarse');
+  assert.equal((await pro.put('/api/ficha', fichaBuena())).estado, 403);
 });
 
 test('la administradora ve todas las alumnas (con y sin ficha) y una ficha concreta', async () => {
@@ -307,14 +311,19 @@ test('borrar la cuenta: primero pide confirmar (409 con lo que se perdería) y l
   assert.equal((await admin.get(`/api/ficha/alumnas/${yo.id}`)).estado, 404);
 });
 
-test('solo se borran alumnas: la cuenta de una profesional o de la admin → 404', async () => {
-  const pro = await nuevaUsuaria('profesional');
-  const idPro = (await pro.get('/api/auth/yo')).datos.id;
+test('desde el Panel se borran alumnas y profesionales (25/11); la clienta o la admin → 404', async () => {
+  const cli = await nuevaUsuaria('clienta');
+  const idCli = (await cli.get('/api/auth/yo')).datos.id;
   const admin = await sesionAdmin();
   const idAdmin = (await admin.get('/api/auth/yo')).datos.id;
-  assert.equal((await admin.pedir('DELETE', `/api/ficha/alumnas/${idPro}?confirmar=si`)).estado, 404);
+  assert.equal((await admin.pedir('DELETE', `/api/ficha/alumnas/${idCli}?confirmar=si`)).estado, 404);
   assert.equal((await admin.pedir('DELETE', `/api/ficha/alumnas/${idAdmin}?confirmar=si`)).estado, 404);
-  assert.ok((await pro.get('/api/auth/yo')).datos, 'la profesional sigue');
+  assert.ok((await cli.get('/api/auth/yo')).datos, 'la clienta sigue');
+
+  const pro = await nuevaUsuaria('profesional');
+  const idPro = (await pro.get('/api/auth/yo')).datos.id;
+  assert.equal((await admin.pedir('DELETE', `/api/ficha/alumnas/${idPro}`)).estado, 409, 'primero pide confirmar');
+  assert.equal((await admin.pedir('DELETE', `/api/ficha/alumnas/${idPro}?confirmar=si`)).estado, 200);
 });
 
 test('una alumna NO puede modificar ni borrar a otras → 403', async () => {

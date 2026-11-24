@@ -65,12 +65,19 @@
             </span></label>
         </fieldset>
 
-        <!-- Ficha personal: solo si elige "Alumna" (obligatoria). La rellena js/ficha-form.js,
-             el mismo formulario que usa la administradora en Panel → Alumnas -->
+        <!-- Ficha personal: si elige "Alumna" o "Profesional" (obligatoria). La rellena js/ficha-form.js,
+             el mismo formulario que usa la administradora en el Panel -->
         <section class="registro-ficha oculto" id="zona-ficha" aria-labelledby="titulo-ficha">
           <h2 id="titulo-ficha">Tus datos personales</h2>
           <p class="ayuda">Solo los verá la administradora de la academia. Si más adelante hay que cambiar algo, se lo pides a ella.</p>
           <div id="campos-ficha"></div>
+        </section>
+
+        <!-- Mi negocio: solo si elige "Profesional" (25/11). Lo verán las clientas; lo podrá cambiar ella misma -->
+        <section class="registro-ficha oculto" id="zona-negocio" aria-labelledby="titulo-negocio">
+          <h2 id="titulo-negocio">Tu negocio</h2>
+          <p class="ayuda">Esto sí lo verán las clientas en tu perfil y en el directorio de Profesionales. Podrás cambiarlo cuando quieras desde «Mi negocio».</p>
+          <div id="campos-negocio"></div>
         </section>
 
         <p class="mensaje error oculto" id="msg"></p>
@@ -84,6 +91,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/ficha-form.js"></script>
+  <script src="/js/negocio-form.js"></script>
   <script>
     api('/api/auth/yo').then(u => { if (u) location.replace(paginaInicio(u)); }).catch(() => {});
 
@@ -93,12 +101,31 @@
     const zonaFicha = document.getElementById('zona-ficha');
     const camposFicha = document.getElementById('campos-ficha');
 
-    // Si elige "Alumna" salen los campos de la ficha; con otro perfil se QUITAN del formulario
+    const zonaNegocio = document.getElementById('zona-negocio');
+    const camposNegocio = document.getElementById('campos-negocio');
+
+    // «Tu negocio»: solo para la profesional (25/11). Igual que la ficha: con otro perfil se quita.
+    async function pintarNegocio() {
+      const esProfesional = form.perfil.value === 'profesional';
+      zonaNegocio.classList.toggle('oculto', !esProfesional);
+      if (!esProfesional) { camposNegocio.innerHTML = ''; return; }
+      if (camposNegocio.innerHTML) return;
+      try {
+        await cargarCategoriasNegocio();
+        camposNegocio.innerHTML = htmlFormNegocio(null);
+        activarFormNegocio(camposNegocio); // contador de «Sobre mí»
+      } catch {
+        camposNegocio.innerHTML = '<p class="mensaje error">No se pudieron cargar las especialidades. Recarga la página.</p>';
+      }
+    }
+
+    // Si elige "Alumna" o "Profesional" salen los campos de la ficha; con la clienta se QUITAN del formulario
     // (no solo se esconden), porque llevan "required" y el navegador no dejaría enviar.
     async function pintarFicha() {
-      const esAlumna = form.perfil.value === 'alumna';
-      zonaFicha.classList.toggle('oculto', !esAlumna);
-      if (!esAlumna) { camposFicha.innerHTML = ''; return; }
+      pintarNegocio();
+      const conFicha = ['alumna', 'profesional'].includes(form.perfil.value);
+      zonaFicha.classList.toggle('oculto', !conFicha);
+      if (!conFicha) { camposFicha.innerHTML = ''; return; }
       if (camposFicha.innerHTML) return; // ya estaba pintada: no se borra lo que haya escrito
       try {
         await cargarPaises();
@@ -119,7 +146,8 @@
     function datosRegistro() {
       const { nombre, email, password, perfil } = Object.fromEntries(new FormData(form));
       const datos = { nombre, email, password, perfil, email_confirmado: emailConfirmado };
-      if (perfil === 'alumna') {
+      if (perfil === 'profesional') datos.negocio = leerFormNegocio(camposNegocio); // (negocio-form.js)
+      if (perfil === 'alumna' || perfil === 'profesional') {
         const ficha = leerFormFicha(form); // (está en ficha-form.js)
         ['nombre', 'email', 'password', 'perfil'].forEach(c => delete ficha[c]);
         datos.ficha = ficha;

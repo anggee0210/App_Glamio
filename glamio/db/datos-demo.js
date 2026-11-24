@@ -203,6 +203,15 @@ async function crearDemo() {
         [servicio, m.nombre, m.coste]);
     }
 
+    // Sofía: su «Mi negocio» (25/11), para que salga en el directorio de Profesionales
+    // y en su perfil público (sin datos personales: solo ciudad, zona y especialidades)
+    await bd.query(
+      `INSERT INTO fichas_profesionales (usuaria_id, nombre_negocio, ciudad, zona, especialidades,
+         anios_experiencia, a_domicilio, instagram, sobre_mi)
+       VALUES ($1, 'Studio Sofía Nails', 'Madrid', 'Chamberí', $2, 4, TRUE, 'studio.sofia.nails', $3)`,
+      [id.sofia, [terminado.categoria_id],
+       'Manicura y esmaltado semipermanente con acabado natural. Certificada en GLAMIO. También voy a domicilio.']);
+
     await bd.query('COMMIT');
 
     // Resumen para tener a mano durante la presentación
@@ -211,7 +220,7 @@ async function crearDemo() {
     console.table([
       { cuenta: CUENTAS.lucia.email,  perfil: 'alumna',      'qué enseñar': `Terminó "${terminado.titulo}": certificado, reseña, aviso 🔔 de respuesta destacada` },
       { cuenta: CUENTAS.marta.email,  perfil: 'alumna',      'qué enseñar': `Va a medias en "${aMedias.titulo}" (${hechas}/${leccionesB.length}): no puede reseñar; duda sin responder` },
-      { cuenta: CUENTAS.sofia.email,  perfil: 'profesional', 'qué enseñar': 'Servicio "Manicura completa" en la calculadora y en su perfil público' },
+      { cuenta: CUENTAS.sofia.email,  perfil: 'profesional', 'qué enseñar': '«Mi negocio», directorio de Profesionales y su carta de servicios (Manicura completa)' },
       { cuenta: CUENTAS.carmen.email, perfil: 'clienta',     'qué enseñar': 'Mi Estilo con un favorito (solo fotos con permiso)' },
       { cuenta: CUENTAS.bea.email,    perfil: 'alumna',      'qué enseñar': 'Bloqueada: desbloquéala desde el Panel → Cuentas bloqueadas' }
     ]);

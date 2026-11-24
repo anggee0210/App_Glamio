@@ -14,6 +14,7 @@
   </main>
 
   <script src="/js/api.js"></script>
+  <script src="/js/negocio-form.js"></script>
   <script>
     const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     const mesYAnio = (f) => { const d = new Date(f); return `${MESES[d.getMonth()]} de ${d.getFullYear()}`; };
@@ -46,11 +47,25 @@
       </section>`;
     }
 
-    // 💅 Servicios que ella decidió enseñar: nombre, duración y precio (sin el desglose de costes)
-    function servicios(lista) {
+    // Profesional (25/11): su negocio (ciudad, zona, especialidades…). Si es su propio perfil y aún
+    // no lo ha rellenado, se le recuerda; las demás personas simplemente no ven el apartado.
+    function negocio(p, esMiPerfil) {
+      if (p.perfil !== 'profesional') return '';
+      if (!p.negocio) return esMiPerfil
+        ? `<p class="mensaje">Todavía no has rellenado tu negocio. <a href="/mi-negocio.html">Rellénalo aquí</a> para salir en el directorio de Profesionales.</p>` : '';
+      return `<section class="perfil-bloque">
+        <h2>Su negocio</h2>
+        ${htmlVerNegocio(p.negocio)}
+        ${esMiPerfil ? '<p class="ayuda"><a href="/mi-negocio.html">Cambiar mi negocio</a></p>' : ''}
+      </section>`;
+    }
+
+    // Servicios que ella decidió enseñar: nombre, duración y precio (sin el desglose de costes).
+    // En la profesional es su «carta de servicios» (25/11): lo que una clienta puede pedirle.
+    function servicios(lista, perfil) {
       if (!lista.length) return ''; // si no ha marcado ninguno, el apartado no sale
       return `<section class="perfil-bloque">
-        <h2>💅 Servicios</h2>
+        <h2>${perfil === 'profesional' ? 'Carta de servicios' : '💅 Servicios'}</h2>
         <div class="perfil-servicios">${lista.map(s => `
           <div class="perfil-servicio">
             <span><strong>${esc(s.nombre)}</strong><br>
@@ -84,7 +99,10 @@
         const p = await api('/api/perfil/' + encodeURIComponent(id || ''));
         document.title = `${p.nombre} – GLAMIO`;
         const esMiPerfil = !!usuaria && usuaria.id === p.id;
-        caja.innerHTML = cabecera(p, esMiPerfil) + cursos(p.cursos) + servicios(p.servicios) + trabajos(p.trabajos);
+        // La profesional enseña primero su negocio y su carta (lo que busca una clienta); la alumna, sus cursos
+        caja.innerHTML = p.perfil === 'profesional'
+          ? cabecera(p, esMiPerfil) + negocio(p, esMiPerfil) + servicios(p.servicios, p.perfil) + trabajos(p.trabajos) + cursos(p.cursos)
+          : cabecera(p, esMiPerfil) + cursos(p.cursos) + servicios(p.servicios, p.perfil) + trabajos(p.trabajos);
       } catch (err) {
         // 404 = no existe o no tiene perfil público (el servidor da el mismo mensaje)
         caja.innerHTML = `<h1>Perfil</h1><p class="mensaje">${esc(err.message)}. <a href="/muro.html">Volver al muro</a></p>`;

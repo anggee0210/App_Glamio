@@ -119,6 +119,8 @@ function seccionActual() {
   if (p.endsWith('/reportes.html')) return 'reportes';
   if (p.endsWith('/bloqueadas.html')) return 'bloqueadas';
   if (p.endsWith('/alumnas.html')) return 'alumnas';
+  if (p.endsWith('/profesionales.html')) return 'profesionales'; // directorio (25/11)
+  if (p.endsWith('/mi-negocio.html')) return 'perfil';           // menú del perfil: nada resaltado arriba
   if (p.endsWith('/mi-estilo.html')) return 'miestilo';
   if (p.endsWith('/simuladores/tienda.html')) return 'tienda';
   if (p.endsWith('/simuladores/citas.html')) return 'citas';
@@ -137,13 +139,15 @@ function htmlDerecha(usuaria) {
   // Alumna y profesional: sus certificados y su perfil público (fase 2), tal como lo ven las demás
   const certificados = ['alumna', 'profesional'].includes(usuaria.perfil)
     ? `<a href="/perfil.html?id=${usuaria.id}">👤 Mi perfil público</a><a href="/certificados.html">🎓 Mis certificados</a>` : '';
+  // Profesional (25/11): su «Mi negocio», lo que ven las clientas en el directorio y en su perfil
+  const negocio = usuaria.perfil === 'profesional' ? '<a href="/mi-negocio.html">💼 Mi negocio</a>' : '';
   return `<span class="menu-derecha">
     <span class="perfil" id="perfil">
       <button type="button" class="boton-perfil" aria-haspopup="true" aria-expanded="false">
         <span class="inicial">${esc(usuaria.nombre.trim().charAt(0).toUpperCase())}</span>
         <span class="nombre-perfil">${esc(usuaria.nombre)}<small>${NOMBRES_PERFIL[usuaria.perfil] || ''}</small></span> ▾
       </button>
-      <span class="menu-perfil">${certificados}<a href="/cuenta.html">⚙️ Mi cuenta</a><a href="#" id="salir">Salir (${esc(usuaria.nombre)})</a></span>
+      <span class="menu-perfil">${negocio}${certificados}<a href="/cuenta.html">⚙️ Mi cuenta</a><a href="#" id="salir">Salir (${esc(usuaria.nombre)})</a></span>
     </span></span>`;
 }
 
@@ -163,8 +167,9 @@ function activarPerfil() {
 function pintarPie(usuaria) {
   if (document.querySelector('.pie') || !document.querySelector('.cabecera')) return;
   const esClienta = usuaria && usuaria.perfil === 'clienta';
-  const enlaces = esClienta ? '<a href="/muro.html">Muro</a><a href="/mi-estilo.html">Mi Estilo</a><a href="/simuladores/citas.html">Citas</a><a href="/simuladores/tienda.html">Tienda</a>'
+  const enlaces = esClienta ? '<a href="/muro.html">Muro</a><a href="/mi-estilo.html">Mi Estilo</a><a href="/profesionales.html">Profesionales</a><a href="/simuladores/citas.html">Citas</a><a href="/simuladores/tienda.html">Tienda</a>'
     : `<a href="/index.html">Inicio</a><a href="/cursos.html">Cursos</a><a href="/muro.html">${usuaria ? 'Comunidad' : 'Muro'}</a>` +
+      '<a href="/profesionales.html">Profesionales</a>' +
       (usuaria ? '<a href="/calculadora.html">Calculadora</a>' : '<a href="/login.html">Entrar</a>') +
       // el simulador de la Tienda, al final (la administradora no compra: ella gestiona los productos desde el Panel)
       (usuaria && usuaria.perfil === 'administradora' ? '' : '<a href="/simuladores/tienda.html">Tienda</a>');
@@ -190,6 +195,8 @@ const OPCIONES_LATERAL = [
   { grupo: 'Academia', clave: 'guias', href: '/admin.html?pestana=guias', texto: 'Guías teóricas', icono: 'guias' },
   { grupo: 'Comunidad', clave: 'reportes', href: '/reportes.html', texto: 'Reportes', icono: 'reportes', extra: ' id="enlace-reportes" title="Reportes pendientes"', contador: '<span class="contador oculto"></span>' },
   { grupo: 'Personas', clave: 'alumnas', href: '/alumnas.html', texto: 'Alumnas', icono: 'alumnas' },
+  // Misma página que Alumnas, con ?perfil=profesional: su ficha personal y su «Mi negocio» (25/11)
+  { grupo: 'Personas', clave: 'profesionales', href: '/alumnas.html?perfil=profesional', texto: 'Profesionales', icono: 'profesionales' },
   { grupo: 'Personas', clave: 'bloqueadas', href: '/bloqueadas.html', texto: 'Cuentas bloqueadas', icono: 'bloqueadas', extra: ' id="enlace-bloqueadas" title="Cuentas bloqueadas por 3 intentos fallidos"', contador: '<span class="contador oculto"></span>' },
   // Simuladores (solo vista previa, sin base de datos): la agenda de citas y los productos de la Tienda
   { grupo: 'Vista previa', clave: 'citasagendadas', href: '/simuladores/citas-agendadas.html', texto: 'Citas agendadas', icono: 'citas' },
@@ -208,6 +215,7 @@ const ICONOS_LATERAL = {
   reportes: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   alumnas: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13.8c2 .9 3.5 3 3.5 5.7"/>',
   bloqueadas: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  profesionales: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12.5h18"/>',
   citas: '<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/>',
   productos: '<path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>'
 };
@@ -228,7 +236,7 @@ function claveLateral() {
   const p = location.pathname;
   if (p.endsWith('/reportes.html')) return 'reportes';
   if (p.endsWith('/bloqueadas.html')) return 'bloqueadas';
-  if (p.endsWith('/alumnas.html')) return 'alumnas';
+  if (p.endsWith('/alumnas.html')) return param('perfil') === 'profesional' ? 'profesionales' : 'alumnas';
   if (p.endsWith('/simuladores/citas-agendadas.html')) return 'citasagendadas';
   if (p.endsWith('/simuladores/productos.html')) return 'productosventa';
   return param('pestana') || 'resumen';
@@ -268,7 +276,7 @@ async function pintarCabecera() {
   // La clienta solo puede estar en el muro, en Mi Estilo, en los perfiles públicos (fase 2), en Mi cuenta
   // y en los dos simuladores (Tienda y Citas):
   // si abre otra página, la llevamos al muro. (Es para que la app se vea bien; la seguridad de verdad está en el servidor.)
-  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo|perfil|cuenta|tienda|citas)\.html$/.test(location.pathname)) {
+  if (usuaria && usuaria.perfil === 'clienta' && !/\/(muro|mi-estilo|perfil|profesionales|cuenta|tienda|citas)\.html$/.test(location.pathname)) {
     location.replace('/muro.html');
     return usuaria;
   }
@@ -288,6 +296,7 @@ async function pintarCabecera() {
     // La clienta: el Muro (mirar) y Mi Estilo (fase 2: sus favoritos guardados con ♡)
     menu.innerHTML = opcion('comunidad', '/muro.html', 'Muro') +
       opcion('miestilo', '/mi-estilo.html', '💜 Mi Estilo') +
+      opcion('profesionales', '/profesionales.html', 'Profesionales') + // directorio (25/11)
       // Simuladores (vista previa): Citas solo para la clienta; Tienda para todos
       opcion('citas', '/simuladores/citas.html', 'Citas') + opcion('tienda', '/simuladores/tienda.html', 'Tienda') + htmlDerecha(usuaria);
     activarSalir();
@@ -309,6 +318,8 @@ async function pintarCabecera() {
       html += opcion('panel', '/admin.html', 'Panel');
     }
   }
+  // Sin cuenta: también el directorio de Profesionales (quien llega buscando dónde hacerse las uñas)
+  if (!usuaria) html += opcion('profesionales', '/profesionales.html', 'Profesionales');
   // Al final del menú: el simulador de la Tienda (vista previa de la fase 3, carpeta /simuladores/).
   // La administradora no la ve aquí: en su menú lateral tiene «Citas agendadas» y «Productos en venta».
   if (!usuaria || usuaria.perfil !== 'administradora') html += opcion('tienda', '/simuladores/tienda.html', 'Tienda');

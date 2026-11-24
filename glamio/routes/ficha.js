@@ -12,6 +12,11 @@ const { requierePerfil, requiereAdmin } = require('../middleware/auth');
 const { esId } = require('../middleware/permisos');
 const { normalizarEmail, emailValido } = require('../middleware/seguridad');
 const { borrarArchivo } = require('../middleware/subidas');
+const { leerNegocio } = require('./profesionales'); // «Mi negocio» de la profesional (25/11)
+
+// Perfiles con ficha personal (25/11: también la profesional). Las rutas del Panel se siguen
+// llamando /alumnas por compatibilidad; ?perfil=profesional en la lista muestra a las profesionales.
+const CON_FICHA = ['alumna', 'profesional'];
 const router = express.Router();
 
 const EDAD_MINIMA = 14;
@@ -142,6 +147,7 @@ router.get('/paises', async (req, res, next) => {
 // (LEFT JOIN: así sabe quién no la ha rellenado todavía)
 router.get('/alumnas', requiereAdmin, async (req, res, next) => {
   try {
+    const perfil = req.query.perfil === 'profesional' ? 'profesional' : 'alumna';
     const { rows } = await pool.query(
       `SELECT u.id, u.nombre, u.email, u.creada_en, (u.bloqueada_en IS NOT NULL) AS bloqueada,
          (f.usuaria_id IS NOT NULL) AS tiene_ficha, ${CAMPOS_FICHA},
@@ -150,8 +156,8 @@ router.get('/alumnas', requiereAdmin, async (req, res, next) => {
        FROM usuarias u
        LEFT JOIN fichas_alumnas f ON f.usuaria_id = u.id
        LEFT JOIN paises p ON p.codigo = f.pais_nacimiento
-       WHERE u.perfil = 'alumna'
-       ORDER BY tiene_ficha DESC, u.nombre`);
+       WHERE u.perfil = $1
+       ORDER BY tiene_ficha DESC, u.nombre`, [perfil]);
     res.json(rows);
   } catch (err) { next(err); }
 });
@@ -166,8 +172,8 @@ router.get('/alumnas/:id', requiereAdmin, async (req, res, next) => {
     if (!esId(id)) return noExiste();
 
     const cuenta = (await pool.query(
-      `SELECT id, nombre, email, creada_en, email_verificado_en, bloqueada_en
-       FROM usuarias WHERE id = $1 AND perfil = 'alumna'`, [id])).rows[0];
+      `SELECT id, nombre, email, perfil, creada_en, email_verificado_en, bloqueada_en
+       FROM usuarias WHERE id = $1 AND perfil = ANY($2)`, [id, CON_FICHA])).rows[0];
     if (!cuenta) return noExiste();
 
     const ficha = (await pool.query(
@@ -208,12 +214,15 @@ router.get('/alumnas/:id', requiereAdmin, async (req, res, next) => {
        WHERE d.usuaria_id = $1
        ORDER BY d.fecha DESC, d.id DESC`, [id])).rows;
 
-    res.json({ cuenta, ficha, cursos, actividad, dudas });
+    // Profesional: también su «Mi negocio» (lo que ven las clientas)
+    const negocio = cuenta.perfil === 'profesional' ? await leerNegocio(id) : null;
+
+    res.json({ cuenta, ficha, cursos, actividad, dudas, negocio });
   } catch (err) { next(err); }
 });
 
 // GET /api/ficha → mi ficha (alumna, solo para leer). null si la administradora todavía no la ha rellenado.
-router.get('/', requierePerfil('alumna'), async (req, res, next) => {
+router.get('/', requierePerfil(...CON_FICHA), async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT ${CAMPOS_FICHA}
@@ -273,7 +282,7 @@ async function guardarFicha(usuariaId, cuerpo, res, next) {
 async function buscarAlumna(id) {
   if (!esId(id)) return null;
   const { rows } = await pool.query(
-    "SELECT id, nombre, email FROM usuarias WHERE id = $1 AND perfil = 'alumna'", [id]);
+    'SELECT id, nombre, email, perfil FROM usuarias WHERE id = $1 AND perfil = ANY($2)', [id, CON_FICHA]);
   return rows[0] || null;
 }
 

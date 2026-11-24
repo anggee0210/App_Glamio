@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi negocio – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="icon" href="/img/favicon.png">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main class="pagina-negocio">
+    <!-- «Mi negocio» de la profesional (25/11): lo que ven las clientas en su perfil y en el directorio.
+         Sus datos personales (documento, dirección…) NO están aquí: van en su ficha, que es privada.
+         PC: formulario a la izquierda y vista previa en vivo a la derecha. Móvil: una columna. -->
+    <header class="nf-cabecera">
+      <div>
+        <p class="al-antetitulo">Profesional</p>
+        <h1>Mi negocio</h1>
+        <p class="al-sub">Así te encuentran las clientas en el directorio de Profesionales y en tu perfil público.</p>
+      </div>
+      <span class="nf-estado oculto" id="estado"></span>
+    </header>
+
+    <p class="mensaje oculto" id="msg"></p>
+
+    <div class="nf-zona oculto" id="zona">
+      <form id="form" class="nf-form">
+        <div id="campos"></div>
+        <div class="nf-acciones">
+          <button class="boton" id="guardar">Guardar cambios</button>
+          <a class="boton secundario" id="ver-perfil" href="#">Ver mi perfil público</a>
+        </div>
+      </form>
+
+      <!-- Vista previa: la misma tarjeta que sale en el directorio, cambia mientras escribe -->
+      <aside class="nf-vista" aria-label="Vista previa">
+        <p class="nf-vista-titulo">Así te ven las clientas</p>
+        <div id="vista"></div>
+        <p class="nf-vista-nota">Se actualiza mientras escribes. Los cambios se publican al pulsar «Guardar cambios».</p>
+      </aside>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/negocio-form.js"></script>
+  <script>
+    const form = document.getElementById('form');
+    const msg = document.getElementById('msg');
+    let usuaria = null;
+
+    function avisar(texto, esError = false) {
+      msg.textContent = texto;
+      msg.className = 'mensaje' + (esError ? ' error' : '');
+      msg.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    // «Visible en el directorio» / «Todavía no sales»: se ve de un vistazo si ya está publicada
+    function pintarEstado(publicado) {
+      const e = document.getElementById('estado');
+      e.textContent = publicado ? 'Visible en el directorio' : 'Todavía no sales en el directorio';
+      e.className = 'nf-estado ' + (publicado ? 'ok' : 'pendiente');
+    }
+
+    // La tarjeta del directorio con lo que hay escrito AHORA en el formulario (sin guardar)
+    function pintarVista() {
+      const n = leerFormNegocio(form);
+      const nombres = CATEGORIAS_NEGOCIO.filter(c => n.especialidades.includes(c.id)).map(c => c.nombre);
+      const lugar = [n.zona, n.ciudad].map(x => x.trim()).filter(Boolean).map(esc).join(', ');
+      const inicial = usuaria.nombre.trim().split(/\s+/).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+      // Ficha compacta (25/11): círculo con iniciales + datos, como una tarjeta de contacto
+      document.getElementById('vista').innerHTML = `
+        <div class="nf-mini">
+          <div class="nf-mini-cabeza">
+            <span class="nf-mini-avatar" aria-hidden="true">${esc(inicial)}</span>
+            <span><strong>${esc(usuaria.nombre)}</strong>
+              ${n.nombre_negocio.trim() ? `<small>${esc(n.nombre_negocio.trim())}</small>` : ''}</span>
+          </div>
+          <p class="nf-mini-lugar">${lugar || '<em>Escribe tu ciudad</em>'}${n.a_domicilio ? ' · A domicilio' : ''}</p>
+          <p class="negocio-chips">${nombres.map(x => `<span class="negocio-chip">${esc(x)}</span>`).join('') || '<em>Elige tus especialidades</em>'}</p>
+          ${n.anios_experiencia !== '' ? `<p class="nf-mini-dato">${esc(n.anios_experiencia)} ${Number(n.anios_experiencia) === 1 ? 'año' : 'años'} de experiencia</p>` : ''}
+          ${n.sobre_mi.trim() ? `<p class="nf-sobre">${esc(n.sobre_mi.trim())}</p>` : ''}
+          ${n.instagram.trim() ? `<p class="negocio-instagram">@${esc(n.instagram.trim().replace(/^@/, ''))}</p>` : ''}
+        </div>`;    }
+
+    let escuchando = false; // la vista previa se engancha al formulario UNA sola vez (aunque se repinte al guardar)
+    function pintarFormulario(negocio) {
+      document.getElementById('campos').innerHTML = htmlFormNegocio(negocio);
+      activarFormNegocio(form, escuchando ? null : pintarVista);
+      escuchando = true;
+      pintarVista();
+    }
+
+    async function iniciar() {
+      usuaria = await pintarCabecera();
+      if (!usuaria || usuaria.perfil !== 'profesional') {
+        document.querySelector('main').innerHTML = '<p class="mensaje">Esta página es solo para las profesionales.</p>';
+        return;
+      }
+      document.getElementById('ver-perfil').href = '/perfil.html?id=' + usuaria.id;
+      try {
+        const [negocio] = await Promise.all([api('/api/profesionales/mio'), cargarCategoriasNegocio()]);
+        pintarFormulario(negocio);
+        pintarEstado(!!negocio);
+        document.getElementById('zona').classList.remove('oculto');
+      } catch (err) {
+        avisar('No se pudo cargar tu negocio: ' + err.message, true);
+      }
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const boton = document.getElementById('guardar');
+      boton.disabled = true; // evita guardar dos veces con doble clic
+      try {
+        const negocio = await api('/api/profesionales/mio', { method: 'PUT', body: leerFormNegocio(form) });
+        pintarFormulario(negocio);
+        pintarEstado(true);
+        avisar('Guardado. Las clientas ya ven los cambios.');
+      } catch (err) {
+        avisar(err.message, true); // ej. «Elige al menos una especialidad»
+      } finally {
+        boton.disabled = false;
+      }
+    };
+
+    iniciar();
+  </script>
+</body>
+</html>
