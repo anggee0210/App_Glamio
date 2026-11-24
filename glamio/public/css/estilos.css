@@ -1636,6 +1636,12 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 .sim-producto-pie { padding-top: 16px; }
 .sim-producto .catalogo-precio { font-size: 1.7rem; }
 .sim-anadir { padding: 12px 22px; font-size: 1.12rem; }
+/* Arreglo (24/11): la línea de .sim-tienda de arriba pisaba la del móvil y el carrito se comía
+   todo el ancho (los productos no se veían). En pantallas estrechas, una columna: productos y,
+   debajo, el carrito. */
+@media (max-width: 1100px) {
+  .sim-tienda { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 640px) {
   .sim-productos { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .sim-producto-nombre { font-size: 1.35rem; }
@@ -1803,3 +1809,254 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .acceso-logo { display: none; }
   .acceso-panel { margin: 0; border-radius: 0; min-height: 100vh; padding-top: 32px; }
 }
+
+
+/* ===================== CURSOS en el MÓVIL: en fila, deslizando de lado (24/11) =====================
+   En vez de una tarjeta debajo de otra, van en fila y se pasan con el dedo (como en las apps).
+   Cada tarjeta mide el 80 % del ancho, así se asoma la siguiente y se nota que hay más.
+   scroll-snap: al soltar, la tarjeta se coloca sola en su sitio. Vale para Cursos e Inicio. */
+@media (max-width: 640px) {
+  .catalogo-rejilla { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+    margin: 0 -16px; padding: 4px 16px 18px; scroll-padding: 0 16px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .catalogo-rejilla::-webkit-scrollbar { display: none; }
+  .catalogo-rejilla > .catalogo-carta { flex: 0 0 80%; scroll-snap-align: start; }
+  .catalogo-rejilla > :not(.catalogo-carta) { flex: 0 0 100%; } /* «Cargando…» y «Próximamente» a todo el ancho */
+  .catalogo-carta:hover { transform: none; } /* en el móvil no hay ratón: sin el saltito */
+}
+
+
+/* ===================== MÓVIL · letra más proporcionada (24/11) =====================
+   Antes 18 px de base en el móvil; ahora 15 px (pedido 24/11: más pequeña y limpia). Como casi todo
+   está en rem, títulos, botones y tarjetas bajan a la vez y en proporción.
+   Las casillas de escribir no bajan de 16 px: si no, el iPhone hace zoom al pulsarlas. */
+@media (max-width: 640px) {
+  html { font-size: 93.75%; } /* 15 px (24/11: un poco más pequeña que los 16 px de antes) */
+  input, select, textarea { font-size: 16px; } /* nunca menos de 16 px: el iPhone haría zoom */
+  /* Entrar y Registrarme: casillas proporcionadas (el texto de la contraseña ya no se corta) */
+  .campo-icono input { font-size: 1.1rem; padding: 15px 50px; }
+  .campo-icono input[name=password] { font-size: 16px; padding-top: 16px; padding-bottom: 16px; }
+  .campo-icono svg { width: 22px; height: 22px; left: 18px; }
+  .ver-contrasena { font-size: 1.25rem; right: 12px; }
+}
+
+/* Registrarme: la norma de la contraseña en una línea pequeña debajo de la casilla */
+.ayuda-campo { display: block; margin: -8px 0 0 24px; font-size: .9rem; color: #8a7d90; }
+
+
+/* ===================== MURO / COMUNIDAD en el MÓVIL: trabajos en fila, deslizando de lado (24/11) =====================
+   Igual que los cursos: cada tarjeta mide el 80 % del ancho (se asoma la siguiente) y al soltar
+   se coloca sola (scroll-snap). Vale para la Comunidad de la alumna y el Muro de la clienta. */
+@media (max-width: 640px) {
+  .galeria { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; align-items: stretch;
+    margin: 0 -16px; padding: 4px 16px 18px; scroll-padding: 0 16px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .galeria::-webkit-scrollbar { display: none; }
+  .galeria > .trabajo { flex: 0 0 80%; scroll-snap-align: start; }
+  .galeria > :not(.trabajo) { flex: 0 0 100%; } /* «Cargando…» y «Aún no hay trabajos» a todo el ancho */
+}
+
+
+/* ===================== TIENDA (simulador) en el MÓVIL: productos en fila, deslizando de lado (24/11) =====================
+   Igual que los cursos y el muro. El carrito sigue debajo. */
+@media (max-width: 640px) {
+  .sim-productos { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; align-items: stretch;
+    margin: 0 -16px; padding: 4px 16px 18px; scroll-padding: 0 16px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .sim-productos::-webkit-scrollbar { display: none; }
+  .sim-productos > .sim-producto { flex: 0 0 80%; scroll-snap-align: start; }
+  .sim-productos > :not(.sim-producto) { flex: 0 0 100%; } /* avisos (p. ej. categoría vacía) a todo el ancho */
+}
+
+
+/* ===================== MÓVIL · retoques para que quede más limpio (24/11) ===================== */
+@media (max-width: 640px) {
+  /* Filtros de categoría (Cursos, Inicio, Muro, Tienda): una sola fila que se desliza, como en las apps */
+  .catalogo-pestanas { flex-wrap: nowrap; overflow-x: auto; margin-left: -16px; margin-right: -16px;
+    padding: 2px 16px 6px; scrollbar-width: none; }
+  .catalogo-pestanas::-webkit-scrollbar { display: none; }
+  .catalogo-pestanas > * { flex: none; }
+  .catalogo-pestanas.centradas { justify-content: flex-start; } /* centrado + deslizar escondería el primero */
+  /* Calculadora: el «= x € / sesión» solo ocupa sitio cuando hay un número */
+  .m-por-sesion:empty { display: none; }
+}
+
+
+/* ===================== CARRUSEL también en la WEB: Cursos, Muro y Tienda de lado (24/11) =====================
+   Como en el móvil, pero con flechas ‹ › a los lados (activarCarrusel() en api.js).
+   PC: 4 cursos, 3 trabajos o 2 productos a la vista (la tienda tiene el carrito al lado). */
+.carrusel { position: relative; min-width: 0; }
+@media (min-width: 641px) {
+  .catalogo-rejilla, .galeria, .sim-productos { display: flex; gap: 26px; overflow-x: auto; scroll-snap-type: x mandatory;
+    align-items: stretch; padding: 6px 2px 22px; scrollbar-width: none; }
+  .catalogo-rejilla::-webkit-scrollbar, .galeria::-webkit-scrollbar, .sim-productos::-webkit-scrollbar { display: none; }
+  .catalogo-rejilla > *, .galeria > *, .sim-productos > * { scroll-snap-align: start; }
+  .catalogo-rejilla > .catalogo-carta { flex: 0 0 calc((100% - 3 * 26px) / 4); }
+  .galeria > .trabajo { flex: 0 0 calc((100% - 2 * 26px) / 3); }
+  .sim-productos > .sim-producto { flex: 0 0 calc((100% - 26px) / 2); }
+  .catalogo-rejilla > :not(.catalogo-carta), .galeria > :not(.trabajo), .sim-productos > :not(.sim-producto) { flex: 0 0 100%; }
+  /* Las flechas: círculos blancos a los lados, a media altura de las fotos */
+  .carrusel-flecha { position: absolute; top: 34%; z-index: 2; width: 50px; height: 50px; border-radius: 50%;
+    border: 1px solid var(--borde); background: #fff; color: var(--principal-oscuro); font-size: 2rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center; padding: 0 0 4px; cursor: pointer;
+    box-shadow: 0 8px 22px rgba(61, 23, 71, .16); transition: opacity .2s, transform .2s, background .2s; }
+  .carrusel-flecha:hover { background: var(--principal-claro); transform: scale(1.06); }
+  .carrusel-flecha.anterior { left: -22px; }
+  .carrusel-flecha.siguiente { right: -22px; }
+  .carrusel-flecha:disabled { opacity: 0; pointer-events: none; } /* al principio / al final */
+  .carrusel.sin-flechas .carrusel-flecha { display: none; }       /* si todo cabe */
+}
+@media (min-width: 641px) and (max-width: 1100px) {
+  .catalogo-rejilla > .catalogo-carta { flex-basis: calc((100% - 2 * 26px) / 3); }
+  .galeria > .trabajo { flex-basis: calc((100% - 26px) / 2); }
+  .sim-productos > .sim-producto { flex-basis: calc((100% - 2 * 26px) / 3); } /* aquí el carrito va debajo */
+}
+@media (min-width: 641px) and (max-width: 860px) {
+  .catalogo-rejilla > .catalogo-carta { flex-basis: calc((100% - 26px) / 2); }
+  .sim-productos > .sim-producto { flex-basis: calc((100% - 26px) / 2); }
+}
+@media (max-width: 640px) {
+  .carrusel-flecha { display: none; } /* en el móvil se desliza con el dedo */
+}
+
+
+/* ===================== MÓVIL · botones de categoría TODOS a la vista (24/11) =====================
+   (Explora tu especialidad, Cursos, Muro y Tienda). Antes: una fila que había que deslizar.
+   Ahora llenan el ancho de la pantalla, repartidos, y si un día hay más categorías bajan
+   a otra línea (también repartidos). Sustituye a la fila deslizable de los «retoques». */
+@media (max-width: 640px) {
+  .catalogo-pestanas, .catalogo-pestanas.centradas { flex-wrap: wrap; overflow: visible; margin-left: 0; margin-right: 0;
+    padding: 0; gap: 6px; justify-content: stretch; }
+  .catalogo-pestanas > * { flex: 1 1 auto; justify-content: center; }
+  .catalogo-pestanas button { padding: 8px 10px; font-size: .9rem; gap: 6px; min-height: 0; }
+  .catalogo-pestanas .catalogo-cuenta { min-width: 20px; height: 20px; font-size: .72rem; padding: 0 5px; }
+}
+@media (max-width: 640px) {
+  /* Una sola fila, cuatro partes iguales; el número, pequeño y sin círculo, para que quepan */
+  .catalogo-pestanas, .catalogo-pestanas.centradas { flex-wrap: nowrap; gap: 5px; }
+  .catalogo-pestanas > * { flex: 1 1 0; min-width: 0; padding: 8px 4px; font-size: .88rem; gap: 3px; }
+  .catalogo-pestanas .catalogo-cuenta, .catalogo-pestanas button.activa .catalogo-cuenta {
+    background: none; min-width: 0; height: auto; padding: 0; font-size: .72rem; opacity: .75; align-self: flex-start; }
+}
+
+
+/* ===================== INICIO · Talentos de la comunidad en el MÓVIL: de lado, como los cursos (24/11) =====================
+   Antes: dos fotos por fila, hacia abajo. Ahora en fila, deslizando con el dedo; cada foto
+   (cuadrada) mide el 62 % del ancho, así se asoma la siguiente. «Comparte tu trabajo» va al final. */
+@media (max-width: 640px) {
+  .talentos { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; justify-content: flex-start;
+    margin: 0 -16px; padding: 4px 16px 14px; scroll-padding: 0 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .talentos::-webkit-scrollbar { display: none; }
+  .talentos > .talento { flex: 0 0 62%; scroll-snap-align: start; }
+  .talento:hover { transform: none; }
+  .talento-autora strong { font-size: 1.1rem; }
+  .talento-autora small { font-size: .68rem; }
+}
+
+
+/* ===================== TIENDA en el PC: otra vez TODOS los artículos a la vista (24/11) =====================
+   (Pedido: en el PC, la cuadrícula de antes; en el móvil siguen de lado, deslizando.)
+   Deshace, solo para la tienda y desde 641 px, el carrusel de «CARRUSEL también en la WEB». */
+@media (min-width: 641px) {
+  .sim-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 26px; overflow: visible; padding: 0; scroll-snap-type: none; }
+  .sim-productos > .sim-producto { flex: none; }
+  .sim-productos > :not(.sim-producto) { grid-column: 1 / -1; }
+}
+
+
+/* ===================== PANEL · Guías publicadas ordenadas (24/11) =====================
+   Antes la fila no podía partirse y en el móvil los botones aplastaban el título.
+   PC: datos a la izquierda, botones a la derecha. Móvil: datos arriba y los 3 botones debajo, repartidos. */
+.guias-curso { margin-bottom: 14px; }
+.guias-curso h3 { margin: 0 0 10px; }
+.guia-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px 18px; flex-wrap: wrap;
+  padding: 10px 0; border-top: 1px solid var(--borde); }
+.guias-curso h3 + .guia-fila { border-top: none; padding-top: 0; }
+.guia-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 260px; }
+.guia-info strong { overflow-wrap: anywhere; }
+.guia-info .ayuda { margin: 0; }
+.guia-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .guia-fila { flex-direction: column; align-items: stretch; }
+  .guia-info { flex: none; }
+  .guia-acciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .guia-acciones .chip { justify-content: center; text-align: center; padding: 8px 4px; font-size: .85rem; white-space: normal; }
+}
+
+
+/* ===================== PANEL · Productos en venta en el MÓVIL: una tarjeta por producto (25/11) =====================
+   La tabla de 6 columnas no cabía. En el móvil cada fila pasa a ser una tarjeta:
+     [foto + nombre y detalle          ]
+     [categoría            precio      ]
+     [stock                En la tienda]
+     [        + 10 unidades            ]  */
+@media (max-width: 640px) {
+  .sim-cifras dd { font-size: 1.6rem; }
+  .sim-cifras div { padding: 12px 14px; }
+  .sim-tabla-caja:has(.tabla-productos) { background: none; border: none; overflow: visible; }
+  .tabla-productos, .tabla-productos tbody { display: block; }
+  .tabla-productos thead { display: none; }
+  .tabla-productos tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 12px;
+    background: #fff; border: 1px solid var(--borde); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+  .tabla-productos td { padding: 0; border: none; }
+  .tabla-productos td:nth-child(1) { grid-column: 1 / -1; }
+  .tabla-productos td:nth-child(2) { grid-column: 1; grid-row: 2; color: var(--gris); font-size: .9rem; }
+  .tabla-productos td:nth-child(3) { grid-column: 2; grid-row: 2; font-family: var(--serif); font-weight: 700; font-size: 1.2rem; }
+  .tabla-productos td:nth-child(4) { grid-column: 1; grid-row: 3; }
+  .tabla-productos td:nth-child(5) { grid-column: 2; grid-row: 3; }
+  .tabla-productos td:nth-child(6) { grid-column: 1 / -1; grid-row: 4; }
+  .tabla-productos td:nth-child(6) .al-accion { width: 100%; justify-content: center; }
+  .tabla-productos .sim-producto-fila b { font-size: 1.05rem; }
+}
+
+
+/* =====================================================================
+   BOTONES SERIOS Y PROFESIONALES (25/11) — un solo estilo para toda la app
+   - Sin degradados ni brillos: color liso morado oscuro (como el pie) y letra seminegrita.
+   - Tres tipos: PRINCIPAL (morado liso), SECUNDARIO (blanco con borde fino) y PELIGRO (rojo).
+   - Esquinas de 10 px; los botones anchos de Entrar/Registrarme siguen redondos para ir
+     a juego con sus casillas.
+   - Los textos de los botones ya no llevan emojis (solo quedan los iconos que van solos: 👁 ★ ✕ ♥ ☰).
+   Va al final del archivo para mandar sobre los estilos anteriores.
+   ===================================================================== */
+:root { --boton: #4a1a57; --boton-hover: #5f2470; --boton-borde: #cdb8d6; --boton-suave: #f6f0f8; }
+
+/* PRINCIPAL */
+.boton, .boton-entrar, .boton-rosa {
+  background: var(--boton); color: #fff; border: 1px solid var(--boton); border-radius: 10px;
+  font-weight: 600; letter-spacing: .01em; box-shadow: none; filter: none;
+  transition: background .2s, border-color .2s, color .2s; }
+.boton:hover, .boton-entrar:hover, .boton-rosa:hover { background: var(--boton-hover); border-color: var(--boton-hover); filter: none; }
+.boton:disabled { opacity: .55; cursor: not-allowed; }
+
+/* SECUNDARIO: blanco, borde fino, texto morado */
+.boton.secundario, .boton-contorno, .boton-opcion, .boton-visto, .boton-lila, .boton-corazon {
+  background: #fff; color: var(--boton); border: 1px solid var(--boton-borde); border-radius: 10px;
+  font-weight: 600; box-shadow: none; }
+.boton.secundario:hover, .boton-contorno:hover, .boton-opcion:hover, .boton-visto:hover, .boton-lila:hover, .boton-corazon:hover {
+  background: var(--boton-suave); color: var(--boton); border-color: var(--boton); filter: none; }
+.boton-corazon.guardado { background: var(--boton); border-color: var(--boton); color: #fff; }
+.boton-contorno strong { color: var(--boton); }
+
+/* Botones anchos de Entrar / Registrarme: redondos como sus casillas */
+.boton-ancho, .boton-contorno { border-radius: 999px; }
+
+/* «Respondida» (Notificaciones): verde discreto */
+.boton-verde { background: #fff; color: #1f6b41; border: 1px solid #9fd0b3; border-radius: 10px; font-weight: 600; }
+.boton-verde:hover { background: #f0f9f3; filter: none; }
+
+/* PELIGRO */
+.boton-peligro { border-radius: 10px; font-weight: 600; }
+
+/* Botones pequeños (chips) de acciones: Editar, Borrar, Vista previa, Descargar… */
+.chip { border: 1px solid #ddd0e3; border-radius: 8px; background: #fff; color: var(--boton); font-weight: 600;
+  transition: background .2s, border-color .2s; }
+.chip:hover { background: var(--boton-suave); border-color: var(--boton-borde); }
+.chip.activo { background: var(--boton); border-color: var(--boton); color: #fff; }
+.chip.peligro { color: #a12622; border-color: #ecc9c7; }
+.chip.peligro:hover { background: #fdf3f2; border-color: #d99a96; }
+
+/* Foco visible para quien usa el teclado (accesibilidad) */
+.boton:focus-visible, .chip:focus-visible, .boton-contorno:focus-visible, .boton-opcion:focus-visible {
+  outline: 2px solid #b48ac2; outline-offset: 2px; }

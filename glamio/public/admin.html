@@ -15,11 +15,11 @@
     <!-- Pestañas: cada opción enseña solo su parte (decisión del proyecto).
          La pestaña abierta va en la URL (admin.html?pestana=leccion) para que recargar no la pierda. -->
     <nav class="pestanas pestanas-panel" id="pestanas-panel">
-      <button class="pestana activa" data-pestana="cursos">📚 Mis cursos</button>
-      <button class="pestana" data-pestana="curso">➕ Nuevo curso</button>
-      <button class="pestana" data-pestana="leccion">🎬 Nueva lección</button>
-      <button class="pestana" data-pestana="material">🧴 Materiales</button>
-      <button class="pestana" data-pestana="certificado">🎓 Certificado</button>
+      <button class="pestana activa" data-pestana="cursos">Mis cursos</button>
+      <button class="pestana" data-pestana="curso">Nuevo curso</button>
+      <button class="pestana" data-pestana="leccion">Nueva lección</button>
+      <button class="pestana" data-pestana="material">Materiales</button>
+      <button class="pestana" data-pestana="certificado">Certificado</button>
     </nav>
 
     <!-- Panel principal (diseño "Panel de Gestión"): cifras reales, visitas y ventas por mes -->
@@ -190,7 +190,7 @@
         <div class="editor-controles">
           <strong id="editor-nombre-dato"></strong>
           <label class="fila" style="margin:0">Tamaño <input type="range" id="editor-tamano" step="0.05"></label>
-          <button type="button" class="boton secundario" id="editor-borrar">🗑 Borrar del certificado</button>
+          <button type="button" class="boton secundario" id="editor-borrar">Borrar del certificado</button>
           <span class="ayuda" id="editor-fijo">El nombre y el curso siempre salen.</span>
         </div>
         <div class="fila" style="align-items:center">
@@ -319,10 +319,10 @@
               <span class="precio" style="margin-left:6px">${Number(c.precio) === 0 ? 'Gratis' : c.precio + ' €'}</span>
             </div>
             <span class="fila" style="flex-wrap:wrap">
-              <button class="chip" onclick="editarCurso(${c.id})">✏️ Editar curso</button>
-              <button class="chip peligro" onclick="borrarCurso(this, ${c.id})">🗑 Borrar curso</button>
-              <button class="chip" onclick="nuevaLeccionEn(${c.id})">🎬 + Lección</button>
-              <button class="chip" onclick="nuevoMaterialEn(${c.id})">🧴 + Material</button>
+              <button class="chip" onclick="editarCurso(${c.id})">Editar curso</button>
+              <button class="chip peligro" onclick="borrarCurso(this, ${c.id})">Borrar curso</button>
+              <button class="chip" onclick="nuevaLeccionEn(${c.id})">+ Lección</button>
+              <button class="chip" onclick="nuevoMaterialEn(${c.id})">+ Material</button>
             </span>
           </div>
           <p style="margin:10px 0 4px"><strong>Lecciones</strong></p>
@@ -335,10 +335,10 @@
               <details class="opciones">
                 <summary class="chip">Opciones ▾</summary>
                 <div class="menu-opciones">
-                  <button class="chip" onclick="editarLeccion(${l.id})">✏️ Editar</button>
+                  <button class="chip" onclick="editarLeccion(${l.id})">Editar</button>
                   ${l.tiene_youtube || l.tiene_video_propio
-                    ? `<button class="chip" onclick="quitarVideo(${l.id})">🎬 Quitar vídeo</button>` : ''}
-                  <button class="chip peligro" onclick="borrarLeccion(${l.id})">🗑️ Borrar lección</button>
+                    ? `<button class="chip" onclick="quitarVideo(${l.id})">Quitar vídeo</button>` : ''}
+                  <button class="chip peligro" onclick="borrarLeccion(${l.id})">Borrar lección</button>
                 </div>
               </details>
             </div>`).join('') || '<p class="ayuda">Todavía no tiene lecciones.</p>'}
@@ -633,7 +633,7 @@
       document.getElementById(contenedor).innerHTML = ruta
         ? `<div class="fila" style="align-items:center">
              <img src="${ruta}" alt="" style="flex:none;width:auto;height:70px;max-width:200px;object-fit:contain;border-radius:6px;margin:4px 0;background:#f4eaf8">
-             <button type="button" class="boton secundario" data-quitar="${campoQuitar}">🗑 Borrar</button>
+             <button type="button" class="boton secundario" data-quitar="${campoQuitar}">Borrar</button>
            </div>`
         : 'Ahora no hay ninguna.';
     }
@@ -646,7 +646,7 @@
       if (!boton.dataset.seguro) {
         boton.dataset.seguro = 'si';
         boton.textContent = '¿Seguro? Pulsa otra vez para borrar';
-        setTimeout(() => { if (boton.isConnected) { delete boton.dataset.seguro; boton.textContent = '🗑 Borrar'; } }, 4000);
+        setTimeout(() => { if (boton.isConnected) { delete boton.dataset.seguro; boton.textContent = 'Borrar'; } }, 4000);
         return;
       }
       // Se envían también el color y la forma del logo actuales, para que no cambien
@@ -742,7 +742,7 @@
       document.getElementById('editor-nombre-dato').textContent = info.etiqueta + (p.ver ? '' : ' (borrado: no aparece en el certificado)');
       editorTamano.min = info.min; editorTamano.max = info.max; editorTamano.value = p.t;
       editorTamano.closest('label').classList.toggle('oculto', !p.ver);   // borrado: no hay tamaño que cambiar
-      editorBorrar.textContent = p.ver ? '🗑 Borrar del certificado' : '↺ Restaurar';
+      editorBorrar.textContent = p.ver ? 'Borrar del certificado' : 'Restaurar';
       editorBorrar.classList.toggle('oculto', !info.ocultable);
       document.getElementById('editor-fijo').classList.toggle('oculto', info.ocultable);
     }
@@ -911,16 +911,19 @@
       try {
         const listas = await Promise.all(Object.values(cursos).map(c => api('/api/guias?curso=' + c.id).then(g => ({ c, g }))));
         caja.innerHTML = listas.filter(x => x.g.length).map(({ c, g }) => `
-          <div class="tarjeta" style="margin-bottom:12px">
-            <h3 style="margin:0 0 8px">${esc(c.titulo)}</h3>
+          <div class="tarjeta guias-curso">
+            <h3>${esc(c.titulo)}</h3>
             ${g.map(guia => `
-              <div class="fila fila-lista" style="justify-content:space-between;margin-bottom:6px">
-                <span>📖 <strong>${esc(guia.titulo)}</strong> · ${Number(guia.precio) ? euros(guia.precio) : 'Gratis'}
-                  <span class="ayuda" style="display:inline">· ${guia.ventas} ${guia.ventas === 1 ? 'compra' : 'compras'}</span></span>
-                <span class="fila">
-                  <button class="chip" onclick="verGuia(this, ${guia.id})">👁 Vista previa</button>
-                  <a class="chip" href="/api/guias/${guia.id}/descargar">⬇ Descargar</a>
-                  <button class="chip peligro" onclick="borrarGuia(this, ${guia.id})">🗑 Borrar</button>
+              <!-- PC: datos a la izquierda y botones a la derecha. Móvil: datos arriba y los 3 botones debajo, repartidos -->
+              <div class="guia-fila">
+                <span class="guia-info">
+                  <strong>📖 ${esc(guia.titulo)}</strong>
+                  <span class="ayuda">${Number(guia.precio) ? euros(guia.precio) : 'Gratis'} · ${guia.ventas} ${guia.ventas === 1 ? 'compra' : 'compras'}</span>
+                </span>
+                <span class="guia-acciones">
+                  <button class="chip" onclick="verGuia(this, ${guia.id})">Vista previa</button>
+                  <a class="chip" href="/api/guias/${guia.id}/descargar">Descargar</a>
+                  <button class="chip peligro" onclick="borrarGuia(this, ${guia.id})">Borrar</button>
                 </span>
               </div>
               <div class="vista-guia oculto" id="vista-guia-${guia.id}"></div>`).join('')}
@@ -948,10 +951,16 @@
     // Vista previa: abre (o cierra) el PDF dentro de la tarjeta, con el visor del navegador.
     // El <iframe> se crea solo al abrirla, para no cargar todos los PDF al entrar en la pestaña.
     function verGuia(boton, id) {
+      // En el móvil el navegador no enseña un PDF dentro de la página (saldría en blanco):
+      // se abre en una pestaña nueva, con el visor del propio móvil
+      if (matchMedia('(max-width: 640px)').matches) {
+        window.open(`/api/guias/${id}/descargar?ver=1`, '_blank', 'noopener');
+        return;
+      }
       const caja = document.getElementById('vista-guia-' + id);
       const abrir = caja.classList.contains('oculto');
       caja.classList.toggle('oculto', !abrir);
-      boton.textContent = abrir ? '✕ Cerrar vista previa' : '👁 Vista previa';
+      boton.textContent = abrir ? 'Cerrar vista previa' : 'Vista previa';
       if (abrir && !caja.firstChild) {
         caja.innerHTML = `<iframe src="/api/guias/${id}/descargar?ver=1#view=FitH" title="Vista previa de la guía"></iframe>
           <p class="ayuda"><a href="/api/guias/${id}/descargar?ver=1" target="_blank" rel="noopener">Abrir en una pestaña nueva ↗</a></p>`;

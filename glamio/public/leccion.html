@@ -15,7 +15,7 @@
       <div id="video-zona"></div>
       <div class="leccion-lado">
         <p id="contenido" class="leccion-texto"></p>
-        <button class="boton oculto" id="completar">Marcar como completada ✓</button>
+        <button class="boton oculto" id="completar">Marcar como completada</button>
         <p class="mensaje oculto" id="msg"></p>
         <!-- "← Anterior · Lección 2 de 5 · Siguiente →" -->
         <nav class="navegacion" id="navegacion"></nav>
@@ -78,7 +78,7 @@
       boton.classList.remove('oculto');
       boton.disabled = completada;
       boton.classList.toggle('secundario', completada);
-      boton.textContent = completada ? '✅ Lección completada' : 'Marcar como completada ✓';
+      boton.textContent = completada ? 'Lección completada ✓' : 'Marcar como completada';
     }
 
     // "← Anterior · Lección 2 de 5 · Siguiente →" usando las lecciones del curso en orden
@@ -170,7 +170,7 @@
                   <p>${autoria(r)}</p>
                   <p class="duda-texto">${esc(r.texto)}</p>
                   <div class="fila">
-                    ${esAdmin && !r.destacada ? `<button class="chip" onclick="destacar(${r.id})">⭐ Destacar</button>` : ''}
+                    ${esAdmin && !r.destacada ? `<button class="chip" onclick="destacar(${r.id})">Destacar</button>` : ''}
                     ${esAdmin && r.destacada ? `<button class="chip peligro" onclick="quitarDestacada(${r.id})">Quitar destacada</button>` : ''}
                     ${puedeReportar(r) ? `<button class="enlace-reportar" onclick="reportar(this, 'respuesta', ${r.id})">Reportar</button>` : ''}
                   </div>

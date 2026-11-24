@@ -59,7 +59,7 @@ function crearRecortador(input, caja) {
     caja.innerHTML = `
       <div class="recorte-editor">
         <div class="recorte-modos" role="group" aria-label="Cómo publicar la foto">
-          <button type="button" class="chip activo" data-modo="recortar">✂ Recortar</button>
+          <button type="button" class="chip activo" data-modo="recortar">Recortar</button>
           <button type="button" class="chip" data-modo="completa">Foto completa</button>
         </div>
         <div class="recorte-zona">

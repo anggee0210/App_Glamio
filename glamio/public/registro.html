@@ -36,11 +36,13 @@
         <label class="campo-icono">
           <span class="visualmente-oculto">Contraseña</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-          <input type="password" name="password" placeholder="Contraseña (mín. 8, letras y números)" autocomplete="new-password" minlength="8" required>
+          <input type="password" name="password" placeholder="Contraseña" aria-describedby="ayuda-password" autocomplete="new-password" minlength="8" required>
           <button type="button" class="ver-contrasena" aria-label="Mostrar la contraseña" title="Mostrar la contraseña">👁</button>
         </label>
 
         <!-- El perfil se elige con tarjetas (botones de opción), más claro que un desplegable -->
+        <small class="ayuda-campo" id="ayuda-password">Mínimo 8 caracteres, con letras y números.</small>
+
         <fieldset class="elegir-perfil">
           <legend>Soy…</legend>
           <label class="opcion-perfil"><input type="radio" name="perfil" value="alumna" checked>
@@ -72,10 +74,10 @@
         </section>
 
         <p class="mensaje error oculto" id="msg"></p>
-        <button class="boton boton-ancho" id="registrarme">✨ Registrarme</button>
+        <button class="boton boton-ancho" id="registrarme">Registrarme</button>
       </form>
 
-      <a class="boton-contorno" href="/login.html">🔑 ¿Ya tienes cuenta? <strong>Entrar</strong></a>
+      <a class="boton-contorno" href="/login.html">¿Ya tienes cuenta? <strong>Entrar</strong></a>
       <a class="volver-inicio" href="/index.html">← Volver al inicio</a>
     </div>
   </div>
@@ -130,7 +132,7 @@
         // Ya no entra directamente: primero tiene que confirmar su email con el enlace del correo
         const res = await api('/api/auth/registro', { method: 'POST', body: datosRegistro() });
         // Escondemos los campos (el mensaje está dentro del formulario, así que el formulario se queda)
-        e.target.querySelectorAll('label, fieldset, button, .registro-ficha').forEach(el => el.classList.add('oculto'));
+        e.target.querySelectorAll('label, fieldset, button, .registro-ficha, .ayuda-campo').forEach(el => el.classList.add('oculto'));
         msg.classList.remove('error', 'oculto');
         msg.innerHTML = `📧 ${esc(res.mensaje)}<br><small>¿No te llega? Mira en spam o pide otro desde
           <a href="/login.html">Entrar</a>.</small>`;

@@ -94,7 +94,7 @@
             <span class="campo-euros"><input class="m-precio" type="number" step="0.01" min="0" max="10000" placeholder="0,00"><span aria-hidden="true">€</span></span></label>
           <label class="m-campo">Servicios que salen
             <input class="m-servicios" type="number" step="1" min="1" max="10000" value="1"></label>
-          <span class="m-por-sesion" title="Lo que gastas de este material en cada sesión">–</span>
+          <span class="m-por-sesion" title="Lo que gastas de este material en cada sesión"></span>
           <button type="button" class="boton-papelera" title="Quitar material" aria-label="Quitar material">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
           </button>
@@ -115,7 +115,7 @@
       const caja = fila.querySelector('.m-por-sesion');
       caja.textContent = precio > 0 && servicios >= 1
         ? `= ${(precio / servicios).toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 3 })} / sesión`
-        : '–';
+        : '';
     }
 
     function leerDatos() {
@@ -171,7 +171,7 @@
           <details class="opciones">
             <summary class="boton-puntos" title="Opciones" aria-label="Opciones de ${esc(s.nombre)}">⋮</summary>
             <div class="menu-opciones">
-              <button type="button" class="chip peligro" data-borrar="${s.id}">🗑 Borrar</button>
+              <button type="button" class="chip peligro" data-borrar="${s.id}">Borrar</button>
             </div>
           </details>
         </div>`).join('') || '<p class="ayuda">Aún no has guardado servicios. Calcula uno y pulsa «Guardar servicio».</p>';

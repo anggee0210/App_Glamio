@@ -527,3 +527,47 @@ function htmlPortada(c, alt = '') {
   if (c.imagen_ajuste !== 'completa') return img;
   return `<span class="portada-completa" style="--foto:url('${c.imagen}')">${img}</span>`;
 }
+
+
+// ---------- Carrusel: listas que se pasan de lado con flechas ‹ › (24/11) ----------
+// Lo usan Cursos/Inicio (catalogo.js), el Muro y la Tienda. En el móvil se desliza con el dedo
+// (las flechas se esconden por CSS); en el PC, con las flechas o con el touchpad.
+// Envuelve la lista en <div class="carrusel"> y pone las flechas a los lados.
+// Las flechas se apagan al llegar al principio o al final, y se esconden si todo cabe.
+function activarCarrusel(lista) {
+  if (!lista || lista.dataset.carrusel) return;
+  lista.dataset.carrusel = 'si';
+  const envoltorio = document.createElement('div');
+  envoltorio.className = 'carrusel';
+  lista.parentNode.insertBefore(envoltorio, lista);
+  envoltorio.appendChild(lista);
+
+  const flecha = (clase, texto, etiqueta) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'carrusel-flecha ' + clase;
+    b.innerHTML = texto;
+    b.setAttribute('aria-label', etiqueta);
+    envoltorio.appendChild(b);
+    return b;
+  };
+  const anterior = flecha('anterior', '‹', 'Ver los anteriores');
+  const siguiente = flecha('siguiente', '›', 'Ver los siguientes');
+
+  // Avanza casi una pantalla de tarjetas (scroll-snap la deja bien colocada)
+  const mover = (sentido) => lista.scrollBy({ left: sentido * lista.clientWidth * 0.9, behavior: 'smooth' });
+  anterior.onclick = () => mover(-1);
+  siguiente.onclick = () => mover(1);
+
+  function actualizar() {
+    const sobra = lista.scrollWidth - lista.clientWidth;
+    envoltorio.classList.toggle('sin-flechas', sobra <= 2);       // todo cabe: sin flechas
+    anterior.disabled = lista.scrollLeft <= 2;                    // al principio
+    siguiente.disabled = lista.scrollLeft >= sobra - 2;           // al final
+  }
+  lista.addEventListener('scroll', actualizar, { passive: true });
+  window.addEventListener('resize', actualizar);
+  // Cuando la página cambia las tarjetas (un filtro, «Cargando…»), se vuelve a empezar por la izquierda
+  new MutationObserver(() => { lista.scrollLeft = 0; actualizar(); }).observe(lista, { childList: true });
+  actualizar();
+}

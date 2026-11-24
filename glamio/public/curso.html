@@ -33,7 +33,7 @@
         <div class="barra barra-grande"><div id="barra" style="width:0%"><span id="porcentaje"></span></div></div>
       </div>
       <p id="texto-progreso"></p>
-      <a id="certificado" class="boton-opcion oculto" href="#" title="Abre tu certificado para verlo o imprimirlo">🎓 Ver mi certificado</a>
+      <a id="certificado" class="boton-opcion oculto" href="#" title="Abre tu certificado para verlo o imprimirlo">Ver mi certificado</a>
     </section>
 
     <!-- Dos columnas: lecciones a la izquierda; materiales y reseñas a la derecha -->
@@ -48,7 +48,7 @@
           <h2>📋 Materiales</h2>
           <ul id="materiales" class="lista-materiales"></ul>
           <!-- Solo si está inscrita (ver pintarCabeceraCurso) -->
-          <a class="boton-opcion oculto" id="ir-calculadora" href="#" title="Abre la calculadora con estos materiales ya cargados">🧮 Calcular mi precio</a>
+          <a class="boton-opcion oculto" id="ir-calculadora" href="#" title="Abre la calculadora con estos materiales ya cargados">Calcular mi precio</a>
         </section>
         <!-- Guías teóricas en PDF (solo sale si el curso tiene alguna) -->
         <section class="tarjeta oculto" id="zona-guias">
@@ -150,7 +150,7 @@
         accion = `<a class="boton" href="/login.html">Entra para inscribirte</a>
           <span class="ayuda">¿No tienes cuenta? <a href="/registro.html">Regístrate</a></span>`;
       } else if (usuaria.perfil === 'administradora') {
-        accion = `<a class="boton secundario" href="/admin.html">✏️ Editar en el Panel</a>`;
+        accion = `<a class="boton secundario" href="/admin.html">Editar en el Panel</a>`;
       } else if (!PUEDEN_INSCRIBIRSE.includes(usuaria.perfil)) {
         accion = '<p class="ayuda">Los cursos son para alumnas y profesionales.</p>';
       } else if (!inscrita) {
@@ -261,7 +261,7 @@
       document.getElementById('lista-guias').innerHTML = guias.map(g => {
         const gratis = Number(g.precio) === 0;
         let accion;
-        if (g.comprada || esAdministradora) accion = `<a class="boton-opcion" href="/api/guias/${g.id}/descargar">⬇ Descargar PDF</a>`;
+        if (g.comprada || esAdministradora) accion = `<a class="boton-opcion" href="/api/guias/${g.id}/descargar">Descargar PDF</a>`;
         else if (!usuaria) accion = `<a class="boton-opcion" href="/login.html">Entra para ${gratis ? 'obtenerla' : 'comprarla'}</a>`;
         else if (puedeComprar) accion = `<button class="boton" onclick="comprarGuia(this, ${g.id}, ${gratis}, '${precioTexto(g.precio)}')">${gratis ? 'Obtener gratis' : 'Comprar · ' + precioTexto(g.precio)}</button>`;
         else accion = '';
@@ -339,8 +339,8 @@
         </form>` : '';
       // La autora borra la suya; las demás (con sesión) pueden reportarla. La directora responde, no reporta.
       let acciones = '';
-      if (esMia(r)) acciones = `<div class="fila" style="margin-top:8px"><button class="chip peligro" onclick="borrarResena(this, ${r.id})">🗑 Borrar mi reseña</button></div>`;
-      else if (usuaria && !esAdmin()) acciones = `<div class="fila" style="margin-top:8px"><button class="chip" onclick="reportarResena(this, ${r.id})">⚑ Reportar</button></div>`;
+      if (esMia(r)) acciones = `<div class="fila" style="margin-top:8px"><button class="chip peligro" onclick="borrarResena(this, ${r.id})">Borrar mi reseña</button></div>`;
+      else if (usuaria && !esAdmin()) acciones = `<div class="fila" style="margin-top:8px"><button class="chip" onclick="reportarResena(this, ${r.id})">Reportar</button></div>`;
 
       return `
         <div class="tarjeta ${esMia(r) ? 'destacada' : ''}" style="margin-bottom:10px">

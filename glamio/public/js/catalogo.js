@@ -37,6 +37,7 @@ function tarjetaCurso(c) {
 // Pinta el catálogo completo en dos cajas: la de los botones y la de las tarjetas.
 // Los cursos se piden UNA vez; al cambiar de categoría se filtran aquí, sin volver al servidor.
 async function pintarCatalogo(cajaBotones, cajaLista) {
+  activarCarrusel(cajaLista); // los cursos se pasan de lado, con flechas en el PC (api.js)
   let cursos, categorias;
   try {
     [cursos, categorias] = await Promise.all([api('/api/cursos'), api('/api/categorias')]);
