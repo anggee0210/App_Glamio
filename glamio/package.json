@@ -8,6 +8,7 @@
     "dev": "node --watch server.js",
     "db:crear": "psql -U postgres -d glamio -f db/schema.sql",
     "db:datos": "psql -U postgres -d glamio -f db/seed.sql",
+    "db:demo": "node db/datos-demo.js",
     "test": "node test/ejecutar.js",
     "test:simulado": "node -e \"process.env.CORREO_PRUEBAS='simulado'; require('./test/ejecutar.js')\"",
     "db:migrar-login": "psql -U postgres -d glamio -f db/migracion-login.sql",
