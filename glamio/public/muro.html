@@ -38,6 +38,8 @@
         </label>
         <label>Descripción <textarea name="descripcion" rows="2" maxlength="500" placeholder="Cuenta brevemente tu trabajo…"></textarea></label>
       </div>
+      <!-- Recortar la foto antes de publicar (js/recortar-foto.js): sale al elegir la foto -->
+      <div id="recorte" class="oculto"></div>
       <div class="publicar-pie">
         <label class="interruptor permiso-casilla"><input type="checkbox" name="permiso_mi_estilo">
           <span class="interruptor-pista" aria-hidden="true"></span>
@@ -55,6 +57,7 @@
   </main>
 
   <script src="/js/api.js"></script>
+  <script src="/js/recortar-foto.js"></script>
   <script>
     let usuaria = null;
     let categoriaActual = '';
@@ -137,7 +140,7 @@
       // Tarjeta del diseño: foto grande · nombre (serif) + permiso a la derecha · curso · descripción · Reportar
       caja.innerHTML = trabajos.map(t => `
         <div class="trabajo">
-          <a class="ver-foto" href="${t.foto}" target="_blank" title="Ver la foto en grande"><img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}"></a>
+          <a class="ver-foto foto-completa" href="${t.foto}" target="_blank" title="Ver la foto en grande" style="--foto: url('${esc(t.foto)}')"><img src="${t.foto}" alt="Trabajo de ${esc(t.nombre)}" loading="lazy"></a>
           <div class="trabajo-datos">
             <div class="trabajo-cabeza">
               <strong><a class="enlace-autora" href="/perfil.html?id=${t.usuaria_id}" title="Ver su perfil">${esc(t.nombre)}</a>${esMio(t) ? ' <span class="ayuda" style="display:inline">(tú)</span>' : ''}</strong>
@@ -207,14 +210,20 @@
     }
 
     // ---------- Publicar ----------
+    const recorte = crearRecortador(document.querySelector('#form [name=foto]'), document.getElementById('recorte'));
+
     document.getElementById('form').onsubmit = async (e) => {
       e.preventDefault();
       const form = e.target;
       const boton = document.getElementById('publicar');
       boton.disabled = true; // evita publicar dos veces con doble clic
       try {
-        await api('/api/trabajos', { method: 'POST', body: new FormData(form) });
+        const datos = new FormData(form);
+        const foto = await recorte.archivoFinal(); // la foto recortada (o la original)
+        if (foto) datos.set('foto', foto);
+        await api('/api/trabajos', { method: 'POST', body: datos });
         form.reset();
+        recorte.limpiar();
         avisar('msg-form', '✅ ¡Publicado! Ya está en el muro.');
         cargarTrabajos();
       } catch (err) {

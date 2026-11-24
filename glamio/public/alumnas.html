@@ -161,7 +161,29 @@
     // Una línea de "dato: valor" para la cuenta
     const dato = (nombre, valor) => `<div><dt>${nombre}</dt><dd>${esc(valor)}</dd></div>`;
 
-    function pintarDetalle({ cuenta, ficha, cursos, actividad }) {
+    // Historial de dudas de ESTA alumna (solo las suyas; las trae el servidor ya filtradas).
+    // Cada una enlaza a su lección, bajando hasta la duda (#duda-N).
+    function htmlDudas(dudas) {
+      if (!dudas.length) return '<p class="al-nada izq">Todavía no ha hecho ninguna duda.</p>';
+      return `<ul class="al-dudas">${dudas.map(d => `
+        <li class="al-duda">
+          <div class="al-duda-cabeza">
+            <a href="/leccion.html?id=${d.leccion_id}#duda-${d.id}">${esc(d.curso)} · ${esc(d.leccion)}</a>
+            <small>${fechaCortaDia(d.fecha)}</small>
+          </div>
+          <p>${esc(d.texto)}</p>
+          <p class="al-marcas">
+            ${d.respuestas
+              ? `<span class="al-marca ok">${d.respuestas} ${d.respuestas === 1 ? 'respuesta' : 'respuestas'}</span>`
+              : '<span class="al-marca mal">Sin responder</span>'}
+            ${d.con_destacada ? '<span class="al-marca">⭐ Con destacada</span>' : ''}
+            ${d.foto ? `<a class="ver-foto al-marca" href="${esc(d.foto)}">📷 Ver foto</a>` : ''}
+            ${d.oculta ? '<span class="al-marca mal">Oculta por un reporte</span>' : ''}
+          </p>
+        </li>`).join('')}</ul>`;
+    }
+
+    function pintarDetalle({ cuenta, ficha, cursos, actividad, dudas = [] }) {
       const terminados = cursos.filter(c => c.terminado).length;
       const caja = document.getElementById('detalle');
       caja.innerHTML = `
@@ -222,6 +244,12 @@
                 <td class="num">${Number(c.importe) > 0 ? Number(c.importe).toFixed(2).replace('.', ',') + ' €' : 'Gratis'}</td>
               </tr>`; }).join('')}</tbody></table></div>`
             : '<p class="al-nada izq">No está inscrita en ningún curso.</p>'}
+        </section>
+
+        <section class="al-seccion" id="bloque-dudas">
+          <div class="al-seccion-cabeza"><h3>Historial de dudas</h3>
+            <span class="al-nota">${dudas.length} ${dudas.length === 1 ? 'duda' : 'dudas'}</span></div>
+          ${htmlDudas(dudas)}
         </section>
 
         <section class="al-seccion al-peligro">

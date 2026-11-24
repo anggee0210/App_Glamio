@@ -198,7 +198,9 @@ CREATE TABLE materiales_servicio (
   id           SERIAL PRIMARY KEY,
   servicio_id  INT NOT NULL REFERENCES servicios(id) ON DELETE CASCADE,
   nombre       VARCHAR(100) NOT NULL,
-  coste        NUMERIC(8,2) NOT NULL DEFAULT 0
+  coste        NUMERIC(10,4) NOT NULL DEFAULT 0, -- coste por sesión (24/11: 4 decimales)
+  precio_envase NUMERIC(8,2) CHECK (precio_envase >= 0), -- lo que costó el producto entero (24/11)
+  servicios_envase INT CHECK (servicios_envase BETWEEN 1 AND 10000) -- para cuántos servicios da (24/11)
 );
 
 -- Reportes de contenido (oculta hasta revisión)

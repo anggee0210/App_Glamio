@@ -362,3 +362,37 @@ test('la alumna VE su ficha pero NO puede crearla ni modificarla → 403', async
   assert.equal(vista.estado, 200, 'sí puede verla');
   assert.equal(vista.datos.direccion, 'Calle Original 1, Madrid', 'sigue igual');
 });
+
+// ---------- Historial de dudas en la ficha de cada alumna (24/11) ----------
+
+test('la ficha de cada alumna trae SOLO sus dudas (no las de otras), con respuestas y destacada', async () => {
+  const ana = await nuevaUsuaria('alumna');
+  const eva = await nuevaUsuaria('alumna');
+  const admin = await sesionAdmin();
+  await ana.post('/api/cursos/1/inscribirse');
+  await eva.post('/api/cursos/1/inscribirse');
+
+  const d1 = await ana.post('/api/dudas', { leccion_id: 1, texto: 'Duda de Ana 1' });
+  const d2 = await ana.post('/api/dudas', { leccion_id: 1, texto: 'Duda de Ana 2' });
+  await eva.post('/api/dudas', { leccion_id: 1, texto: 'Duda de Eva' });
+  assert.equal(d1.estado, 201, JSON.stringify(d1.datos));
+
+  // La administradora responde la primera de Ana y la marca como destacada
+  const r = await admin.post(`/api/dudas/${d1.datos.id}/respuestas`, { texto: 'Respuesta' });
+  await admin.put(`/api/dudas/respuestas/${r.datos.id}/destacar`);
+
+  const idAna = (await ana.get('/api/auth/yo')).datos.id;
+  const { datos } = await admin.get(`/api/ficha/alumnas/${idAna}`);
+  assert.deepEqual(datos.dudas.map(d => d.texto).sort(), ['Duda de Ana 1', 'Duda de Ana 2'], 'solo las suyas');
+  const primera = datos.dudas.find(d => d.id === d1.datos.id);
+  assert.equal(primera.respuestas, 1);
+  assert.equal(primera.con_destacada, true);
+  assert.ok(primera.curso && primera.leccion, 'con su curso y su lección');
+  const segunda = datos.dudas.find(d => d.id === d2.datos.id);
+  assert.equal(segunda.respuestas, 0);
+  assert.equal(segunda.con_destacada, false);
+
+  const idEva = (await eva.get('/api/auth/yo')).datos.id;
+  const deEva = (await admin.get(`/api/ficha/alumnas/${idEva}`)).datos.dudas;
+  assert.deepEqual(deEva.map(d => d.texto), ['Duda de Eva']);
+});

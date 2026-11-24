@@ -50,3 +50,58 @@ test('una profesional guarda un servicio y lo ve en "mis servicios"', async () =
   assert.equal(mios.datos.length, 1);
   assert.equal(mios.datos[0].materiales.length, 2);
 });
+
+// ---------- Precio del producto ÷ servicios que salen (24/11) ----------
+
+test('esmalte de 12 € que da para 30 servicios → 0,40 € por sesión; con 1 h a 10 €/h y 0 % = 10,40 €', async () => {
+  const res = await new Sesion().post('/api/servicios/calcular', {
+    materiales: [{ nombre: 'Esmalte', precio_envase: 12, servicios_envase: 30 }],
+    minutos: 60, precio_hora: 10, margen: 0
+  });
+  assert.equal(res.estado, 200);
+  assert.equal(res.datos.coste_materiales, 0.4);
+  assert.equal(res.datos.mano_obra, 10);
+  assert.equal(res.datos.margen_euros, 0);
+  assert.equal(res.datos.precio_sugerido, 10.4);
+});
+
+test('el desglose suma el precio: materiales + tiempo + margen', async () => {
+  const res = await new Sesion().post('/api/servicios/calcular', {
+    materiales: [
+      { nombre: 'Base', precio_envase: 9, servicios_envase: 45 },   // 0,20
+      { nombre: 'Lima', precio_envase: 3, servicios_envase: 10 }    // 0,30
+    ],
+    minutos: 30, precio_hora: 12, margen: 50                      // tiempo 6 → (0,5 + 6) × 1,5 = 9,75
+  });
+  assert.equal(res.datos.coste_materiales, 0.5);
+  assert.equal(res.datos.mano_obra, 6);
+  assert.equal(res.datos.margen_euros, 3.25);
+  assert.equal(res.datos.precio_sugerido, 9.75);
+});
+
+test('servicios que salen: 0, decimales o vacío → 400; precio negativo → 400', async () => {
+  const s = new Sesion();
+  for (const servicios_envase of [0, 2.5, '', -3, 'muchos']) {
+    const res = await s.post('/api/servicios/calcular', {
+      materiales: [{ nombre: 'Gel', precio_envase: 10, servicios_envase }], minutos: 60, precio_hora: 10, margen: 0 });
+    assert.equal(res.estado, 400, `servicios_envase=${JSON.stringify(servicios_envase)} debería dar 400`);
+  }
+  const negativo = await s.post('/api/servicios/calcular', {
+    materiales: [{ nombre: 'Gel', precio_envase: -1, servicios_envase: 5 }], minutos: 60, precio_hora: 10, margen: 0 });
+  assert.equal(negativo.estado, 400);
+});
+
+test('al guardar se apuntan el precio del producto, los servicios y el coste por sesión (sin redondear a 0,00)', async () => {
+  const alumna = await nuevaUsuaria('alumna');
+  const res = await alumna.post('/api/servicios', {
+    nombre: 'Manicura rápida', categoria_id: 1, minutos: 60, precio_hora: 10, margen: 0,
+    materiales: [{ nombre: 'Algodón', precio_envase: 5, servicios_envase: 300 }]  // 0,0167 € por sesión
+  });
+  assert.equal(res.estado, 201, JSON.stringify(res.datos));
+  assert.equal(Number(res.datos.precio_sugerido), 10.02);
+  const [servicio] = (await alumna.get('/api/servicios')).datos;
+  const [m] = servicio.materiales;
+  assert.equal(Number(m.precio_envase), 5);
+  assert.equal(m.servicios_envase, 300);
+  assert.equal(Number(m.coste), 0.0167, 'el coste por sesión se guarda con 4 decimales');
+});

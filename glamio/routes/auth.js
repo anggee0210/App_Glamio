@@ -95,6 +95,49 @@ async function apuntarFalloCuenta(usuaria) {
 }
 
 // -----------------------------------------
+// Crear una cuenta (la usa el registro).
+// TRANSACCIÓN: la cuenta y la ficha se guardan juntas. Si la ficha falla
+// (p. ej. el documento ya está en otra cuenta), tampoco se crea la cuenta.
+// -----------------------------------------
+async function crearCuenta({ nombre, email, hash, perfil, ficha }) {
+  const cliente = await pool.connect();
+  try {
+    await cliente.query('BEGIN');
+    const { rows } = await cliente.query(
+      `INSERT INTO usuarias (nombre, email, password, perfil)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [String(nombre).trim(), email, hash, perfil]);
+    if (ficha) await escribirFicha(cliente, rows[0].id, ficha);
+    await cliente.query('COMMIT');
+    return rows[0];
+  } catch (err) {
+    await cliente.query('ROLLBACK');
+    throw err;
+  } finally {
+    cliente.release();
+  }
+}
+
+// Alumna: valida su ficha (obligatoria, 24/11). Devuelve { error } o { ficha } (null si no es alumna)
+async function fichaDelRegistro(perfil, cuerpo) {
+  if (perfil !== 'alumna') return { ficha: null };
+  return validarFicha(cuerpo);
+}
+
+// Errores al crear la cuenta → mensaje claro
+function errorAlCrearCuenta(err, res, next) {
+  // En un proyecto de curso aceptamos decir "email en uso"
+  // (lo más seguro sería responder siempre "Revisa tu correo")
+  // 23505 = valor repetido. Puede ser el email (usuarias) o el documento (fichas_alumnas)
+  if (err.code === '23505' && err.table === 'fichas_alumnas')
+    return res.status(409).json({ error: 'Ese documento ya está registrado en otra cuenta' });
+  if (err.code === '23505') return res.status(400).json({ error: 'Ese email ya está registrado' });
+  // P0001 = RAISE EXCEPTION de un trigger de la ficha (segunda barrera)
+  if (err.code === 'P0001') return res.status(400).json({ error: err.message });
+  next(err);
+}
+
+// -----------------------------------------
 // 1. REGISTRO
 // Validar → (alumna: validar su ficha) → normalizar email → política de contraseña → hash
 // → crear usuaria (+ ficha, en la misma transacción) → token de verificación → correo. NO se inicia sesión: primero tiene que verificar.
@@ -106,37 +149,13 @@ router.post('/registro', async (req, res, next) => {
     if (error) return res.status(400).json({ error });
     if (!PERFILES_PUBLICOS.includes(perfil)) return res.status(400).json({ error: 'Perfil no válido' });
 
-    // La alumna rellena su ficha personal AL REGISTRARSE (obligatoria, 24/11).
     // Se comprueba con las mismas reglas que usa el Panel (routes/ficha.js), ANTES de crear nada.
-    let ficha = null;
-    if (perfil === 'alumna') {
-      const resultado = await validarFicha(req.body.ficha);
-      if (resultado.error) return res.status(400).json({ error: resultado.error });
-      ficha = resultado.ficha;
-    }
+    const { error: errorFicha, ficha } = await fichaDelRegistro(perfil, req.body.ficha);
+    if (errorFicha) return res.status(400).json({ error: errorFicha });
 
     const email = normalizarEmail(req.body.email);
     const hash = await cifrarPassword(password); // Argon2id
-
-    // TRANSACCIÓN: la cuenta y la ficha se guardan juntas. Si la ficha falla
-    // (p. ej. el documento ya está en otra cuenta), tampoco se crea la cuenta.
-    const cliente = await pool.connect();
-    let usuaria;
-    try {
-      await cliente.query('BEGIN');
-      const { rows } = await cliente.query(
-        `INSERT INTO usuarias (nombre, email, password, perfil)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [String(nombre).trim(), email, hash, perfil]);
-      usuaria = rows[0];
-      if (ficha) await escribirFicha(cliente, usuaria.id, ficha);
-      await cliente.query('COMMIT');
-    } catch (err) {
-      await cliente.query('ROLLBACK');
-      throw err; // lo recoge el catch de abajo
-    } finally {
-      cliente.release();
-    }
+    const usuaria = await crearCuenta({ nombre, email, hash, perfil, ficha });
 
     const enviado = await enviarVerificacion(usuaria);
     res.status(201).json({
@@ -147,15 +166,7 @@ router.post('/registro', async (req, res, next) => {
         : 'Tu cuenta está creada, pero no pudimos enviar el correo. Pide otro desde la página de entrar.'
     });
   } catch (err) {
-    // En un proyecto de curso aceptamos decir "email en uso"
-    // (lo más seguro sería responder siempre "Revisa tu correo")
-    // 23505 = valor repetido. Puede ser el email (usuarias) o el documento (fichas_alumnas)
-    if (err.code === '23505' && err.table === 'fichas_alumnas')
-      return res.status(409).json({ error: 'Ese documento ya está registrado en otra cuenta' });
-    if (err.code === '23505') return res.status(400).json({ error: 'Ese email ya está registrado' });
-    // P0001 = RAISE EXCEPTION de un trigger de la ficha (segunda barrera)
-    if (err.code === 'P0001') return res.status(400).json({ error: err.message });
-    next(err);
+    errorAlCrearCuenta(err, res, next);
   }
 });
 

@@ -193,7 +193,22 @@ router.get('/alumnas/:id', requiereAdmin, async (req, res, next) => {
          (SELECT COUNT(*) FROM resenas_cursos WHERE usuaria_id = $1)::int AS resenas,
          (SELECT COUNT(*) FROM compras_guias WHERE usuaria_id = $1)::int AS guias`, [id])).rows[0];
 
-    res.json({ cuenta, ficha, cursos, actividad });
+    // Historial de dudas (24/11): SOLO las que escribió ESTA alumna (WHERE d.usuaria_id),
+    // con su lección y curso, cuántas respuestas tiene y si alguna es la destacada.
+    // Las más nuevas primero. Las ocultas por un reporte también salen (marcadas), para que la
+    // administradora vea el historial completo.
+    const dudas = (await pool.query(
+      `SELECT d.id, d.texto, d.foto, d.oculta, d.fecha,
+         l.id AS leccion_id, l.titulo AS leccion, c.id AS curso_id, c.titulo AS curso,
+         (SELECT COUNT(*) FROM respuestas r WHERE r.duda_id = d.id)::int AS respuestas,
+         EXISTS (SELECT 1 FROM respuestas r WHERE r.duda_id = d.id AND r.destacada) AS con_destacada
+       FROM dudas d
+       JOIN lecciones l ON l.id = d.leccion_id
+       JOIN cursos c ON c.id = l.curso_id
+       WHERE d.usuaria_id = $1
+       ORDER BY d.fecha DESC, d.id DESC`, [id])).rows;
+
+    res.json({ cuenta, ficha, cursos, actividad, dudas });
   } catch (err) { next(err); }
 });
 

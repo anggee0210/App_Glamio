@@ -1659,3 +1659,147 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .registro-ficha { padding: 18px 16px 20px; border-radius: 20px; }
   .registro-ficha h2 { font-size: 1.4rem; }
 }
+
+
+/* ===================== ALUMNAS (Panel) · Historial de dudas (24/11) ===================== */
+.al-dudas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow-y: auto; }
+.al-duda { border: 1px solid var(--borde); border-radius: 14px; padding: 12px 16px; background: #fff; }
+.al-duda-cabeza { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.al-duda-cabeza a { font-weight: 700; color: var(--principal-oscuro); }
+.al-duda-cabeza small { color: var(--gris); white-space: nowrap; }
+.al-duda > p { margin: 6px 0; overflow-wrap: anywhere; }
+.al-duda .al-marcas { display: flex; gap: 14px; flex-wrap: wrap; margin: 4px 0 0; }
+
+
+/* ===================== CALCULADORA · precio del producto y servicios que salen (24/11) =====================
+   Cada fila: Material | Precio del producto | Servicios que salen | = x € / sesión | papelera */
+.fila-material { grid-template-columns: minmax(0, 1.4fr) 150px 165px minmax(130px, auto) auto; gap: 12px; align-items: end; }
+.m-campo { white-space: nowrap; } /* que «Servicios que salen» no se parta en dos líneas */
+.m-campo { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; font-weight: 600; color: var(--gris); min-width: 0; }
+.m-por-sesion { font-weight: 700; color: var(--principal-oscuro); white-space: nowrap; padding-bottom: 12px; }
+.fila-material .boton-papelera { margin-bottom: 4px; }
+.material + .material { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--borde); }
+/* Desglose encima del precio: materiales + tiempo + margen */
+.calc-desglose { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 10px; }
+.calc-desglose div { background: #fff; border: 1px solid var(--borde); border-radius: 12px; padding: 10px 14px; }
+.calc-desglose dt { font-size: .85rem; color: var(--gris); }
+.calc-desglose dd { margin: 2px 0 0; font-weight: 700; font-size: 1.2rem; color: var(--oscuro); }
+@media (max-width: 760px) {
+  /* Móvil: el nombre arriba entero; debajo precio y servicios; debajo el coste por sesión y la papelera */
+  .fila-material { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; }
+  .fila-material .m-campo:first-child { grid-column: 1 / -1; }
+  .m-por-sesion { grid-column: 1 / 3; padding-bottom: 0; }
+  .campo-euros input { padding-left: 10px; }
+  .calc-desglose { grid-template-columns: 1fr; gap: 6px; }
+  .calc-desglose div { display: flex; justify-content: space-between; align-items: baseline; }
+}
+
+
+/* ===================== MURO / COMUNIDAD · el trabajo se ve COMPLETO (24/11) =====================
+   Antes la foto se recortaba (object-fit: cover). Ahora se ve entera (contain) y el hueco
+   que sobra se rellena con la MISMA foto difuminada detrás (--foto lo pone muro.html). */
+.trabajo > a.foto-completa { position: relative; display: block; aspect-ratio: 4 / 5; /* vertical: las fotos del móvil casi llenan la casilla */ overflow: hidden; background: #f3e8f7; }
+.trabajo > a.foto-completa::before { content: ''; position: absolute; inset: -24px; background: var(--foto) center / cover no-repeat;
+  filter: blur(20px) saturate(1.1); opacity: .55; }
+.trabajo > a.foto-completa img { position: relative; display: block; width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; }
+
+
+/* ===================== COMUNIDAD · recortar la foto antes de publicar (24/11) =====================
+   El marco tiene la MISMA forma que la casilla del muro (4:5): lo que se ve es lo que se publica. */
+#recorte { margin-top: 14px; }
+.recorte-editor { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "zona modos" "zona controles" "zona nota"; gap: 14px 22px; align-items: start; align-content: start; justify-content: start; }
+.recorte-modos { grid-area: modos; display: flex; gap: 8px; flex-wrap: wrap; }
+.recorte-modos .chip.activo { background: var(--principal-oscuro); color: #fff; border-color: var(--principal-oscuro); }
+.recorte-zona { grid-area: zona; }
+.recorte-marco { position: relative; width: 240px; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 14px; background: #1c0823;
+  box-shadow: 0 0 0 3px var(--principal), var(--sombra); cursor: grab; touch-action: none; user-select: none; }
+.recorte-marco.arrastrando { cursor: grabbing; }
+.recorte-marco img { position: absolute; max-width: none; pointer-events: none; }
+.recorte-completa { display: none; width: 240px; max-height: 320px; object-fit: contain; border-radius: 14px; background: #f3e8f7; box-shadow: var(--sombra); }
+.modo-completa .recorte-marco { display: none; }
+.modo-completa .recorte-completa { display: block; }
+.modo-completa .recorte-controles { display: none; }
+.recorte-controles { grid-area: controles; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.recorte-controles label { display: flex; flex-direction: row; align-items: center; gap: 10px; font-weight: 600; }
+.recorte-controles input[type=range] { width: 180px; accent-color: var(--principal); }
+.recorte-nota { grid-area: nota; margin: 0; max-width: 36ch; }
+@media (max-width: 640px) {
+  .recorte-editor { grid-template-columns: 1fr; grid-template-areas: "modos" "zona" "controles" "nota"; justify-items: center; }
+  .recorte-marco, .recorte-completa { width: min(260px, 80vw); }
+  .recorte-nota { text-align: center; }
+}
+
+
+/* ===================== ENTRAR · casillas de usuario y contraseña un poco más pequeñas (24/11) =====================
+   (petición de la autora; antes 1.85rem / 28px de relleno). Vale también para Registrarme, que va a juego. */
+.campo-icono input { font-size: 1.5rem; padding: 22px 70px; }
+.campo-icono input[name=password] { font-size: 1.3rem; padding-top: 24px; padding-bottom: 24px; } /* mismo alto que las demás */
+.campo-icono svg { width: 32px; height: 32px; left: 22px; }
+.ver-contrasena { font-size: 1.7rem; right: 18px; }
+@media (max-width: 860px) {
+  .campo-icono input { font-size: 1.25rem; padding: 17px 56px; }
+  .campo-icono input[name=password] { font-size: 1.1rem; padding-top: 19px; padding-bottom: 19px; }
+  .campo-icono svg { width: 26px; height: 26px; left: 16px; }
+  .ver-contrasena { font-size: 1.4rem; }
+}
+
+
+/* ===================== REGISTRO · tarjetas de perfil estilo app (24/11) =====================
+   Limpias y modernas: el icono en un cuadrado redondeado con el color de cada perfil, el texto
+   alineado a la izquierda y un círculo de selección arriba a la derecha. La elegida: fondo
+   blanco con BORDE DEGRADADO (morado → rosa → dorado), sombra suave y el icono relleno.
+   Sustituye al estilo anterior (tarjeta oscura); este bloque va al final y lo sobrescribe. */
+.elegir-perfil { gap: 14px; }
+.opcion-perfil { --tono: #7a2a8c; --tono-claro: #f1e3f7; }            /* Alumna: morado */
+.opcion-perfil:nth-of-type(2) { --tono: #9c5a1c; --tono-claro: #fbefdc; } /* Profesional: dorado tostado */
+.opcion-perfil:nth-of-type(3) { --tono: #c2367f; --tono-claro: #fde6f1; } /* Clienta: rosa */
+
+.opcion-perfil span { align-items: flex-start; text-align: left; gap: 4px; padding: 18px 18px 16px; border-radius: 20px;
+  border: 1.5px solid #eadcf0; background: rgba(255, 255, 255, .82); box-shadow: 0 1px 2px rgba(61, 23, 71, .04);
+  transition: transform .2s, box-shadow .2s, border-color .2s; }
+.opcion-perfil:hover span { transform: translateY(-2px); border-color: #d9c3e3; box-shadow: 0 10px 22px rgba(61, 23, 71, .09); }
+
+/* Icono: cuadrado redondeado (como los iconos de las apps) */
+.perfil-icono { width: 48px; height: 48px; border-radius: 14px; margin: 0 0 8px; color: var(--tono); background: var(--tono-claro);
+  box-shadow: none; transition: background .2s, color .2s, box-shadow .2s; }
+.perfil-icono svg { width: 24px; height: 24px; stroke-width: 1.7; }
+
+/* Título sin serif y con peso: más de app */
+.opcion-perfil strong { font-family: inherit; font-size: 1.12rem; font-weight: 800; color: var(--oscuro); letter-spacing: -.01em; }
+.opcion-perfil small { font-size: .88rem; color: #85788b; }
+
+/* Círculo de selección arriba a la derecha: vacío, y relleno con ✓ al elegir */
+.perfil-check { top: 14px; right: 14px; width: 22px; height: 22px; opacity: 1; transform: none;
+  background: #fff; border: 1.5px solid #d9c8e0; transition: background .2s, border-color .2s; }
+.perfil-check::after { left: 6.5px; top: 3px; border-color: #fff; opacity: 0; transition: opacity .2s; }
+
+/* La elegida */
+.opcion-perfil input:checked + span {
+  border: 2px solid transparent;
+  background: linear-gradient(#fff, #fff) padding-box,
+              linear-gradient(135deg, #7a2a8c 0%, #d946b4 55%, #e3c27f 100%) border-box;
+  box-shadow: 0 14px 30px rgba(122, 42, 140, .16); transform: translateY(-2px); }
+.opcion-perfil input:checked + span .perfil-icono { background: linear-gradient(135deg, var(--tono), #d946b4); color: #fff;
+  box-shadow: 0 6px 14px rgba(122, 42, 140, .28); }
+.opcion-perfil input:checked + span strong { color: var(--principal-oscuro); }
+.opcion-perfil input:checked + span small { color: #6f6276; }
+.opcion-perfil input:checked + span .perfil-check { background: linear-gradient(135deg, #7a2a8c, #d946b4); border-color: transparent; }
+.opcion-perfil input:checked + span .perfil-check::after { opacity: 1; }
+.opcion-perfil input:focus-visible + span { outline: 2px solid var(--principal); outline-offset: 3px; }
+
+@media (max-width: 760px) {
+  /* Móvil: una por fila, icono a la izquierda y el círculo a la derecha (como una lista de ajustes) */
+  .opcion-perfil span { grid-template-columns: 44px 1fr; padding: 14px 48px 14px 14px; }
+  .perfil-icono { width: 44px; height: 44px; border-radius: 13px; margin: 0; }
+  .perfil-check { top: 50%; transform: translateY(-50%); }
+}
+
+
+/* ===================== ENTRAR y REGISTRARME en el MÓVIL: sin el logo grande (24/11) =====================
+   En el móvil el logo de neón salía repetido (arriba grande y otra vez en el panel) y empujaba el
+   formulario hacia abajo. Ahora solo queda el logo del panel y el formulario se ve nada más entrar.
+   En el PC no cambia nada. */
+@media (max-width: 860px) {
+  .acceso-logo { display: none; }
+  .acceso-panel { margin: 0; border-radius: 0; min-height: 100vh; padding-top: 32px; }
+}

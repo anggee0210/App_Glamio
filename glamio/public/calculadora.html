@@ -26,9 +26,10 @@
 
           <!-- Recuadro con cabecera lila, como en el diseño -->
           <section class="recuadro">
-            <h2 class="recuadro-titulo">Materiales (coste por servicio)</h2>
+            <h2 class="recuadro-titulo">Materiales</h2>
             <div class="recuadro-cuerpo">
-              <p class="ayuda">Pon lo que gastas de cada material en <strong>un</strong> servicio, no lo que cuesta el bote entero.</p>
+              <p class="ayuda">Pon lo que te costó cada producto <strong>entero</strong> (el bote, la caja…) y para cuántos servicios te da.
+                GLAMIO calcula lo que gastas de él en <strong>cada sesión</strong>.</p>
               <div id="materiales"></div>
               <button type="button" class="boton-opcion boton-pequeno" id="anadir">＋ Añadir material</button>
             </div>
@@ -43,7 +44,13 @@
             </div>
           </section>
 
-          <div class="precio-sugerido"><span>Precio sugerido:</span> <strong id="resultado">–</strong></div>
+          <!-- Desglose: de dónde sale el precio (lo calcula el servidor) -->
+          <dl class="calc-desglose">
+            <div><dt>Materiales por sesión</dt><dd id="d-materiales">–</dd></div>
+            <div><dt>Tu tiempo</dt><dd id="d-tiempo">–</dd></div>
+            <div><dt>Margen</dt><dd id="d-margen">–</dd></div>
+          </dl>
+          <div class="precio-sugerido"><span>Precio del servicio:</span> <strong id="resultado">–</strong></div>
           <p class="mensaje error oculto" id="error"></p>
           <p class="mensaje oculto" id="exito"></p>
           <button class="boton calc-guardar" id="guardar">Guardar servicio</button>
@@ -61,7 +68,7 @@
   <script src="/js/api.js"></script>
   <script>
     const form = document.getElementById('form');
-    const cursoId = param('curso');
+    let cursoId = param('curso'); // let: al guardar se olvida (dejarEnBlanco)
 
     // Mensajes dentro de la página (en vez de alert)
     function mostrar(idElemento, texto) {
@@ -78,11 +85,16 @@
     function filaMaterial(nombre = '', cantidad = '') {
       const div = document.createElement('div');
       div.className = 'material';
-      // Nombre | coste con "€" al final | papelera, como en el diseño
+      // Material | precio del producto € | servicios que salen | = coste por sesión | papelera
       div.innerHTML = `
         <div class="fila-material">
-          <input class="m-nombre" placeholder="Material" maxlength="100" aria-label="Material">
-          <span class="campo-euros"><input class="m-coste" type="number" step="0.01" min="0" max="10000" placeholder="0,00" aria-label="Coste en euros"><span aria-hidden="true">€</span></span>
+          <label class="m-campo">Material
+            <input class="m-nombre" placeholder="Ej: Esmalte" maxlength="100"></label>
+          <label class="m-campo">Precio del producto
+            <span class="campo-euros"><input class="m-precio" type="number" step="0.01" min="0" max="10000" placeholder="0,00"><span aria-hidden="true">€</span></span></label>
+          <label class="m-campo">Servicios que salen
+            <input class="m-servicios" type="number" step="1" min="1" max="10000" value="1"></label>
+          <span class="m-por-sesion" title="Lo que gastas de este material en cada sesión">–</span>
           <button type="button" class="boton-papelera" title="Quitar material" aria-label="Quitar material">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
           </button>
@@ -92,6 +104,18 @@
       div.querySelector('.m-nombre').value = nombre;
       div.querySelector('button').onclick = () => { div.remove(); calcular(); };
       document.getElementById('materiales').appendChild(div);
+      porSesion(div);
+    }
+
+    // "= 0,40 € / sesión" al lado de cada material: precio del producto ÷ servicios que salen.
+    // Es solo para verlo mientras escribe; el cálculo que vale es el del servidor.
+    function porSesion(fila) {
+      const precio = Number(fila.querySelector('.m-precio').value);
+      const servicios = Number(fila.querySelector('.m-servicios').value);
+      const caja = fila.querySelector('.m-por-sesion');
+      caja.textContent = precio > 0 && servicios >= 1
+        ? `= ${(precio / servicios).toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 3 })} / sesión`
+        : '–';
     }
 
     function leerDatos() {
@@ -99,7 +123,8 @@
       datos.curso_id = cursoId;
       datos.materiales = [...document.querySelectorAll('#materiales .material')].map(f => ({
         nombre: f.querySelector('.m-nombre').value.trim(),
-        coste: f.querySelector('.m-coste').value || 0
+        precio_envase: f.querySelector('.m-precio').value || 0,
+        servicios_envase: f.querySelector('.m-servicios').value
       })).filter(m => m.nombre); // las filas sin nombre se ignoran
       return datos;
     }
@@ -113,10 +138,13 @@
         const r = await api('/api/servicios/calcular', { method: 'POST', body: leerDatos() });
         if (numero !== ultimaPeticion) return;
         document.getElementById('resultado').textContent = euros(r.precio_sugerido);
+        document.getElementById('d-materiales').textContent = euros(r.coste_materiales);
+        document.getElementById('d-tiempo').textContent = euros(r.mano_obra);
+        document.getElementById('d-margen').textContent = euros(r.margen_euros);
         mostrar('error', '');
       } catch (err) {
         if (numero !== ultimaPeticion) return;
-        document.getElementById('resultado').textContent = '–';
+        ['resultado', 'd-materiales', 'd-tiempo', 'd-margen'].forEach(id => document.getElementById(id).textContent = '–');
         mostrar('error', err.message); // ej. "El margen debe estar entre 0 y 500 %"
       }
     }
@@ -208,8 +236,26 @@
       cargarServicios();
     }
 
+    // Deja la calculadora EN BLANCO (24/11): después de guardar, así no se guarda el mismo
+    // servicio dos veces. También se olvida el curso (?curso=) para que recargar no lo vuelva a cargar.
+    function dejarEnBlanco() {
+      form.reset(); // nombre vacío y minutos, €/h y margen a sus valores de partida
+      document.getElementById('materiales').innerHTML = '';
+      filaMaterial();
+      if (cursoId) {
+        cursoId = null;
+        history.replaceState(null, '', location.pathname);
+        document.getElementById('origen').textContent = 'Calcula otro servicio o revisa tus precios guardados.';
+      }
+      calcular();
+    }
+
     document.getElementById('anadir').onclick = () => filaMaterial();
-    form.addEventListener('input', calcular);
+    form.addEventListener('input', (e) => {
+      const fila = e.target.closest('.material');
+      if (fila) porSesion(fila); // el "= x € / sesión" de esa fila
+      calcular();
+    });
     form.onsubmit = async (e) => {
       e.preventDefault();
       mostrar('exito', '');
@@ -218,7 +264,8 @@
       try {
         const s = await api('/api/servicios', { method: 'POST', body: leerDatos() });
         mostrar('error', '');
-        mostrar('exito', `✅ Guardado «${s.nombre}» a ${euros(s.precio_sugerido)}`);
+        mostrar('exito', `✅ Guardado «${s.nombre}» a ${euros(s.precio_sugerido)}. La calculadora queda lista para otro servicio.`);
+        dejarEnBlanco();
         cargarServicios();
       } catch (err) {
         mostrar('error', err.message);

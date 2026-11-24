@@ -6,13 +6,34 @@ const { requierePerfil } = require('../middleware/auth');
 const requiereCalculadora = requierePerfil('alumna', 'profesional', 'administradora');
 const router = express.Router();
 
-// Fórmula: (materiales + mano de obra) * (1 + margen/100)
-function calcularPrecio(materiales, minutos, precioHora, margen) {
-  const costeMateriales = materiales.reduce((suma, m) => suma + Number(m.coste || 0), 0);
+// ¿Viene el material con "precio del producto" y "servicios que salen"? (forma nueva, 24/11)
+const conEnvase = (m) => m.precio_envase !== undefined && m.precio_envase !== '';
+
+// Coste de UN material en UNA sesión.
+// Forma nueva: lo que costó el producto entero ÷ los servicios que salen de él.
+//   Ej.: un esmalte de 12 € da para 30 servicios → 12 / 30 = 0,40 € por sesión.
+// Forma antigua (servicios guardados antes del 24/11): el coste por servicio escrito a mano.
+function costePorSesion(m) {
+  if (conEnvase(m)) return Number(m.precio_envase) / Number(m.servicios_envase);
+  return Number(m.coste || 0);
+}
+
+const redondear = (n) => Math.round(n * 100) / 100;
+
+// Fórmula: (materiales por sesión + mano de obra) * (1 + margen/100)
+// Devuelve también el desglose, para enseñarlo en la calculadora.
+function desglosar(materiales, minutos, precioHora, margen) {
+  const costeMateriales = materiales.reduce((suma, m) => suma + costePorSesion(m), 0);
   const manoObra = (Number(minutos) / 60) * Number(precioHora);
   const total = (costeMateriales + manoObra) * (1 + Number(margen) / 100);
-  return Math.round(total * 100) / 100;
+  return {
+    coste_materiales: redondear(costeMateriales),
+    mano_obra: redondear(manoObra),
+    margen_euros: redondear(total - costeMateriales - manoObra),
+    precio_sugerido: redondear(total)
+  };
 }
+const calcularPrecio = (...datos) => desglosar(...datos).precio_sugerido;
 
 // ¿Es un número válido entre min y max? (rechaza texto, vacío y negativos)
 function numeroEntre(valor, min, max) {
@@ -33,7 +54,15 @@ function validarDatos({ minutos, precio_hora, margen, materiales }) {
   for (const m of materiales) {
     if (!m || !String(m.nombre || '').trim()) return 'Cada material necesita un nombre';
     if (String(m.nombre).trim().length > 100) return 'El nombre de un material es demasiado largo (máx. 100)';
-    if (!numeroEntre(m.coste ?? 0, 0, 10000)) return `El coste de «${String(m.nombre).trim()}» debe estar entre 0 y 10000 €`;
+    const nombre = String(m.nombre).trim();
+    if (conEnvase(m)) {
+      if (!numeroEntre(m.precio_envase, 0, 10000))
+        return `El precio de «${nombre}» debe estar entre 0 y 10000 €`;
+      if (!Number.isInteger(Number(m.servicios_envase)) || !numeroEntre(m.servicios_envase, 1, 10000))
+        return `Indica para cuántos servicios te da «${nombre}» (un número entero de 1 a 10000)`;
+    } else if (!numeroEntre(m.coste ?? 0, 0, 10000)) {
+      return `El coste de «${nombre}» debe estar entre 0 y 10000 €`;
+    }
   }
   return null;
 }
@@ -43,7 +72,7 @@ router.post('/calcular', (req, res) => {
   const { materiales = [], minutos = 60, precio_hora = 0, margen = 30 } = req.body;
   const error = validarDatos({ minutos, precio_hora, margen, materiales });
   if (error) return res.status(400).json({ error });
-  res.json({ precio_sugerido: calcularPrecio(materiales, minutos, precio_hora, margen) });
+  res.json(desglosar(materiales, minutos, precio_hora, margen)); // precio + desglose
 });
 
 // GET /api/servicios  → mis servicios
@@ -78,9 +107,13 @@ router.post('/', requiereCalculadora, async (req, res, next) => {
       `INSERT INTO servicios (usuaria_id, categoria_id, curso_id, nombre, minutos, precio_hora, margen, precio_sugerido)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [req.session.usuaria.id, categoria_id || null, curso_id || null, nombre, minutos, precio_hora, margen, precio]);
+    // Se guarda el precio del producto, los servicios que salen y el coste por sesión ya calculado
     for (const m of materiales) {
-      await cliente.query('INSERT INTO materiales_servicio (servicio_id, nombre, coste) VALUES ($1, $2, $3)',
-        [rows[0].id, String(m.nombre).trim(), Number(m.coste || 0)]);
+      await cliente.query(
+        `INSERT INTO materiales_servicio (servicio_id, nombre, coste, precio_envase, servicios_envase)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [rows[0].id, String(m.nombre).trim(), costePorSesion(m),
+          conEnvase(m) ? Number(m.precio_envase) : null, conEnvase(m) ? Number(m.servicios_envase) : null]);
     }
     await cliente.query('COMMIT');
     res.status(201).json(rows[0]);
