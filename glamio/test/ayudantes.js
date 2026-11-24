@@ -66,10 +66,30 @@ function tokenDelCorreo(correo) {
   return encontrado ? encontrado[1] : null;
 }
 
+// Desde el 24/11 la alumna manda su ficha al registrarse. Cada una necesita un DNI distinto
+// (el documento es UNIQUE). Cada archivo de pruebas corre en su propio proceso, así que se
+// parte del número del proceso para que dos archivos no repitan DNI.
+const LETRAS_DNI = 'TRWAGMYFPDXBNJZSQVHLCKE';
+let siguienteDni = 30000000 + (process.pid % 60000) * 1000;
+function fichaDePrueba(cambios = {}) {
+  const n = siguienteDni++;
+  return {
+    nombre_completo: 'Prueba Alumna García',
+    pais_nacimiento: 'ES',
+    ciudad_nacimiento: 'Madrid',
+    numero_documento: String(n) + LETRAS_DNI[n % 23],
+    fecha_nacimiento: '1998-03-15',
+    direccion: 'Calle de Prueba 1, Madrid',
+    telefono: '600111222',
+    ...cambios
+  };
+}
+
 // Registra una usuaria SIN confirmar el email. Devuelve sus datos y la sesión (sin entrar).
 async function registrarSinVerificar(perfil = 'alumna') {
   const sesion = new Sesion();
   const datos = { nombre: `Prueba ${perfil}`, email: emailUnico(perfil), password: 'clave1234', perfil };
+  if (perfil === 'alumna') datos.ficha = fichaDePrueba();
   const res = await sesion.post('/api/auth/registro', datos);
   if (res.estado !== 201) throw new Error(`No se pudo registrar: ${JSON.stringify(res.datos)}`);
   // El correo de verificación tiene que haber salido (con correos reales: Gmail lo aceptó)
@@ -108,5 +128,5 @@ async function terminarCurso(sesion, cursoId) {
 
 module.exports = {
   Sesion, nuevaUsuaria, registrarSinVerificar, sesionAdmin, emailUnico,
-  terminarCurso, ultimoCorreo, tokenDelCorreo
+  terminarCurso, ultimoCorreo, tokenDelCorreo, fichaDePrueba
 };

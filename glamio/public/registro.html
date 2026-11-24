@@ -63,6 +63,14 @@
             </span></label>
         </fieldset>
 
+        <!-- Ficha personal: solo si elige "Alumna" (obligatoria). La rellena js/ficha-form.js,
+             el mismo formulario que usa la administradora en Panel → Alumnas -->
+        <section class="registro-ficha oculto" id="zona-ficha" aria-labelledby="titulo-ficha">
+          <h2 id="titulo-ficha">Tus datos personales</h2>
+          <p class="ayuda">Solo los verá la administradora de la academia. Si más adelante hay que cambiar algo, se lo pides a ella.</p>
+          <div id="campos-ficha"></div>
+        </section>
+
         <p class="mensaje error oculto" id="msg"></p>
         <button class="boton boton-ancho" id="registrarme">✨ Registrarme</button>
       </form>
@@ -73,21 +81,56 @@
   </div>
 
   <script src="/js/api.js"></script>
+  <script src="/js/ficha-form.js"></script>
   <script>
     api('/api/auth/yo').then(u => { if (u) location.replace(paginaInicio(u)); }).catch(() => {});
 
     activarVerContrasena(); // el 👁 (está en api.js)
 
-    document.getElementById('form').onsubmit = async (e) => {
+    const form = document.getElementById('form');
+    const zonaFicha = document.getElementById('zona-ficha');
+    const camposFicha = document.getElementById('campos-ficha');
+
+    // Si elige "Alumna" salen los campos de la ficha; con otro perfil se QUITAN del formulario
+    // (no solo se esconden), porque llevan "required" y el navegador no dejaría enviar.
+    async function pintarFicha() {
+      const esAlumna = form.perfil.value === 'alumna';
+      zonaFicha.classList.toggle('oculto', !esAlumna);
+      if (!esAlumna) { camposFicha.innerHTML = ''; return; }
+      if (camposFicha.innerHTML) return; // ya estaba pintada: no se borra lo que haya escrito
+      try {
+        await cargarPaises();
+        camposFicha.innerHTML = htmlFormFicha(null);
+        activarFormFicha(form);
+      } catch {
+        camposFicha.innerHTML = '<p class="mensaje error">No se pudo cargar la lista de países. Recarga la página.</p>';
+      }
+    }
+    form.querySelectorAll('[name=perfil]').forEach(r => r.addEventListener('change', pintarFicha));
+    pintarFicha(); // "Alumna" sale marcada al empezar
+
+    // Lo que se manda al servidor: los datos de la cuenta y, si es alumna, su ficha aparte
+    function datosRegistro() {
+      const { nombre, email, password, perfil } = Object.fromEntries(new FormData(form));
+      const datos = { nombre, email, password, perfil };
+      if (perfil === 'alumna') {
+        const ficha = leerFormFicha(form); // (está en ficha-form.js)
+        ['nombre', 'email', 'password', 'perfil'].forEach(c => delete ficha[c]);
+        datos.ficha = ficha;
+      }
+      return datos;
+    }
+
+    form.onsubmit = async (e) => {
       e.preventDefault();
       const boton = document.getElementById('registrarme');
       const msg = document.getElementById('msg');
       boton.disabled = true;
       try {
         // Ya no entra directamente: primero tiene que confirmar su email con el enlace del correo
-        const res = await api('/api/auth/registro', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
+        const res = await api('/api/auth/registro', { method: 'POST', body: datosRegistro() });
         // Escondemos los campos (el mensaje está dentro del formulario, así que el formulario se queda)
-        e.target.querySelectorAll('label, fieldset, button').forEach(el => el.classList.add('oculto'));
+        e.target.querySelectorAll('label, fieldset, button, .registro-ficha').forEach(el => el.classList.add('oculto'));
         msg.classList.remove('error', 'oculto');
         msg.innerHTML = `📧 ${esc(res.mensaje)}<br><small>¿No te llega? Mira en spam o pide otro desde
           <a href="/login.html">Entrar</a>.</small>`;

@@ -1,5 +1,6 @@
 // Formulario de la ficha personal de la alumna (18/11).
-// El FORMULARIO solo lo usa la administradora (alumnas.html): ella es la única que crea y modifica fichas.
+// El FORMULARIO lo usan: la alumna UNA VEZ al registrarse (registro.html, obligatorio desde el 24/11)
+// y la administradora (alumnas.html), que es la única que la modifica después.
 // htmlVerFicha() (para leer) lo usan las dos páginas: "Alumnas" y "Mis datos" (cuenta.html, la alumna).
 // Las comprobaciones de verdad están en el servidor (routes/ficha.js); aquí solo se ayuda a escribirlo bien.
 

@@ -1641,3 +1641,21 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .sim-producto-nombre { font-size: 1.35rem; }
   .sim-producto-pie { flex-direction: row; align-items: center; }
 }
+
+
+/* ===================== REGISTRO · ficha personal de la alumna (24/11) =====================
+   Los mismos campos que en Panel → Alumnas, dentro de una tarjeta blanca y con letra grande
+   como el resto de la pantalla de registro. */
+.registro-ficha { background: rgba(255,255,255,.7); border: 1.5px solid #dcc4e3; border-radius: 24px; padding: 22px 24px 26px; display: flex; flex-direction: column; gap: 10px; }
+.registro-ficha.oculto { display: none; }
+.registro-ficha h2 { font-family: var(--serif); font-size: 1.6rem; color: var(--principal-oscuro); margin: 0; }
+.registro-ficha .ayuda { margin: 0 0 6px; font-size: 1.02rem; color: var(--gris); }
+.registro-ficha .ficha-rejilla label { font-size: 1.02rem; color: var(--principal-oscuro); }
+.registro-ficha .ficha-rejilla input, .registro-ficha .ficha-rejilla select { font-size: 1.15rem; padding: 12px 14px; border: 1.5px solid #dcc4e3; background: #fff; }
+.registro-ficha .ficha-rejilla small { font-size: .92rem; color: var(--gris); }
+.registro-ficha .ficha-nie legend { font-size: 1.02rem; }
+.registro-ficha .ficha-radio { font-size: 1.05rem !important; }
+@media (max-width: 860px) {
+  .registro-ficha { padding: 18px 16px 20px; border-radius: 20px; }
+  .registro-ficha h2 { font-size: 1.4rem; }
+}

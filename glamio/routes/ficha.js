@@ -1,6 +1,7 @@
 // Ficha personal de la alumna (18/11)
-// Decisiones: solo la alumna tiene ficha; SOLO LA ADMINISTRADORA la crea, modifica y borra
-// (Panel → Alumnas); la alumna la VE en "Mi cuenta → Mis datos", sin poder cambiarla.
+// Decisiones: solo la alumna tiene ficha. Ella la rellena UNA VEZ, al registrarse (obligatoria,
+// 24/11: routes/auth.js usa validarFicha y escribirFicha de aquí). Después SOLO LA ADMINISTRADORA
+// la modifica y borra (Panel → Alumnas); la alumna la VE en "Mi cuenta → Mis datos", sin poder cambiarla.
 // Nadie más la ve (nunca sale en el perfil público).
 // El documento depende del país de nacimiento (tabla paises); quien nació fuera de España
 // también puede dar su NIE. Edad mínima: 14 años (en España, desde los 14 una persona
@@ -212,24 +213,30 @@ router.get('/', requierePerfil('alumna'), async (req, res, next) => {
 router.put('/', (req, res) =>
   res.status(403).json({ error: 'Tus datos solo los puede modificar la administradora de la academia' }));
 
-// Guarda la ficha de una alumna (solo la usa la administradora: PUT /alumnas/:id/ficha).
-// ON CONFLICT (usuaria_id) DO UPDATE: si ya existe, se actualiza. Así hay una sola ruta para crear y cambiar.
+// Escribe en la tabla una ficha YA VALIDADA. "bd" puede ser el pool o un cliente dentro de una
+// transacción (el registro crea la cuenta y la ficha juntas: o se guardan las dos o ninguna).
+// ON CONFLICT (usuaria_id) DO UPDATE: si ya existe, se actualiza. Así hay una sola consulta para crear y cambiar.
+function escribirFicha(bd, usuariaId, ficha) {
+  return bd.query(
+    `INSERT INTO fichas_alumnas (usuaria_id, nombre_completo, pais_nacimiento, ciudad_nacimiento,
+       numero_documento, usa_nie, fecha_nacimiento, direccion, telefono)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (usuaria_id) DO UPDATE SET
+       nombre_completo = EXCLUDED.nombre_completo, pais_nacimiento = EXCLUDED.pais_nacimiento,
+       ciudad_nacimiento = EXCLUDED.ciudad_nacimiento, numero_documento = EXCLUDED.numero_documento,
+       usa_nie = EXCLUDED.usa_nie, fecha_nacimiento = EXCLUDED.fecha_nacimiento,
+       direccion = EXCLUDED.direccion, telefono = EXCLUDED.telefono`,
+    [usuariaId, ficha.nombre_completo, ficha.pais_nacimiento, ficha.ciudad_nacimiento,
+      ficha.numero_documento, ficha.usa_nie, ficha.fecha_nacimiento, ficha.direccion, ficha.telefono]);
+}
+
+// Guarda la ficha de una alumna desde el Panel (PUT /alumnas/:id/ficha, solo la administradora).
 async function guardarFicha(usuariaId, cuerpo, res, next) {
   try {
     const { error, ficha } = await validarFicha(cuerpo);
     if (error) return res.status(400).json({ error });
 
-    await pool.query(
-      `INSERT INTO fichas_alumnas (usuaria_id, nombre_completo, pais_nacimiento, ciudad_nacimiento,
-         numero_documento, usa_nie, fecha_nacimiento, direccion, telefono)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT (usuaria_id) DO UPDATE SET
-         nombre_completo = EXCLUDED.nombre_completo, pais_nacimiento = EXCLUDED.pais_nacimiento,
-         ciudad_nacimiento = EXCLUDED.ciudad_nacimiento, numero_documento = EXCLUDED.numero_documento,
-         usa_nie = EXCLUDED.usa_nie, fecha_nacimiento = EXCLUDED.fecha_nacimiento,
-         direccion = EXCLUDED.direccion, telefono = EXCLUDED.telefono`,
-      [usuariaId, ficha.nombre_completo, ficha.pais_nacimiento, ficha.ciudad_nacimiento,
-        ficha.numero_documento, ficha.usa_nie, ficha.fecha_nacimiento, ficha.direccion, ficha.telefono]);
+    await escribirFicha(pool, usuariaId, ficha);
 
     const { rows } = await pool.query(
       `SELECT ${CAMPOS_FICHA}
@@ -349,3 +356,6 @@ router.delete('/alumnas/:id', requiereAdmin, async (req, res, next) => {
 });
 
 module.exports = router;
+// El registro (routes/auth.js) usa las MISMAS comprobaciones y la misma consulta
+module.exports.validarFicha = validarFicha;
+module.exports.escribirFicha = escribirFicha;

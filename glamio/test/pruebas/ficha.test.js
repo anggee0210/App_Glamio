@@ -56,9 +56,10 @@ test('la lista de países sale para el formulario (España primero, Otro país a
   assert.ok(!('patron' in res.datos[0]), 'no hace falta mandar la expresión regular');
 });
 
-test('una alumna nueva no tiene ficha (null); la administradora se la guarda y ella la ve', async () => {
+test('la alumna ya tiene la ficha que rellenó al registrarse; la administradora la cambia y ella la ve', async () => {
   const ana = await nuevaUsuaria('alumna');
-  assert.equal((await ana.get('/api/ficha')).datos, null);
+  const delRegistro = (await ana.get('/api/ficha')).datos;
+  assert.equal(delRegistro.nombre_completo, 'Prueba Alumna García', 'la ficha del registro (24/11)');
 
   const res = await guardar(ana, fichaBuena());
   assert.equal(res.estado, 200, JSON.stringify(res.datos));
@@ -162,6 +163,7 @@ test('edad mínima 14 años: con 13 → 400; justo 14 → 200', async () => {
 
 test('datos mal escritos → 400 con un mensaje claro', async () => {
   const ana = await nuevaUsuaria('alumna');
+  const antes = (await ana.get('/api/ficha')).datos; // la del registro
   const casos = [
     [{ nombre_completo: 'Ana' }, /nombre/],
     [{ nombre_completo: 'Ana123 López' }, /letras/],
@@ -179,7 +181,7 @@ test('datos mal escritos → 400 con un mensaje claro', async () => {
     assert.equal(res.estado, 400, `${JSON.stringify(cambio)} debería dar 400`);
     assert.match(res.datos.error, mensaje);
   }
-  assert.equal((await ana.get('/api/ficha')).datos, null, 'nada de eso se guardó');
+  assert.deepEqual((await ana.get('/api/ficha')).datos, antes, 'nada de eso se guardó');
 });
 
 test('solo la alumna tiene ficha: profesional y clienta → 403; sin sesión → 401', async () => {
@@ -196,6 +198,10 @@ test('la administradora ve todas las alumnas (con y sin ficha) y una ficha concr
   await guardar(conFicha, fichaBuena());
   const sinFicha = await nuevaUsuaria('alumna');
   const admin = await sesionAdmin();
+  // Desde el 24/11 toda alumna nueva trae ficha; "sin ficha" = cuentas antiguas o una que la
+  // administradora ha borrado. Lo simulamos borrándola.
+  const idSin = (await sinFicha.get('/api/auth/yo')).datos.id;
+  assert.equal((await admin.pedir('DELETE', `/api/ficha/alumnas/${idSin}/ficha`)).estado, 200);
 
   const lista = await admin.get('/api/ficha/alumnas');
   assert.equal(lista.estado, 200);
@@ -343,10 +349,11 @@ test('la ficha nunca sale en el perfil público', async () => {
 
 test('la alumna VE su ficha pero NO puede crearla ni modificarla → 403', async () => {
   const ana = await nuevaUsuaria('alumna');
+  const delRegistro = (await ana.get('/api/ficha')).datos;
   const intento = await ana.put('/api/ficha', fichaBuena());
   assert.equal(intento.estado, 403);
   assert.match(intento.datos.error, /administradora/);
-  assert.equal((await ana.get('/api/ficha')).datos, null, 'no se creó nada');
+  assert.deepEqual((await ana.get('/api/ficha')).datos, delRegistro, 'no cambió nada');
 
   await guardar(ana, fichaBuena({ direccion: 'Calle Original 1, Madrid' }));
   const cambio = await ana.put('/api/ficha', fichaBuena({ direccion: 'Calle Cambiada 2, Madrid' }));

@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const pool = require('../../db/pool');
 const { URL_BASE } = require('../config');
 const {
-  Sesion, nuevaUsuaria, registrarSinVerificar, emailUnico, ultimoCorreo, tokenDelCorreo
+  Sesion, nuevaUsuaria, registrarSinVerificar, emailUnico, ultimoCorreo, tokenDelCorreo, fichaDePrueba
 } = require('../ayudantes');
 
 test.after(() => pool.end());
@@ -20,7 +20,7 @@ function tokenDeCookie(sesion) {
 test('registro: crea la cuenta pero NO entra hasta confirmar el email', async () => {
   const sesion = new Sesion();
   const email = emailUnico('alumna');
-  const res = await sesion.post('/api/auth/registro', { nombre: 'Lucía', email, password: 'clave1234', perfil: 'alumna' });
+  const res = await sesion.post('/api/auth/registro', { nombre: 'Lucía', email, password: 'clave1234', perfil: 'alumna', ficha: fichaDePrueba() });
   assert.equal(res.estado, 201);
   assert.equal(res.datos.perfil, 'alumna');
   assert.equal(res.datos.email_verificado, false);
@@ -64,7 +64,7 @@ test('verificación: con el enlace del correo confirma el email y entra', async 
 test('registro: el email se guarda sin espacios y en minúsculas', async () => {
   const email = emailUnico('mayus');
   const res = await new Sesion().post('/api/auth/registro',
-    { nombre: 'Ana', email: `  ${email.toUpperCase()}  `, password: 'clave1234', perfil: 'alumna' });
+    { nombre: 'Ana', email: `  ${email.toUpperCase()}  `, password: 'clave1234', perfil: 'alumna', ficha: fichaDePrueba() });
   assert.equal(res.estado, 201);
   assert.equal(res.datos.email, email);
 
@@ -92,8 +92,70 @@ test('registro: envía un correo de verificación con el enlace', async () => {
 test('registro: no se puede registrar dos veces el mismo email', async () => {
   const sesion = await nuevaUsuaria('alumna');
   const res = await new Sesion().post('/api/auth/registro',
-    { nombre: 'Copia', email: sesion.usuaria.email, password: 'otra1234', perfil: 'alumna' });
+    { nombre: 'Copia', email: sesion.usuaria.email, password: 'otra1234', perfil: 'alumna', ficha: fichaDePrueba() });
   assert.equal(res.estado, 400);
+});
+
+// ---------- Ficha personal en el registro (24/11) ----------
+
+test('registro de alumna SIN ficha → 400 y no se crea la cuenta', async () => {
+  const email = emailUnico('sinficha');
+  const res = await new Sesion().post('/api/auth/registro',
+    { nombre: 'Sin Ficha', email, password: 'clave1234', perfil: 'alumna' });
+  assert.equal(res.estado, 400);
+  const { rows } = await pool.query('SELECT id FROM usuarias WHERE email = $1', [email]);
+  assert.equal(rows.length, 0, 'sin ficha no debe quedar la cuenta a medias');
+});
+
+test('registro de alumna con la ficha mal (DNI con la letra mal) → 400 con el mensaje de la ficha', async () => {
+  const res = await new Sesion().post('/api/auth/registro',
+    { nombre: 'Letra Mal', email: emailUnico('letra'), password: 'clave1234', perfil: 'alumna',
+      ficha: fichaDePrueba({ numero_documento: '12345678A' }) }); // la buena sería la Z
+  assert.equal(res.estado, 400);
+  assert.match(res.datos.error, /letra del DNI/);
+});
+
+test('registro de alumna con ficha: se guardan la cuenta y la ficha juntas', async () => {
+  const ficha = fichaDePrueba({ telefono: '+34 600 222 333' });
+  const limpio = ficha.numero_documento; // p. ej. 30012345Z
+  // Se escribe con puntos, guion y en minúscula, como lo haría una persona: "30.012.345-z"
+  ficha.numero_documento = `${limpio.slice(0, 2)}.${limpio.slice(2, 5)}.${limpio.slice(5, 8)}-${limpio[8].toLowerCase()}`;
+  const email = emailUnico('conficha');
+  const res = await new Sesion().post('/api/auth/registro',
+    { nombre: 'Con Ficha', email, password: 'clave1234', perfil: 'alumna', ficha });
+  assert.equal(res.estado, 201, JSON.stringify(res.datos));
+  const { rows } = await pool.query(
+    `SELECT f.numero_documento, f.telefono FROM fichas_alumnas f
+     JOIN usuarias u ON u.id = f.usuaria_id WHERE u.email = $1`, [email]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].numero_documento, limpio, 'el documento se guarda limpio');
+  assert.equal(rows[0].telefono, '+34600222333');
+});
+
+test('registro con un documento que ya tiene otra alumna → 409 y NO se crea la cuenta (transacción)', async () => {
+  const ficha = fichaDePrueba();
+  const primera = await new Sesion().post('/api/auth/registro',
+    { nombre: 'Primera', email: emailUnico('doc1'), password: 'clave1234', perfil: 'alumna', ficha });
+  assert.equal(primera.estado, 201);
+
+  const email = emailUnico('doc2');
+  const res = await new Sesion().post('/api/auth/registro',
+    { nombre: 'Segunda', email, password: 'clave1234', perfil: 'alumna', ficha: { ...ficha } });
+  assert.equal(res.estado, 409);
+  const { rows } = await pool.query('SELECT id FROM usuarias WHERE email = $1', [email]);
+  assert.equal(rows.length, 0, 'la cuenta no se queda creada sin su ficha');
+});
+
+test('profesional y clienta se registran sin ficha (y si la mandan, se ignora)', async () => {
+  for (const perfil of ['profesional', 'clienta']) {
+    const email = emailUnico(perfil);
+    const res = await new Sesion().post('/api/auth/registro',
+      { nombre: 'Sin Ficha', email, password: 'clave1234', perfil, ficha: fichaDePrueba() });
+    assert.equal(res.estado, 201, perfil);
+    const { rows } = await pool.query(
+      'SELECT 1 FROM fichas_alumnas f JOIN usuarias u ON u.id = f.usuaria_id WHERE u.email = $1', [email]);
+    assert.equal(rows.length, 0, `${perfil} no tiene ficha`);
+  }
 });
 
 test('registro: nadie puede registrarse como administradora', async () => {
