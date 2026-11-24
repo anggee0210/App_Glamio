@@ -323,3 +323,35 @@ test('rutas protegidas: sin sesión → 401', async () => {
   const res = await new Sesion().get('/api/servicios');
   assert.equal(res.estado, 401);
 });
+
+// ---------- Email con errata o dominio sin correo (25/11) ----------
+const { sugerencia, distancia } = require('../../middleware/comprobar-email');
+
+test('erratas de proveedores: gmai.com, gmial.com, hotmial.com, gmail.co → sugiere el bueno; gmail.com no', () => {
+  assert.equal(distancia('gmai.com', 'gmail.com'), 1);
+  assert.equal(sugerencia('ana@gmai.com'), 'ana@gmail.com');
+  assert.equal(sugerencia('ana@gmial.com'), 'ana@gmail.com');
+  assert.equal(sugerencia('ana@hotmial.com'), 'ana@hotmail.com');
+  assert.equal(sugerencia('ana@gmail.co'), 'ana@gmail.com');
+  assert.equal(sugerencia('ana@gmail.com'), null);
+  assert.equal(sugerencia('ana@miacademia.es'), null, 'un dominio propio no se toca');
+});
+
+test('registro con errata en el email → 400 con la sugerencia y NO se crea la cuenta', async () => {
+  const email = `errata.${Date.now()}@gmai.com`;
+  const res = await new Sesion().post('/api/auth/registro',
+    { nombre: 'Errata', email, password: 'clave1234', perfil: 'clienta' });
+  assert.equal(res.estado, 400);
+  assert.equal(res.datos.sugerencia, email.replace('@gmai.com', '@gmail.com'));
+  assert.match(res.datos.error, /Quisiste decir/);
+  const { rows } = await pool.query('SELECT id FROM usuarias WHERE email = $1', [email]);
+  assert.equal(rows.length, 0);
+});
+
+test('si confirma «mi email está bien», el registro sigue', async () => {
+  const email = `confirmado.${Date.now()}@gmai.com`;
+  const res = await new Sesion().post('/api/auth/registro',
+    { nombre: 'Confirmado', email, password: 'clave1234', perfil: 'clienta', email_confirmado: true });
+  assert.equal(res.estado, 201, JSON.stringify(res.datos));
+  await pool.query('DELETE FROM usuarias WHERE email = $1', [email]); // limpiar
+});

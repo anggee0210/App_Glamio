@@ -112,9 +112,13 @@
     pintarFicha(); // "Alumna" sale marcada al empezar
 
     // Lo que se manda al servidor: los datos de la cuenta y, si es alumna, su ficha aparte
+    // true cuando ella ha dicho «Mi email está bien» a una sugerencia (se olvida si cambia el email)
+    let emailConfirmado = false;
+    form.email.addEventListener('input', () => { emailConfirmado = false; });
+
     function datosRegistro() {
       const { nombre, email, password, perfil } = Object.fromEntries(new FormData(form));
-      const datos = { nombre, email, password, perfil };
+      const datos = { nombre, email, password, perfil, email_confirmado: emailConfirmado };
       if (perfil === 'alumna') {
         const ficha = leerFormFicha(form); // (está en ficha-form.js)
         ['nombre', 'email', 'password', 'perfil'].forEach(c => delete ficha[c]);
@@ -140,8 +144,29 @@
         msg.textContent = err.message; // ej. "Ese email ya está registrado"
         msg.classList.remove('oculto');
         boton.disabled = false;
+        // ¿Errata en el email (ej. gmai.com)? Dos botones: usar la corrección o confirmar el suyo
+        if (err.datos && err.datos.sugerencia) mostrarSugerencia(err.datos.sugerencia);
       }
     };
+
+    // «¿Quisiste decir ana@gmail.com?» → [Usar ana@gmail.com] [Mi email está bien]
+    function mostrarSugerencia(corregido) {
+      const msg = document.getElementById('msg');
+      const caja = document.createElement('span');
+      caja.className = 'sugerencia-email';
+      caja.innerHTML = `<button type="button" class="boton" data-usar>Usar ${esc(corregido)}</button>
+        <button type="button" class="boton secundario" data-mantener>Mi email está bien</button>`;
+      msg.appendChild(caja);
+      caja.querySelector('[data-usar]').onclick = () => {
+        form.email.value = corregido;
+        emailConfirmado = false;
+        form.requestSubmit(); // vuelve a enviar el registro con el email corregido
+      };
+      caja.querySelector('[data-mantener]').onclick = () => {
+        emailConfirmado = true;
+        form.requestSubmit();
+      };
+    }
   </script>
 </body>
 </html>

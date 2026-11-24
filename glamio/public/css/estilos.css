@@ -2060,3 +2060,8 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 /* Foco visible para quien usa el teclado (accesibilidad) */
 .boton:focus-visible, .chip:focus-visible, .boton-contorno:focus-visible, .boton-opcion:focus-visible {
   outline: 2px solid #b48ac2; outline-offset: 2px; }
+
+
+/* Registrarme: «¿Quisiste decir …@gmail.com?» con sus dos botones (25/11) */
+.sugerencia-email { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sugerencia-email .boton { padding: 9px 16px; font-size: .95rem; }

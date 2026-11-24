@@ -32,6 +32,7 @@ const {
 } = require('../middleware/seguridad');
 const { enviarCorreo, urlApp } = require('../middleware/correo');
 const { validarFicha, escribirFicha } = require('./ficha'); // ficha personal de la alumna
+const { comprobarEmail } = require('../middleware/comprobar-email'); // erratas y dominios sin correo
 const router = express.Router();
 
 // Perfiles que se pueden registrar solas (la admin se crea con db/crear-admin.js)
@@ -148,6 +149,11 @@ router.post('/registro', async (req, res, next) => {
     const error = errorRegistro(req.body);
     if (error) return res.status(400).json({ error });
     if (!PERFILES_PUBLICOS.includes(perfil)) return res.status(400).json({ error: 'Perfil no válido' });
+
+    // ¿El email tiene una errata (gmai.com) o un dominio que no recibe correos? (25/11)
+    // Si no, el enlace de verificación nunca le llegaría. email_confirmado = "mi email está bien".
+    const avisoEmail = await comprobarEmail(normalizarEmail(req.body.email), req.body.email_confirmado === true);
+    if (avisoEmail.error) return res.status(400).json(avisoEmail);
 
     // Se comprueba con las mismas reglas que usa el Panel (routes/ficha.js), ANTES de crear nada.
     const { error: errorFicha, ficha } = await fichaDelRegistro(perfil, req.body.ficha);
