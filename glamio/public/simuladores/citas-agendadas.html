@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citas agendadas (simulador) – GLAMIO</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
+  <main class="sim-pagina">
+    <!-- SIMULADOR (vista previa de la fase 2) para la ADMINISTRADORA: la agenda de citas de las clientas.
+         No usa la base de datos: junta citas de ejemplo con las que se reservan en el simulador de este navegador. -->
+    <p class="sim-aviso"><b>Vista previa · Fase 2</b> Es un simulador: hay citas de ejemplo y, además, las que se reserven
+      en el simulador de la clienta en este navegador. <button type="button" class="sim-enlace" id="reiniciar">Reiniciar agenda</button></p>
+
+    <header class="al-titulo">
+      <p class="al-antetitulo">Citas · Gestión</p>
+      <h1>Citas agendadas</h1>
+      <p class="al-sub">Las reservas de las clientas con cada profesional: día, hora, servicio y precio.</p>
+    </header>
+
+    <p class="mensaje oculto" id="mensaje"></p>
+    <dl class="sim-cifras" id="cifras"></dl>
+
+    <nav class="catalogo-pestanas" id="filtro" aria-label="Filtrar por profesional"></nav>
+    <div class="sim-tabla-caja"><table class="sim-tabla" id="tabla"></table></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/simuladores/datos-simulador.js"></script>
+  <script>
+    let filtro = 0; // 0 = todas las profesionales
+
+    function avisarSim(texto) {
+      const caja = document.getElementById('mensaje');
+      caja.textContent = texto;
+      caja.className = 'mensaje' + (texto ? '' : ' oculto');
+    }
+
+    // Todas las citas: las de ejemplo (menos las canceladas) + las reservadas en el simulador de la clienta
+    function todasLasCitas() {
+      const canceladas = leerSim(CLAVE_CANCELADAS, []);
+      const delSimulador = leerCitas().map(c => ({ ...c, clienta: 'Clienta (simulador)' }));
+      return [...citasDeEjemplo().filter(c => !canceladas.includes(c.id)), ...delSimulador]
+        .sort((a, b) => (a.dia + a.hora).localeCompare(b.dia + b.hora));
+    }
+
+    function pintar() {
+      const hoy = claveDia(new Date());
+      const citas = todasLasCitas();
+      const deHoy = citas.filter(c => c.dia === hoy);
+      const ingresos = citas.reduce((suma, c) => suma + c.precio, 0);
+      document.getElementById('cifras').innerHTML = `
+        <div><dt>Citas agendadas</dt><dd>${citas.length}</dd></div>
+        <div><dt>Hoy</dt><dd>${deHoy.length}</dd></div>
+        <div><dt>Profesionales</dt><dd>${new Set(citas.map(c => c.profesional)).size}</dd></div>
+        <div><dt>Ingresos previstos</dt><dd>${euros(ingresos)}</dd></div>`;
+
+      // Filtro por profesional (mismos botones que en Cursos)
+      document.getElementById('filtro').innerHTML = [{ id: 0, nombre: 'Todas' }, ...PROFESIONALES].map(p => {
+        const n = p.id ? citas.filter(c => c.profesional === p.id).length : citas.length;
+        return `<button type="button" class="${filtro === p.id ? 'activa' : ''}" data-id="${p.id}">${esc(p.nombre)} <span class="catalogo-cuenta">${n}</span></button>`;
+      }).join('');
+      document.querySelectorAll('#filtro button').forEach(b => b.onclick = () => { filtro = Number(b.dataset.id); pintar(); });
+
+      const lista = citas.filter(c => !filtro || c.profesional === filtro);
+      document.getElementById('tabla').innerHTML = lista.length ? `
+        <thead><tr><th>Día</th><th>Hora</th><th>Clienta</th><th>Profesional</th><th>Servicio</th><th class="num">Precio</th><th></th></tr></thead>
+        <tbody>${lista.map(c => `
+          <tr class="${c.dia === hoy ? 'resaltada' : ''}">
+            <td><b class="sim-dia-tabla">${textoDia(c.dia)}</b>${c.dia === hoy ? ' <span class="sim-stock pocas">Hoy</span>' : ''}</td>
+            <td><b>${c.hora}</b></td>
+            <td><span class="sim-producto-fila"><span class="al-avatar">${inicialesSim(c.clienta)}</span><span>${esc(c.clienta)}
+              ${c.ejemplo ? '' : '<small>Reservada en el simulador</small>'}</span></span></td>
+            <td>${esc(c.nombreProfesional)}</td>
+            <td>${esc(c.servicio)}<small class="sim-bajo">${duracion(c.minutos)}</small></td>
+            <td class="num">${euros(c.precio)}</td>
+            <td><button type="button" class="al-accion peligro" data-cancelar="${c.id}">Cancelar</button></td>
+          </tr>`).join('')}</tbody>`
+        : '<tbody><tr><td class="sim-vacio">No hay citas para esta profesional.</td></tr></tbody>';
+
+      document.querySelectorAll('[data-cancelar]').forEach(b => b.onclick = () => {
+        const id = b.dataset.cancelar;
+        if (id.startsWith('ej')) {
+          guardarSim(CLAVE_CANCELADAS, [...leerSim(CLAVE_CANCELADAS, []), id]);
+        } else {
+          guardarCitas(leerCitas().filter(c => String(c.id) !== id));
+        }
+        avisarSim('Cita cancelada (simulado).');
+        pintar();
+      });
+    }
+
+    document.getElementById('reiniciar').onclick = () => {
+      borrarSim(CLAVE_CANCELADAS);
+      borrarSim(CLAVE_CITAS);
+      avisarSim('Agenda reiniciada: solo quedan las citas de ejemplo.');
+      pintar();
+    };
+
+    (async () => {
+      const usuaria = await pintarCabecera();
+      if (!usuaria || usuaria.perfil !== 'administradora') {
+        document.querySelector('main').innerHTML = '<p class="mensaje">Esta página es solo para la administradora.</p>';
+        return;
+      }
+      pintar();
+    })();
+  </script>
+</body>
+</html>

@@ -13,7 +13,7 @@
          No usa la base de datos ni el servidor: los productos están escritos aquí abajo
          y el carrito y el stock viven solo en este navegador (localStorage). Sirve para enseñar la idea. -->
     <p class="sim-aviso"><b>Vista previa · Fase 3</b> Es un simulador: los productos son de ejemplo, no se cobra nada
-      y no se guarda nada en GLAMIO. <button type="button" class="sim-enlace" id="reiniciar">Reiniciar simulador</button></p>
+      y no se guarda nada en GLAMIO. Fotos: Unsplash. <button type="button" class="sim-enlace" id="reiniciar">Reiniciar simulador</button></p>
 
     <header class="catalogo-cabecera">
       <p class="catalogo-antetitulo">Tienda GLAMIO</p>
@@ -32,59 +32,21 @@
   </main>
 
   <script src="/js/api.js"></script>
+  <script src="/simuladores/datos-simulador.js"></script>
   <script>
-    // ---------- Datos de ejemplo (en la fase 3 vendrían de las tablas productos e inventario) ----------
-    // icono: el dibujo de la tarjeta (ICONOS_TIENDA, más abajo)
-    const PRODUCTOS = [
-      { id: 1, categoria: 'Uñas',    nombre: 'Esmalte semipermanente Rosa Nude', detalle: '10 ml',        precio: 8.90,  stock: 12, icono: 'esmalte' },
-      { id: 2, categoria: 'Uñas',    nombre: 'Base y top coat',                  detalle: '2 × 10 ml',    precio: 12.50, stock: 3,  icono: 'esmalte' },
-      { id: 3, categoria: 'Uñas',    nombre: 'Limas 180/240',                    detalle: 'Pack de 10',   precio: 4.95,  stock: 25, icono: 'lima' },
-      { id: 4, categoria: 'Uñas',    nombre: 'Lámpara LED 48 W',                 detalle: 'Secado 30-60 s', precio: 39.00, stock: 4, icono: 'lampara' },
-      { id: 5, categoria: 'Uñas',    nombre: 'Pinceles nail art',                detalle: 'Set de 5',     precio: 9.90,  stock: 9,  icono: 'pincel' },
-      { id: 6, categoria: 'Cabello', nombre: 'Tinte profesional 7.1',            detalle: '60 ml',        precio: 6.50,  stock: 15, icono: 'tinte' },
-      { id: 7, categoria: 'Cabello', nombre: 'Oxidante 20 vol.',                 detalle: '1 litro',      precio: 7.20,  stock: 2,  icono: 'tinte' },
-      { id: 8, categoria: 'Cabello', nombre: 'Tijera de corte',                  detalle: '6 pulgadas',   precio: 24.00, stock: 6,  icono: 'tijera' },
-      { id: 9, categoria: 'Cejas',   nombre: 'Henna para cejas',                 detalle: 'Castaño, 10 g', precio: 11.00, stock: 8, icono: 'henna' },
-      { id: 10, categoria: 'Cejas',  nombre: 'Pinza de precisión',               detalle: 'Acero inoxidable', precio: 7.50, stock: 1, icono: 'pinza' }
-    ];
-    const POCAS = 3; // con 3 o menos unidades sale el aviso «¡Quedan pocas!»
-
-    // Dibujos de línea (SVG) para cada tipo de producto: sin fotos inventadas
-    const ICONOS_TIENDA = {
-      esmalte: '<rect x="24" y="30" width="16" height="24" rx="5"/><path d="M28 30v-8h8v8"/><path d="M29 22V12h6v10"/>',
-      lima:    '<rect x="14" y="27" width="36" height="10" rx="5" transform="rotate(-30 32 32)"/><path d="M22 38l4-7M28 35l4-7M34 32l4-7"/>',
-      lampara: '<path d="M12 44c0-12 9-22 20-22s20 10 20 22"/><path d="M8 44h48v6H8z"/><path d="M24 34h16"/>',
-      pincel:  '<path d="M42 12 26 38"/><path d="M26 38c-4 0-8 4-8 10 6 0 10-4 10-8z"/>',
-      tinte:   '<path d="M22 20h20v30a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4z"/><path d="M26 20v-6h12v6"/><path d="M22 32h20"/>',
-      tijera:  '<circle cx="20" cy="44" r="6"/><circle cx="20" cy="22" r="6"/><path d="M25 26 50 44M25 40 50 22"/>',
-      henna:   '<rect x="18" y="26" width="28" height="22" rx="6"/><path d="M22 26c0-6 4-10 10-10s10 4 10 10"/><path d="M26 38c4-3 8-3 12 0"/>',
-      pinza:   '<path d="M24 10 30 52M40 10 34 52"/><path d="M27 30h10"/>'
-    };
-
-    // ---------- Estado del simulador (solo en este navegador) ----------
-    // localStorage puede fallar (modo privado...): por eso siempre con try/catch, y si falla se empieza de cero.
-    const CLAVE = 'glamio-simulador-tienda';
-    function leerEstado() {
-      try {
-        const e = JSON.parse(localStorage.getItem(CLAVE));
-        if (e && e.carrito && e.stock) return e;
-      } catch (err) { /* sin estado guardado: empezamos de cero */ }
-      return { carrito: {}, stock: Object.fromEntries(PRODUCTOS.map(p => [p.id, p.stock])), pedidos: 0 };
-    }
-    function guardarEstado() {
-      try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (err) { /* no pasa nada: solo se pierde al recargar */ }
-    }
-    let estado = leerEstado();
+    // Productos, iconos y estado: en /simuladores/datos-simulador.js (los comparte con la página de la administradora)
+    let estado = leerTienda();
     let categoria = 'Todos';
     let mensaje = ''; // el aviso de «pedido confirmado»
-
-    const euros = n => n.toFixed(2).replace('.', ',') + ' €';
+    const guardarEstado = () => guardarTienda(estado);
+    // Solo los productos que la administradora no ha ocultado
+    const enVenta = () => PRODUCTOS.filter(p => !estado.ocultos.includes(p.id));
 
     // ---------- Pestañas por categoría (mismo estilo que Cursos) ----------
     function pintarPestanas() {
       const categorias = ['Todos', 'Uñas', 'Cabello', 'Cejas'];
       document.getElementById('pestanas').innerHTML = categorias.map(c => {
-        const n = c === 'Todos' ? PRODUCTOS.length : PRODUCTOS.filter(p => p.categoria === c).length;
+        const n = c === 'Todos' ? enVenta().length : enVenta().filter(p => p.categoria === c).length;
         return `<button type="button" class="${c === categoria ? 'activa' : ''}" data-cat="${c}">${c} <span class="catalogo-cuenta">${n}</span></button>`;
       }).join('');
       document.querySelectorAll('#pestanas button').forEach(b => b.onclick = () => { categoria = b.dataset.cat; pintarTodo(); });
@@ -92,7 +54,7 @@
 
     // ---------- Tarjetas de producto ----------
     function pintarProductos() {
-      const lista = PRODUCTOS.filter(p => categoria === 'Todos' || p.categoria === categoria);
+      const lista = enVenta().filter(p => categoria === 'Todos' || p.categoria === categoria);
       document.getElementById('productos').innerHTML = lista.map(p => {
         const quedan = estado.stock[p.id] - (estado.carrito[p.id] || 0); // lo que aún se puede añadir
         const stock = estado.stock[p.id];
@@ -101,8 +63,8 @@
           : `<span class="sim-stock">${stock} en stock</span>`;
         return `
           <article class="sim-producto">
-            <div class="sim-dibujo sim-${p.categoria === 'Uñas' ? 'unas' : p.categoria.toLowerCase()}">
-              <svg viewBox="0 0 64 64" aria-hidden="true">${ICONOS_TIENDA[p.icono]}</svg>
+            <div class="sim-dibujo ${claseCategoria(p.categoria)}">
+              ${htmlImagenProducto(p)}
               ${etiqueta}
             </div>
             <div class="sim-producto-cuerpo">
@@ -177,8 +139,8 @@
     function pintarTodo() { pintarPestanas(); pintarProductos(); pintarCarrito(); }
 
     document.getElementById('reiniciar').onclick = () => {
-      try { localStorage.removeItem(CLAVE); } catch (err) { /* nada que borrar */ }
-      estado = leerEstado();
+      borrarSim(CLAVE_TIENDA);
+      estado = leerTienda();
       mensaje = 'Simulador reiniciado: stock y carrito como al principio.';
       pintarTodo();
     };

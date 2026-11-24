@@ -1579,3 +1579,65 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .sim-producto-pie { flex-direction: column; align-items: stretch; }
 }
 .sim-servicios .sim-vacio, .sim-profesionales .sim-vacio { grid-column: 1 / -1; }
+
+/* --- Simuladores · páginas de la administradora (Citas agendadas y Productos en venta) --- */
+.sim-cifras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 22px 0 24px; background: #fff;
+  border: 1px solid var(--borde); border-radius: 18px; overflow: hidden; }
+.sim-cifras div { padding: 18px 22px; border-left: 1px solid var(--borde); }
+.sim-cifras div:first-child { border-left: none; }
+.sim-cifras dt { font-size: .82rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gris); }
+.sim-cifras dd { margin: 6px 0 0; font-family: var(--serif); font-size: 2.1rem; line-height: 1.1; color: var(--principal-oscuro); }
+.sim-cifras dd small { font-family: inherit; font-size: 1rem; color: var(--gris); }
+.sim-cifras .alerta dd { color: #8a5d0c; }
+.sim-tabla-caja { background: #fff; border: 1px solid var(--borde); border-radius: 18px; overflow-x: auto; }
+.sim-tabla { width: 100%; border-collapse: collapse; font-size: 1.08rem; }
+.sim-tabla th { text-align: left; padding: 14px 16px; font-size: .8rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--gris); border-bottom: 1px solid var(--borde); white-space: nowrap; }
+.sim-tabla td { padding: 14px 16px; border-bottom: 1px solid var(--borde); vertical-align: middle; }
+.sim-tabla tr:last-child td { border-bottom: none; }
+.sim-tabla .num { text-align: right; white-space: nowrap; }
+.sim-tabla tr.apagada td { opacity: .5; }
+.sim-tabla tr.resaltada td { background: #fffaf0; }
+.sim-tabla .sim-stock { position: static; display: inline-block; background: var(--principal-claro); }
+.sim-producto-fila { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sim-producto-fila > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.sim-producto-fila small, .sim-bajo { display: block; color: var(--gris); font-size: .92rem; }
+.sim-mini { flex-shrink: 0; width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.sim-mini svg { width: 70%; fill: none; stroke: var(--principal-oscuro); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.sim-dia-tabla { display: inline-block; font-weight: 600; }
+.sim-dia-tabla::first-letter { text-transform: uppercase; } /* solo la primera letra: «Martes, 24 de noviembre» */
+/* En las tablas las palabras no se parten por la mitad (la regla general overflow-wrap: anywhere las cortaba) */
+.sim-tabla td { overflow-wrap: normal; word-break: normal; }
+.sim-tabla td:nth-child(2), .sim-tabla .sim-stock { white-space: nowrap; }
+@media (max-width: 900px) {
+  .sim-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sim-cifras div:nth-child(3) { border-left: none; }
+  .sim-cifras div:nth-child(n+3) { border-top: 1px solid var(--borde); }
+}
+
+/* --- Simuladores · fotos de los productos (todas recortadas igual: 4:3 en la tarjeta, cuadrado en la tabla) --- */
+.sim-dibujo { overflow: hidden; }
+.sim-dibujo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s; }
+.sim-producto:hover .sim-dibujo img { transform: scale(1.04); }
+.sim-dibujo .sim-stock { z-index: 1; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
+.sim-mini { overflow: hidden; }
+.sim-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* --- Tienda (simulador): fichas de producto más grandes (pedido 24/11) --- */
+.sim-tienda { grid-template-columns: minmax(0, 1fr) minmax(0, 21rem); }
+.sim-productos { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 26px; }
+.sim-producto { border-radius: 22px; }
+.sim-dibujo { aspect-ratio: 5 / 4; }
+.sim-stock { top: 14px; left: 14px; padding: 6px 13px; font-size: .95rem; }
+.sim-producto-cuerpo { gap: 6px; padding: 20px 22px 22px; }
+.sim-producto .catalogo-categoria { font-size: .9rem; }
+.sim-producto-nombre { font-size: 1.55rem; }
+.sim-detalle { font-size: 1.08rem; }
+.sim-producto-pie { padding-top: 16px; }
+.sim-producto .catalogo-precio { font-size: 1.7rem; }
+.sim-anadir { padding: 12px 22px; font-size: 1.12rem; }
+@media (max-width: 640px) {
+  .sim-productos { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .sim-producto-nombre { font-size: 1.35rem; }
+  .sim-producto-pie { flex-direction: row; align-items: center; }
+}

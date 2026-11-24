@@ -115,7 +115,7 @@ function seccionActual() {
   if (p.endsWith('/muro.html')) return 'comunidad';
   if (p.endsWith('/calculadora.html')) return 'calculadora';
   if (p.endsWith('/avisos.html')) return 'avisos';
-  if (p.endsWith('/admin.html')) return 'panel';
+  if (p.endsWith('/admin.html') || /\/simuladores\/(citas-agendadas|productos)\.html$/.test(p)) return 'panel';
   if (p.endsWith('/reportes.html')) return 'reportes';
   if (p.endsWith('/bloqueadas.html')) return 'bloqueadas';
   if (p.endsWith('/alumnas.html')) return 'alumnas';
@@ -166,7 +166,8 @@ function pintarPie(usuaria) {
   const enlaces = esClienta ? '<a href="/muro.html">Muro</a><a href="/mi-estilo.html">Mi Estilo</a><a href="/simuladores/citas.html">Citas</a><a href="/simuladores/tienda.html">Tienda</a>'
     : `<a href="/index.html">Inicio</a><a href="/cursos.html">Cursos</a><a href="/muro.html">${usuaria ? 'Comunidad' : 'Muro'}</a>` +
       (usuaria ? '<a href="/calculadora.html">Calculadora</a>' : '<a href="/login.html">Entrar</a>') +
-      '<a href="/simuladores/tienda.html">Tienda</a>'; // el simulador, al final
+      // el simulador de la Tienda, al final (la administradora no compra: ella gestiona los productos desde el Panel)
+      (usuaria && usuaria.perfil === 'administradora' ? '' : '<a href="/simuladores/tienda.html">Tienda</a>');
   document.body.insertAdjacentHTML('beforeend', `
     <footer class="pie"><div class="pie-dentro">
       <span class="pie-logo"><img src="/img/logo-g.png" alt="">
@@ -190,6 +191,9 @@ const OPCIONES_LATERAL = [
   { grupo: 'Comunidad', clave: 'reportes', href: '/reportes.html', texto: 'Reportes', icono: 'reportes', extra: ' id="enlace-reportes" title="Reportes pendientes"', contador: '<span class="contador oculto"></span>' },
   { grupo: 'Personas', clave: 'alumnas', href: '/alumnas.html', texto: 'Alumnas', icono: 'alumnas' },
   { grupo: 'Personas', clave: 'bloqueadas', href: '/bloqueadas.html', texto: 'Cuentas bloqueadas', icono: 'bloqueadas', extra: ' id="enlace-bloqueadas" title="Cuentas bloqueadas por 3 intentos fallidos"', contador: '<span class="contador oculto"></span>' },
+  // Simuladores (solo vista previa, sin base de datos): la agenda de citas y los productos de la Tienda
+  { grupo: 'Vista previa', clave: 'citasagendadas', href: '/simuladores/citas-agendadas.html', texto: 'Citas agendadas', icono: 'citas' },
+  { grupo: 'Vista previa', clave: 'productosventa', href: '/simuladores/productos.html', texto: 'Productos en venta', icono: 'productos' },
 ];
 
 // Iconos de línea del menú lateral (trazos SVG de 24×24; el color lo pone el CSS con currentColor)
@@ -203,7 +207,9 @@ const ICONOS_LATERAL = {
   guias: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
   reportes: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   alumnas: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13.8c2 .9 3.5 3 3.5 5.7"/>',
-  bloqueadas: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'
+  bloqueadas: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  citas: '<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/>',
+  productos: '<path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>'
 };
 
 // El HTML del menú: un título por grupo y, debajo, sus opciones
@@ -223,6 +229,8 @@ function claveLateral() {
   if (p.endsWith('/reportes.html')) return 'reportes';
   if (p.endsWith('/bloqueadas.html')) return 'bloqueadas';
   if (p.endsWith('/alumnas.html')) return 'alumnas';
+  if (p.endsWith('/simuladores/citas-agendadas.html')) return 'citasagendadas';
+  if (p.endsWith('/simuladores/productos.html')) return 'productosventa';
   return param('pestana') || 'resumen';
 }
 
@@ -301,13 +309,14 @@ async function pintarCabecera() {
       html += opcion('panel', '/admin.html', 'Panel');
     }
   }
-  // Al final del menú: el simulador de la Tienda (vista previa de la fase 3, carpeta /simuladores/), para todos
-  html += opcion('tienda', '/simuladores/tienda.html', 'Tienda');
+  // Al final del menú: el simulador de la Tienda (vista previa de la fase 3, carpeta /simuladores/).
+  // La administradora no la ve aquí: en su menú lateral tiene «Citas agendadas» y «Productos en venta».
+  if (!usuaria || usuaria.perfil !== 'administradora') html += opcion('tienda', '/simuladores/tienda.html', 'Tienda');
   menu.innerHTML = html + htmlDerecha(usuaria);
   activarSalir();
   activarPerfil();
   // La administradora tiene además el menú lateral en sus páginas de gestión
-  if (usuaria && usuaria.perfil === 'administradora' && /\/(admin|reportes|bloqueadas|alumnas)\.html$/.test(location.pathname)) pintarLateral();
+  if (usuaria && usuaria.perfil === 'administradora' && /\/(admin|reportes|bloqueadas|alumnas|simuladores\/citas-agendadas|simuladores\/productos)\.html$/.test(location.pathname)) pintarLateral();
   if (usuaria) {
     usuariaCampana = usuaria;
     actualizarCampana();

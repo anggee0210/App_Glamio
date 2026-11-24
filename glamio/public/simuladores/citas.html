@@ -39,40 +39,13 @@
   </main>
 
   <script src="/js/api.js"></script>
+  <script src="/simuladores/datos-simulador.js"></script>
   <script>
-    // ---------- Datos de ejemplo (en la fase 2 vendrían de los perfiles públicos y de servicios con publico = TRUE) ----------
-    const PROFESIONALES = [
-      { id: 1, nombre: 'Laura Martín', especialidad: 'Uñas', servicios: [
-        { id: 11, nombre: 'Manicura semipermanente', minutos: 60, precio: 22.50 },
-        { id: 12, nombre: 'Nail art (2 uñas)', minutos: 20, precio: 8.00 },
-        { id: 13, nombre: 'Retirada de semipermanente', minutos: 30, precio: 10.00 } ] },
-      { id: 2, nombre: 'Sofía Ramos', especialidad: 'Cejas', servicios: [
-        { id: 21, nombre: 'Diseño de cejas con pinza', minutos: 30, precio: 12.00 },
-        { id: 22, nombre: 'Henna de cejas', minutos: 45, precio: 18.00 } ] },
-      { id: 3, nombre: 'Carla Vidal', especialidad: 'Cabello', servicios: [
-        { id: 31, nombre: 'Color raíz', minutos: 90, precio: 35.00 },
-        { id: 32, nombre: 'Corte y peinado', minutos: 60, precio: 25.00 } ] }
-    ];
-    const HORAS = ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'];
+    // Profesionales, horas y citas guardadas: en /simuladores/datos-simulador.js (los comparte con la página de la administradora)
     const DIAS_VISTOS = 14; // se puede reservar en los próximos 14 días (sin domingos)
-
-    // ---------- Estado (solo en este navegador) ----------
-    const CLAVE = 'glamio-simulador-citas';
-    function leerCitas() {
-      try { const c = JSON.parse(localStorage.getItem(CLAVE)); if (Array.isArray(c)) return c; } catch (err) { /* empezamos de cero */ }
-      return [];
-    }
-    function guardarCitas() { try { localStorage.setItem(CLAVE, JSON.stringify(citas)); } catch (err) { /* solo se pierde al recargar */ } }
     let citas = leerCitas();
     const eleccion = { profesional: null, servicio: null, dia: null, hora: null };
     let mensaje = '';
-
-    const euros = n => n.toFixed(2).replace('.', ',') + ' €';
-    const duracion = m => m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`;
-    const iniciales = n => n.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
-    // Fecha local (no UTC) en formato '2026-11-25'
-const claveDia = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const textoDia = iso => new Date(iso + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
     // Próximos días laborables (lunes a sábado)
     function proximosDias() {
@@ -94,6 +67,8 @@ const claveDia = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,
       for (const letra of texto) suma = (suma * 31 + letra.charCodeAt(0)) % 997;
       if (suma % 3 === 0) return true;
       if (citas.some(c => c.profesional === profesional && c.dia === dia && c.hora === hora)) return true;
+      const canceladas = leerSim(CLAVE_CANCELADAS, []);
+      if (citasDeEjemplo().some(c => !canceladas.includes(c.id) && c.profesional === profesional && c.dia === dia && c.hora === hora)) return true;
       const ahora = new Date();
       return dia === claveDia(ahora) && hora <= ahora.toTimeString().slice(0, 5);
     }
@@ -102,7 +77,7 @@ const claveDia = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,
     function pintarProfesionales() {
       document.getElementById('profesionales').innerHTML = PROFESIONALES.map(p => `
         <button type="button" class="sim-opcion ${eleccion.profesional === p.id ? 'elegida' : ''}" data-id="${p.id}">
-          <span class="al-avatar">${iniciales(p.nombre)}</span>
+          <span class="al-avatar">${inicialesSim(p.nombre)}</span>
           <span><b>${esc(p.nombre)}</b><small>${p.especialidad} · ${p.servicios.length} servicios</small></span>
         </button>`).join('');
       document.querySelectorAll('#profesionales button').forEach(b => b.onclick = () => {
@@ -168,7 +143,7 @@ const claveDia = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,
       boton.onclick = () => {
         citas.push({ id: Date.now(), profesional: p.id, nombreProfesional: p.nombre, servicio: s.nombre,
           minutos: s.minutos, precio: s.precio, dia: eleccion.dia, hora: eleccion.hora });
-        guardarCitas();
+        guardarCitas(citas);
         mensaje = `✓ Cita confirmada (simulada) con ${esc(p.nombre)} el ${textoDia(eleccion.dia)} a las ${eleccion.hora}.`;
         eleccion.hora = null;
         pintarTodo();
@@ -188,7 +163,7 @@ const claveDia = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,
         : '<p class="sim-vacio">Todavía no tienes citas.</p>'}`;
       document.querySelectorAll('#mis-citas button').forEach(b => b.onclick = () => {
         citas = citas.filter(c => c.id !== Number(b.dataset.id));
-        guardarCitas();
+        guardarCitas(citas);
         mensaje = 'Cita cancelada.';
         pintarTodo();
       });
@@ -197,7 +172,7 @@ const claveDia = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,
     function pintarTodo() { pintarProfesionales(); pintarServicios(); pintarDias(); pintarHoras(); pintarResumen(); pintarMisCitas(); }
 
     document.getElementById('reiniciar').onclick = () => {
-      try { localStorage.removeItem(CLAVE); } catch (err) { /* nada que borrar */ }
+      borrarSim(CLAVE_CITAS);
       citas = [];
       Object.assign(eleccion, { profesional: null, servicio: null, dia: null, hora: null });
       mensaje = 'Simulador reiniciado.';
