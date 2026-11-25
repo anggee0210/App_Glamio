@@ -2337,3 +2337,13 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .ag-acciones { grid-column: 1 / -1; }
   .ag-acciones > * { flex: 1; text-align: center; }
 }
+/* Mi agenda en el móvil: los 4 filtros en dos filas de dos (en una sola fila no caben) */
+@media (max-width: 640px) {
+  .ag-pagina .catalogo-pestanas { flex-wrap: wrap; }
+  .ag-pagina .catalogo-pestanas > * { flex: 1 1 calc(50% - 5px); }
+}
+/* Directorio: el botón Buscar al lado de la casilla (una regla general de form lo ponía debajo) */
+.prof-buscar { flex-direction: row !important; align-items: stretch; }
+.prof-buscar .boton { width: auto; flex: none; padding: 10px 22px; }
+
+.prof-pie .catalogo-ver { white-space: nowrap; } /* «Ver perfil →» en una sola línea */

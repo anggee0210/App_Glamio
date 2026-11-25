@@ -15,7 +15,7 @@ App web de formación en belleza (uñas, cabello y cejas): **academia de cursos*
 |---|---|
 | **Administradora** | Crea, edita y borra cursos, lecciones y materiales · sube guías teóricas en PDF · diseña el certificado · responde dudas y marca la ⭐ destacada · responde reseñas · revisa los reportes · ve las **estadísticas** · gestiona las **alumnas** (ficha personal, modificar, borrar) y desbloquea cuentas |
 | **Alumna** | Se inscribe (gratis o con pago simulado) · ve lecciones y marca su progreso · certificado · compra guías · pregunta con foto · calculadora · publica sus trabajos · reseña cursos terminados · ve su **ficha personal** en Mi cuenta (sin poder cambiarla) · tiene **perfil público** (fase 2) |
-| **Profesional** | Lo mismo que la alumna · su insignia es «Profesional certificada» |
+| **Profesional** | Cursos, comunidad, calculadora y trabajos · **ficha personal** privada y **«Mi negocio»** público (salón, ciudad y zona, especialidades, Instagram), que edita ella · sale en el **directorio de Profesionales** con su **carta de servicios** · **📅 Mi agenda** (simulador de citas) · insignia «Profesional certificada» |
 | **Clienta** | El **muro** en lectura (trabajos con permiso de su autora) y **💜 Mi Estilo**: guarda con ♡ los que le gustan (fase 2) |
 
 La cuenta de la administradora no se puede crear desde la web: se crea con `db/crear-admin.js`.
@@ -47,9 +47,15 @@ La cuenta de la administradora no se puede crear desde la web: se crea con `db/c
   - Alumna y profesional: respuestas nuevas a sus dudas.
 - **⚑ Reportes**: lo reportado se oculta al momento; la administradora decide en su página si vuelve a publicarse.
 - **Cuenta y seguridad**
-  - Registro con **verificación de email** (la alumna rellena ahí su **ficha personal**, obligatoria), «¿Olvidaste tu contraseña?» con enlace al correo y **⚙️ Mi cuenta** (cambiar contraseña, ver las sesiones abiertas y cerrarlas).
+  - Registro con **verificación de email** (la alumna y la profesional rellenan ahí su **ficha personal**, obligatoria; la profesional, también **«Mi negocio»**). Si la parte del email después de la @ parece una errata (gmai.com, hotmial.com…) la app pregunta «¿Quisiste decir…?», y si el dominio no existe no deja registrarse. «¿Olvidaste tu contraseña?» con enlace al correo y **⚙️ Mi cuenta** (cambiar contraseña, ver las sesiones abiertas y cerrarlas).
   - Al **3.er intento fallido** la cuenta se bloquea y solo la administradora la desbloquea. La página de entrar sale siempre **en blanco**.
-- **👩‍🎓 Ficha personal de la alumna**
+- **💼 Profesionales (25/11)**
+  - **Mi negocio** (`mi-negocio.html`): salón, ciudad y zona (nunca la dirección), especialidades, años, a domicilio, Instagram y «Sobre mí», con vista previa en vivo de cómo la ven las clientas. Lo edita ella misma.
+  - **Directorio de Profesionales** (`profesionales.html`): público, por ciudad o zona y especialidad, con el sello «Certificada GLAMIO» si terminó cursos y su precio «desde». Nunca datos personales.
+  - Su **perfil público** enseña primero su negocio y su **carta de servicios** (los precios de su calculadora).
+  - **📅 Mi agenda** (`simuladores/mi-agenda.html`, vista previa de la fase 2): citas de ejemplo con sus servicios reales; confirmar, cancelar y recuperar.
+  - En el Panel, **Profesionales** (`alumnas.html?perfil=profesional`): su ficha, su negocio, sus cursos y sus dudas.
+- **👩‍🎓 Ficha personal de la alumna (y de la profesional)**
   - Nombre completo, lugar de nacimiento (país y ciudad), **documento de identidad según el país** (España → DNI, Colombia → Cédula de ciudadanía, México → CURP… y «Otro país» → Pasaporte; si nació fuera de España puede dar su **NIE**), fecha de nacimiento, dirección y teléfono.
   - Se comprueba la **letra del DNI/NIE**, el formato del documento de cada país y la **edad mínima de 14 años**.
   - La alumna la rellena **al registrarse** (obligatoria: la cuenta y la ficha se guardan juntas o ninguna). Después **solo la administradora** la modifica; la alumna la ve en **Mi cuenta → Mis datos**. Nunca sale en el perfil público.
@@ -107,6 +113,7 @@ glamio/
 │   ├── migracion-ficha-alumna.sql # Ficha personal: países con su documento y fichas_alumnas (no borra nada)
 │   ├── migracion-mas-paises.sql   # 31 países más para la ficha (48 en total; no borra nada)
 │   ├── migracion-calculadora.sql  # Calculadora: precio del producto y servicios que salen (no borra nada)
+│   ├── migracion-ficha-profesional.sql # Profesional: ficha personal + tabla fichas_profesionales (no borra nada)
 │   ├── seed.sql           # Categorías, academia y cursos de ejemplo
 │   ├── datos-demo.js      # Cuentas demo con datos para la presentación (npm run db:demo)
 │   ├── copia-seguridad.js # Copia de la BD, uploads y privado (npm run copia)
@@ -138,7 +145,8 @@ glamio/
 │   ├── reportes.js        # Reportar y moderar
 │   ├── mi-estilo.js       # Fase 2 · Mi Estilo: favoritos de la clienta
 │   ├── perfil.js          # Fase 2 · Perfil público de alumna y profesional
-│   └── ficha.js           # Ficha personal y página Alumnas (ver, modificar y borrar: solo la administradora)
+│   ├── profesionales.js   # «Mi negocio» (GET/PUT /mio) y el directorio público de Profesionales
+│   └── ficha.js           # Ficha personal y páginas Alumnas/Profesionales del Panel (solo la administradora)
 ├── public/
 │   ├── index.html         # Inicio: portada, ¿Qué quieres hacer hoy?, cursos y talentos de la comunidad
 │   ├── cursos.html        # Solo cursos, con botones por categoría
@@ -164,6 +172,8 @@ glamio/
 │   ├── js/catalogo.js     # Botones de categoría y tarjetas de curso (Cursos e Inicio)
 │   ├── js/ficha-form.js   # Formulario de la ficha (el documento cambia con el país) y la ficha para leer
 │   ├── js/recortar-foto.js # Recortar la foto antes de publicar un trabajo (canvas, sin librerías)
+│   ├── js/negocio-form.js # Formulario y tarjeta de «Mi negocio» (registro, Mi negocio, perfil y Panel)
+│   ├── mi-negocio.html · profesionales.html # Mi negocio de la profesional y el directorio para las clientas
 │   └── js/certificado-plantilla.js # Dónde va cada dato del certificado (certificado y editor del Panel)
 ├── test/                  # Harness de pruebas (npm test): login, permisos, reseñas, calculadora, ficha…
 ├── docs/                  # Documentación del proyecto
@@ -205,6 +215,7 @@ Necesitas **Node.js** y **PostgreSQL** (con el servicio arrancado).
    > - ficha personal de la alumna (países y documentos): `psql -U postgres -d glamio -f db/migracion-ficha-alumna.sql`
    > - más países para la ficha (después de la anterior): `psql -U postgres -d glamio -f db/migracion-mas-paises.sql`
    > - calculadora por producto (precio del producto y servicios que salen): `psql -U postgres -d glamio -f db/migracion-calculadora.sql`
+   > - ficha y «Mi negocio» de la profesional: `psql -U postgres -d glamio -f db/migracion-ficha-profesional.sql`
    >
    > Si falta alguna, la parte que la usa (certificado, portadas, login, ficha o calculadora) dará error. Se pueden ejecutar más de una vez sin problema.
    >
@@ -257,7 +268,7 @@ Guarda en **`Documentos\GLAMIO-copias\glamio-AAAA-MM-DD_HH-MM\`** la base de dat
 npm test              # con correos reales (si el .env tiene Gmail)
 npm run test:simulado # sin enviar correos, más rápido
 ```
-Usan una base de datos aparte (`glamio_test`): **no tocan tus datos**. Ahora mismo pasan **116 pruebas** (login, bloqueo, recuperación, Mi cuenta, permisos, comunidad, reseñas, calculadora, ficha de la alumna y guías).
+Usan una base de datos aparte (`glamio_test`): **no tocan tus datos**. Ahora mismo pasan **127 pruebas** (login, bloqueo, recuperación, Mi cuenta, permisos, comunidad, reseñas, calculadora, ficha de la alumna y guías).
 
 ## Hooks (protecciones automáticas)
 
@@ -280,6 +291,7 @@ El hook de Git se activa una vez por ordenador, desde la carpeta del repositorio
 6. **Moderación**: reportar algo con un motivo. Se oculta, y la administradora lo revisa en **⚑ Reportes**.
 7. **Estadísticas**: como administradora, **Panel → Panel principal**: visitas y cursos vendidos por mes.
 8. **Alumnas**: registrarse como alumna rellenando la ficha (al elegir el país cambia el documento que se pide). En **Panel → Alumnas** abrirla: su ficha, sus cursos y su **historial de dudas**. Entrar como esa alumna y ver la ficha en **Mi cuenta → Mis datos**, sin poder cambiarla.
+9. **Profesionales**: como clienta (o sin cuenta), **Profesionales** → buscar «Madrid» → abrir a Sofía: su negocio y su carta de servicios. Como profesional, **Mi negocio** (cambiar algo y ver la vista previa) y **📅 Mi agenda** (confirmar una cita). Con `npm run db:demo` sale Sofía (sofia.demo@example.com).
 
 ---
 
