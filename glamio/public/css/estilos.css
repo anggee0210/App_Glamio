@@ -2309,3 +2309,31 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
   .pagina-negocio .nf-cabecera h1 { font-size: 1.75rem; }
   .pagina-negocio .nf-campo input, .pagina-negocio .nf-campo textarea { font-size: 16px; }
 }
+
+
+/* ===================== MI AGENDA de la profesional (simulador, 25/11) ===================== */
+.ag-lista { display: flex; flex-direction: column; gap: 22px; margin-top: 6px; }
+.ag-dia-titulo { margin: 0 0 10px; font-family: var(--serif); font-size: 1.15rem; color: var(--principal-oscuro); }
+.ag-dia-titulo span { display: inline-block; }
+.ag-dia-titulo span::first-letter { text-transform: uppercase; }
+.ag-cita { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto auto auto; align-items: center; gap: 14px;
+  background: #fff; border: 1px solid var(--borde); border-left: 4px solid #e3c27f; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
+.ag-cita.confirmada { border-left-color: #3f9a66; }
+.ag-cita.cancelada { border-left-color: #c9bccd; opacity: .6; }
+.ag-hora { display: flex; flex-direction: column; font-family: var(--serif); font-size: 1.35rem; font-weight: 700; color: var(--principal-oscuro); }
+.ag-hora small { font-family: inherit; font-size: .78rem; font-weight: 400; color: var(--gris); }
+.ag-datos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ag-datos span { color: var(--gris); font-size: .92rem; }
+.ag-precio { font-weight: 700; white-space: nowrap; }
+.ag-estado { font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 4px 10px; white-space: nowrap; background: #fdf3e3; color: #8a5d0c; }
+.ag-estado.confirmada { background: #e8f5ec; color: #1f6b41; }
+.ag-estado.cancelada { background: #f1edf2; color: var(--gris); }
+.ag-acciones { display: flex; gap: 6px; }
+.ag-acciones .boton { padding: 7px 14px; font-size: .9rem; }
+.ag-proxima small { display: block; font-family: var(--sans, inherit); font-size: .8rem; color: var(--gris); }
+@media (max-width: 760px) {
+  .ag-cita { grid-template-columns: 70px minmax(0, 1fr) auto; gap: 8px 12px; }
+  .ag-estado { grid-column: 2; justify-self: start; }
+  .ag-acciones { grid-column: 1 / -1; }
+  .ag-acciones > * { flex: 1; text-align: center; }
+}

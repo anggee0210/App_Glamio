@@ -120,7 +120,7 @@ function seccionActual() {
   if (p.endsWith('/bloqueadas.html')) return 'bloqueadas';
   if (p.endsWith('/alumnas.html')) return 'alumnas';
   if (p.endsWith('/profesionales.html')) return 'profesionales'; // directorio (25/11)
-  if (p.endsWith('/mi-negocio.html')) return 'perfil';           // menú del perfil: nada resaltado arriba
+  if (p.endsWith('/mi-negocio.html') || p.endsWith('/simuladores/mi-agenda.html')) return 'perfil';           // menú del perfil: nada resaltado arriba
   if (p.endsWith('/mi-estilo.html')) return 'miestilo';
   if (p.endsWith('/simuladores/tienda.html')) return 'tienda';
   if (p.endsWith('/simuladores/citas.html')) return 'citas';
@@ -140,7 +140,7 @@ function htmlDerecha(usuaria) {
   const certificados = ['alumna', 'profesional'].includes(usuaria.perfil)
     ? `<a href="/perfil.html?id=${usuaria.id}">👤 Mi perfil público</a><a href="/certificados.html">🎓 Mis certificados</a>` : '';
   // Profesional (25/11): su «Mi negocio», lo que ven las clientas en el directorio y en su perfil
-  const negocio = usuaria.perfil === 'profesional' ? '<a href="/mi-negocio.html">💼 Mi negocio</a>' : '';
+  const negocio = usuaria.perfil === 'profesional' ? '<a href="/mi-negocio.html">💼 Mi negocio</a><a href="/simuladores/mi-agenda.html">📅 Mi agenda</a>' : '';
   return `<span class="menu-derecha">
     <span class="perfil" id="perfil">
       <button type="button" class="boton-perfil" aria-haspopup="true" aria-expanded="false">
