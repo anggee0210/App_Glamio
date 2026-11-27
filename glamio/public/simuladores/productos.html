@@ -22,6 +22,31 @@
 
     <p class="mensaje oculto" id="mensaje"></p>
     <dl class="sim-cifras" id="cifras"></dl>
+
+    <!-- Añadir o modificar un producto del catálogo (el mismo formulario sirve para las dos cosas) -->
+    <div class="pr-barra"><button type="button" class="boton" id="abrir-form">+ Añadir producto</button></div>
+    <section class="tarjeta pr-form oculto" id="caja-form">
+      <h2 id="titulo-form">Añadir producto</h2>
+      <form id="form-producto" autocomplete="off">
+        <div class="pr-campos">
+          <label>Nombre <input name="nombre" maxlength="80" required placeholder="Ej.: Esmalte rojo pasión"></label>
+          <label>Categoría
+            <select name="categoria" required>
+              <option value="" disabled selected>Elige una categoría…</option>
+            </select></label>
+          <label class="pr-ancho">Detalle <input name="detalle" maxlength="80" placeholder="Ej.: Semipermanente · 10 ml"></label>
+          <label>Precio (€) <input name="precio" type="number" min="0.01" max="10000" step="0.01" required></label>
+          <label>Stock (unidades) <input name="stock" type="number" min="0" max="9999" step="1" required value="10"></label>
+          <label class="pr-ancho">Foto (opcional) <input name="foto" type="file" accept="image/*"></label>
+        </div>
+        <div class="pr-foto oculto" id="vista-foto"></div>
+        <div class="fila">
+          <button class="boton" id="boton-guardar">Añadir producto</button>
+          <button type="button" class="boton secundario" id="cancelar">Cancelar</button>
+        </div>
+        <p class="mensaje error oculto" id="error-form"></p>
+      </form>
+    </section>
     <div class="sim-tabla-caja"><table class="sim-tabla tabla-productos" id="tabla"></table></div>
   </main>
 
@@ -61,7 +86,9 @@
             <td>${etiqueta}</td>
             <td><label class="interruptor" title="Mostrar u ocultar en la Tienda">
               <input type="checkbox" data-id="${p.id}" class="ver-en-tienda" ${oculto ? '' : 'checked'}><span class="interruptor-pista" aria-hidden="true"></span>${oculto ? 'Oculto' : 'Visible'}</label></td>
-            <td><button type="button" class="al-accion borde" data-reponer="${p.id}">+10 unidades</button></td>
+            <td><span class="pr-acciones">
+              <button type="button" class="al-accion borde" data-editar="${p.id}">Editar</button>
+              <button type="button" class="al-accion borde" data-reponer="${p.id}">+10 unidades</button></span></td>
           </tr>`;
         }).join('')}</tbody>`;
 
@@ -72,6 +99,7 @@
         avisarSim(`Repuestas 10 unidades de «${PRODUCTOS.find(p => p.id === id).nombre}» (simulado).`);
         pintar();
       });
+      document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => abrirFormulario(Number(b.dataset.editar)));
       document.querySelectorAll('.ver-en-tienda').forEach(c => c.onchange = () => {
         const id = Number(c.dataset.id);
         estado.ocultos = c.checked ? estado.ocultos.filter(x => x !== id) : [...estado.ocultos, id];
@@ -82,8 +110,106 @@
       });
     }
 
+    // ---------- Añadir / modificar producto ----------
+    const form = document.getElementById('form-producto');
+    const cajaForm = document.getElementById('caja-form');
+    form.categoria.insertAdjacentHTML('beforeend', CATEGORIAS_TIENDA.map(c => `<option>${c}</option>`).join(''));
+    let editando = null;   // id del producto que se modifica (null = añadir uno nuevo)
+    let fotoNueva = null;  // la foto elegida, ya reducida (texto data:image/jpeg...)
+
+    function errorForm(texto) {
+      const p = document.getElementById('error-form');
+      p.textContent = texto;
+      p.classList.toggle('oculto', !texto);
+    }
+    function verFoto(src) {
+      const caja = document.getElementById('vista-foto');
+      caja.innerHTML = src ? `<img src="${src}" alt="Foto del producto">` : '';
+      caja.classList.toggle('oculto', !src);
+    }
+
+    // Abre el formulario vacío (añadir) o con los datos del producto (modificar)
+    function abrirFormulario(id = null) {
+      editando = id;
+      fotoNueva = null;
+      form.reset();
+      errorForm('');
+      const p = id ? PRODUCTOS.find(x => x.id === id) : null;
+      document.getElementById('titulo-form').textContent = p ? 'Modificar producto' : 'Añadir producto';
+      document.getElementById('boton-guardar').textContent = p ? 'Guardar cambios' : 'Añadir producto';
+      if (p) {
+        form.nombre.value = p.nombre;
+        form.categoria.value = p.categoria;
+        form.detalle.value = p.detalle || '';
+        form.precio.value = p.precio;
+        form.stock.value = estado.stock[p.id];
+      }
+      verFoto(p ? p.foto : null);
+      cajaForm.classList.remove('oculto');
+      cajaForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      form.nombre.focus({ preventScroll: true });
+    }
+    function cerrarFormulario() {
+      editando = null;
+      form.reset();
+      verFoto(null);
+      cajaForm.classList.add('oculto');
+    }
+    document.getElementById('abrir-form').onclick = () => abrirFormulario();
+    document.getElementById('cancelar').onclick = cerrarFormulario;
+
+    // La foto se reduce a 600 px con un <canvas> para que quepa en el navegador (localStorage es pequeño)
+    form.foto.onchange = () => {
+      const archivo = form.foto.files[0];
+      if (!archivo) return;
+      if (!archivo.type.startsWith('image/')) { form.foto.value = ''; return errorForm('Elige una imagen (JPG, PNG…).'); }
+      const img = new Image();
+      img.onload = () => {
+        const escala = Math.min(1, 600 / Math.max(img.naturalWidth, img.naturalHeight));
+        const lienzo = document.createElement('canvas');
+        lienzo.width = Math.round(img.naturalWidth * escala);
+        lienzo.height = Math.round(img.naturalHeight * escala);
+        lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
+        fotoNueva = lienzo.toDataURL('image/jpeg', 0.82);
+        URL.revokeObjectURL(img.src);
+        errorForm('');
+        verFoto(fotoNueva);
+      };
+      img.onerror = () => { form.foto.value = ''; errorForm('No se pudo leer esa imagen. Prueba con otra (JPG o PNG).'); };
+      img.src = URL.createObjectURL(archivo);
+    };
+
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const nombre = form.nombre.value.trim();
+      const precio = Number(form.precio.value);
+      const stock = Number(form.stock.value);
+      // Comprobaciones (el navegador ya revisa casi todo, pero lo repetimos por si acaso)
+      if (!nombre) return errorForm('Escribe el nombre del producto.');
+      if (!CATEGORIAS_TIENDA.includes(form.categoria.value)) return errorForm('Elige una categoría.');
+      if (!(precio > 0 && precio <= 10000)) return errorForm('El precio tiene que estar entre 0,01 y 10.000 €.');
+      if (!Number.isInteger(stock) || stock < 0 || stock > 9999) return errorForm('El stock tiene que ser un número entero entre 0 y 9999.');
+
+      const datos = { nombre, categoria: form.categoria.value, detalle: form.detalle.value.trim(), precio: Math.round(precio * 100) / 100 };
+      if (fotoNueva) datos.foto = fotoNueva;           // si no elige foto nueva, se queda la que tenía
+      if (!editando) datos.stock = stock;              // stock con el que empieza un producto nuevo
+      const eraNuevo = !editando;
+      let id;
+      try { id = guardarProductoSim(datos, editando); }
+      catch (err) { return errorForm('No se pudo guardar (la foto puede ser demasiado grande para el navegador).'); }
+      estado = leerTienda();                           // recoge el producto nuevo con su stock
+      estado.stock[id] = stock;
+      guardarTienda(estado);
+      cerrarFormulario();
+      avisarSim(eraNuevo ? `Producto «${nombre}» añadido a la Tienda (simulado).` : `Cambios guardados en «${nombre}» (simulado).`);
+      pintar();
+    };
+
     document.getElementById('reiniciar').onclick = () => {
       borrarSim(CLAVE_TIENDA);
+      borrarSim(CLAVE_CATALOGO);   // también quita los productos añadidos y los cambios
+      aplicarCatalogo();
+      cerrarFormulario();
       estado = leerTienda();
       avisarSim('Tienda reiniciada: stock y productos como al principio.');
       pintar();

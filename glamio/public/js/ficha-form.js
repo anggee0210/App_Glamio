@@ -49,7 +49,7 @@ function htmlFormFicha(f) {
         <small class="ayuda doc-ejemplo">Primero elige el país</small>
       </label>
       <label>Fecha de nacimiento
-        <input type="date" name="fecha_nacimiento" value="${v('fecha_nacimiento')}" min="1900-01-01" max="${fechaMaximaFicha()}" required>
+        <input type="date" class="fecha-grande" name="fecha_nacimiento" value="${v('fecha_nacimiento')}" min="1900-01-01" max="${fechaMaximaFicha()}" required>
       </label>
       <label class="ficha-ancho">Dirección (calle, número, piso, ciudad y código postal)
         <input name="direccion" value="${v('direccion')}" maxlength="200" autocomplete="off" required>
@@ -65,6 +65,8 @@ function htmlFormFicha(f) {
 function activarFormFicha(form) {
   const select = form.querySelector('[name=pais_nacimiento]');
   const radios = form.querySelectorAll('[name=tipo_doc]');
+  const fecha = form.querySelector('[name=fecha_nacimiento]');
+  if (fecha) activarCalendarioGrande(fecha);
   const actualizar = () => {
     const pais = PAISES_FICHA.find(p => p.codigo === select.value);
     const cajaNie = form.querySelector('.ficha-nie');
@@ -104,4 +106,103 @@ function htmlVerFicha(f) {
     ${fila('Dirección', f.direccion)}
     ${fila('Teléfono', f.telefono)}
   </dl>`;
+}
+
+// ---------- Calendario GRANDE para la fecha de nacimiento (28/11) ----------
+// El calendario que trae el navegador en el ordenador es diminuto y no se puede agrandar con CSS,
+// así que en el ordenador abrimos uno propio: días grandes y desplegables de mes y año
+// (para una fecha de nacimiento es más rápido elegir el año que pasar meses uno a uno).
+// En el móvil se deja el del teléfono, que ya ocupa toda la pantalla.
+// La casilla sigue siendo <input type="date">: se puede escribir a mano y el valor va igual al servidor.
+const MESES_CAL = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
+  'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+function activarCalendarioGrande(input) {
+  const esMovil = window.matchMedia('(pointer: coarse)').matches;
+  if (esMovil) {
+    // Móvil: el calendario del teléfono, abierto al tocar en cualquier parte de la casilla
+    input.addEventListener('click', () => { try { input.showPicker(); } catch (e) { /* se escribe a mano */ } });
+    return;
+  }
+  input.classList.add('sin-icono-nativo');
+  const dos = x => String(x).padStart(2, '0');
+  const aTexto = (a, m, d) => `${a}-${dos(m + 1)}-${dos(d)}`;
+  let caja = null;     // el calendario abierto (null = cerrado)
+  let vista;           // { a: año, m: mes 0-11 } que se está mirando
+
+  function cerrar() {
+    if (!caja) return;
+    caja.remove();
+    caja = null;
+    document.removeEventListener('mousedown', fueraCierra);
+    document.removeEventListener('keydown', escCierra);
+  }
+  function fueraCierra(e) { if (caja && !caja.contains(e.target) && e.target !== input) cerrar(); }
+  function escCierra(e) { if (e.key === 'Escape') { cerrar(); input.focus(); } }
+
+  function pintar() {
+    const max = input.max || fechaMaximaFicha();
+    const anioMax = Number(max.slice(0, 4));
+    const anioMin = Number((input.min || '1900-01-01').slice(0, 4));
+    const elegida = input.value;
+    const hoyTexto = aTexto(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+    const primerDia = (new Date(vista.a, vista.m, 1).getDay() + 6) % 7; // lunes = 0
+    const diasMes = new Date(vista.a, vista.m + 1, 0).getDate();
+    let celdas = '<span></span>'.repeat(primerDia);
+    for (let d = 1; d <= diasMes; d++) {
+      const t = aTexto(vista.a, vista.m, d);
+      const fuera = t > max || t < (input.min || '1900-01-01');
+      celdas += `<button type="button" data-dia="${t}" class="${t === elegida ? 'elegido' : ''} ${t === hoyTexto ? 'hoy' : ''}" ${fuera ? 'disabled' : ''}>${d}</button>`;
+    }
+    let anios = '';
+    for (let a = anioMax; a >= anioMin; a--) anios += `<option ${a === vista.a ? 'selected' : ''}>${a}</option>`;
+    caja.innerHTML = `
+      <div class="cal-cabeza">
+        <button type="button" class="cal-flecha" data-mover="-1" aria-label="Mes anterior">‹</button>
+        <select class="cal-mes" aria-label="Mes">${MESES_CAL.map((n, i) => `<option value="${i}" ${i === vista.m ? 'selected' : ''}>${n}</option>`).join('')}</select>
+        <select class="cal-anio" aria-label="Año">${anios}</select>
+        <button type="button" class="cal-flecha" data-mover="1" aria-label="Mes siguiente">›</button>
+      </div>
+      <div class="cal-semana"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+      <div class="cal-dias">${celdas}</div>`;
+    caja.querySelector('.cal-mes').onchange = (e) => { vista.m = Number(e.target.value); pintar(); };
+    caja.querySelector('.cal-anio').onchange = (e) => { vista.a = Number(e.target.value); pintar(); };
+    caja.querySelectorAll('[data-mover]').forEach(b => b.onclick = () => {
+      const f = new Date(vista.a, vista.m + Number(b.dataset.mover), 1);
+      if (f.getFullYear() < anioMin || f.getFullYear() > anioMax) return;
+      vista = { a: f.getFullYear(), m: f.getMonth() };
+      pintar();
+    });
+    caja.querySelectorAll('[data-dia]').forEach(b => b.onclick = () => {
+      input.value = b.dataset.dia;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      cerrar();
+      input.focus();
+    });
+  }
+
+  function abrir() {
+    if (caja) return;
+    // Empieza en la fecha ya puesta; si está vacía, en el año máximo (hace 14 años) menos 16 → unos 30 años
+    const base = input.value ? new Date(input.value + 'T12:00') : new Date(Number((input.max || fechaMaximaFicha()).slice(0, 4)) - 16, 0, 1);
+    vista = { a: base.getFullYear(), m: base.getMonth() };
+    caja = document.createElement('div');
+    caja.className = 'cal-grande';
+    caja.setAttribute('role', 'dialog');
+    caja.setAttribute('aria-label', 'Elegir fecha de nacimiento');
+    document.body.appendChild(caja);
+    pintar();
+    // Debajo de la casilla (o encima si no cabe)
+    const r = input.getBoundingClientRect();
+    const alto = caja.offsetHeight;
+    const arriba = r.bottom + alto + 8 > window.innerHeight && r.top > alto + 8;
+    caja.style.top = (window.scrollY + (arriba ? r.top - alto - 6 : r.bottom + 6)) + 'px';
+    caja.style.left = (window.scrollX + Math.max(8, Math.min(r.left, window.innerWidth - caja.offsetWidth - 8))) + 'px';
+    document.addEventListener('mousedown', fueraCierra);
+    document.addEventListener('keydown', escCierra);
+  }
+
+  input.addEventListener('click', (e) => { e.preventDefault(); abrir(); });
+  input.addEventListener('keydown', (e) => { if (e.key === 'ArrowDown' && e.altKey) { e.preventDefault(); abrir(); } });
 }

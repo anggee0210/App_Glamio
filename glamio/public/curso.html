@@ -9,6 +9,9 @@
 <body>
   <header class="cabecera"><a href="/index.html" class="logo">GLAMIO</a><nav class="menu"></nav></header>
   <main>
+    <!-- Solo cuando la administradora llega desde «Ver como alumna» del Panel: botón para volver -->
+    <div class="volver-panel oculto" id="volver-panel">
+      <a class="boton secundario" id="enlace-volver-panel" href="/admin.html?pestana=cursos">← Volver a este curso en el Panel</a>    </div>
     <!-- Diseño "Curso": foto a la izquierda y datos a la derecha (lo pinta pintarCabeceraCurso) -->
     <section id="curso" class="curso-cabecera"></section>
 
@@ -115,6 +118,12 @@
 
     async function iniciar() {
       usuaria = await pintarCabecera();
+      // Vino desde el Panel (?desde=panel) y es la administradora → enseñamos «Volver a este curso en el Panel»
+      // (Mis cursos con la ficha de este curso abierta)
+      if (param('desde') === 'panel' && usuaria && usuaria.perfil === 'administradora') {
+        document.getElementById('enlace-volver-panel').href = '/admin.html?pestana=cursos&abierto=' + encodeURIComponent(id);
+        document.getElementById('volver-panel').classList.remove('oculto');
+      }
       try {
         curso = await api('/api/cursos/' + id);
       } catch (err) {

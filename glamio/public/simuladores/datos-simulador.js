@@ -43,6 +43,46 @@ const PRODUCTOS = [
 ];
 const POCAS = 3; // con 3 o menos unidades sale el aviso de stock bajo
 
+// ---------- Catálogo editable por la administradora (27/11) ----------
+// Lo que añade o cambia en «Productos en venta» se guarda en este navegador:
+//   nuevos:  los productos que ha añadido ella
+//   cambios: lo que ha modificado de los productos de ejemplo ({ id: {nombre, precio...} })
+// Al cargar la página, PRODUCTOS se rehace con la lista de ejemplo + los cambios + los nuevos.
+const CATEGORIAS_TIENDA = ['Uñas', 'Cabello', 'Cejas'];
+const ICONO_POR_CATEGORIA = { 'Uñas': 'esmalte', 'Cabello': 'tijera', 'Cejas': 'henna' }; // dibujo si no hay foto
+const CLAVE_CATALOGO = 'glamio-simulador-catalogo';
+const PRODUCTOS_INICIALES = PRODUCTOS.map(p => ({ ...p }));
+
+function leerCatalogo() {
+  const c = leerSim(CLAVE_CATALOGO, null);
+  if (!c || !Array.isArray(c.nuevos) || !c.cambios || typeof c.cambios !== 'object') return { nuevos: [], cambios: {} };
+  return c;
+}
+function aplicarCatalogo() {
+  const c = leerCatalogo();
+  const lista = PRODUCTOS_INICIALES.map(p => ({ ...p, ...(c.cambios[p.id] || {}) })).concat(c.nuevos);
+  PRODUCTOS.splice(0, PRODUCTOS.length, ...lista); // cambia el contenido sin cambiar la constante
+}
+aplicarCatalogo();
+
+// Guarda un producto: sin id → lo añade (y devuelve su id nuevo); con id → lo modifica
+function guardarProductoSim(datos, id) {
+  const c = leerCatalogo();
+  datos.icono = ICONO_POR_CATEGORIA[datos.categoria] || 'esmalte';
+  if (!id) {
+    id = Math.max(0, ...PRODUCTOS.map(p => p.id)) + 1;
+    c.nuevos.push({ id, ...datos });
+  } else {
+    const nuevo = c.nuevos.find(p => p.id === id);
+    if (nuevo) Object.assign(nuevo, datos);   // uno añadido por ella
+    else c.cambios[id] = { ...(c.cambios[id] || {}), ...datos }; // uno de ejemplo
+  }
+  // Sin try/catch a propósito: si el navegador está lleno (fotos grandes), la página avisa del error
+  localStorage.setItem(CLAVE_CATALOGO, JSON.stringify(c));
+  aplicarCatalogo();
+  return id;
+}
+
 // Dibujos de línea (SVG 64×64) para cada tipo de producto
 const ICONOS_TIENDA = {
   esmalte: '<rect x="24" y="30" width="16" height="24" rx="5"/><path d="M28 30v-8h8v8"/><path d="M29 22V12h6v10"/>',

@@ -13,12 +13,11 @@
     <h1>Panel de la administradora</h1>
 
     <!-- Pestañas: cada opción enseña solo su parte (decisión del proyecto).
-         La pestaña abierta va en la URL (admin.html?pestana=leccion) para que recargar no la pierda. -->
+         La pestaña abierta va en la URL (admin.html?pestana=curso) para que recargar no la pierda.
+         «Nueva lección» no tiene pestaña (28/11): se abre con «+ Lección» o «Editar» dentro de cada curso. -->
     <nav class="pestanas pestanas-panel" id="pestanas-panel">
       <button class="pestana activa" data-pestana="cursos">Mis cursos</button>
       <button class="pestana" data-pestana="curso">Nuevo curso</button>
-      <button class="pestana" data-pestana="leccion">Nueva lección</button>
-      <button class="pestana" data-pestana="material">Materiales</button>
       <button class="pestana" data-pestana="certificado">Certificado</button>
     </nav>
 
@@ -72,10 +71,11 @@
 
     <section class="tarjeta pestana-panel oculto" data-pestana="curso">
       <h2 style="margin-top:0">Nuevo curso</h2>
-      <form id="form-curso">
+      <form id="form-curso" autocomplete="off">
         <input name="titulo" placeholder="Título" required>
         <textarea name="descripcion" placeholder="Descripción" rows="2"></textarea>
-        <select name="categoria_id" class="sel-categoria"></select>
+        <!-- required: no deja crear el curso sin elegir antes la categoría -->
+        <select name="categoria_id" class="sel-categoria" required></select>
         <input name="precio" type="number" step="0.01" min="0" placeholder="Precio (0 = gratis)">
         <label>Imagen <input type="file" name="imagen" accept="image/*"></label>
         <p class="ayuda oculto"></p>
@@ -103,8 +103,10 @@
     </section>
 
     <section class="tarjeta pestana-panel oculto" data-pestana="leccion">
+      <!-- Vuelve a «Mis cursos» con la ficha del curso elegido abierta -->
+      <button type="button" class="boton secundario" id="volver-curso-leccion" style="margin-bottom:12px">← Volver al curso</button>
       <h2 style="margin-top:0">Nueva lección</h2>
-      <form id="form-leccion">
+      <form id="form-leccion" autocomplete="off">
         <select name="curso_id" class="sel-curso"></select>
         <input name="titulo" placeholder="Título" required>
         <label>Orden <input name="orden" type="number" min="1" value="1"></label>
@@ -120,19 +122,6 @@
       </form>
     </section>
 
-    <section class="tarjeta pestana-panel oculto" data-pestana="material">
-      <h2 style="margin-top:0">Material de un curso</h2>
-      <form id="form-material">
-        <select name="curso_id" class="sel-curso"></select>
-        <input name="nombre" placeholder="Material" required>
-        <input name="cantidad" placeholder="Cantidad">
-        <div class="fila">
-          <button class="boton">Añadir material</button>
-          <button type="button" class="boton secundario cancelar oculto">Cancelar</button>
-        </div>
-        <p class="mensaje oculto"></p>
-      </form>
-    </section>
 
     <!-- Va en la misma pestaña que "Nuevo curso": se necesita al elegir la categoría del curso -->
     <section class="tarjeta pestana-panel oculto" data-pestana="curso" style="margin-top:14px">
@@ -215,17 +204,16 @@
     // Textos de cada formulario: [título al crear, título al editar, botón al crear]
     const TEXTOS = {
       'form-curso': ['Nuevo curso', 'Editar curso', 'Crear curso'],
-      'form-leccion': ['Nueva lección', 'Editar lección', 'Crear lección'],
-      'form-material': ['Material de un curso', 'Editar material', 'Añadir material']
+      'form-leccion': ['Nueva lección', 'Editar lección', 'Crear lección']
     };
     const formCurso = document.getElementById('form-curso');
     const formLeccion = document.getElementById('form-leccion');
-    const formMaterial = document.getElementById('form-material');
 
     // ---------- Pestañas del Panel ----------
     // Enseña solo las secciones de esa pestaña y la guarda en la URL (?pestana=leccion).
-    const PESTANAS = ['resumen', 'cursos', 'curso', 'leccion', 'material', 'certificado', 'guias'];
+    const PESTANAS = ['resumen', 'cursos', 'curso', 'leccion', 'certificado', 'guias'];
     function abrirPestanaPanel(nombre) {
+      if (nombre === 'material') nombre = 'cursos'; // los materiales ya están dentro de cada curso (enlaces antiguos)
       if (!PESTANAS.includes(nombre)) nombre = 'resumen';
       document.querySelectorAll('#pestanas-panel .pestana').forEach(b => b.classList.toggle('activa', b.dataset.pestana === nombre));
       document.querySelectorAll('.pestana-panel').forEach(s => s.classList.toggle('oculto', s.dataset.pestana !== nombre));
@@ -240,11 +228,6 @@
       formLeccion.curso_id.value = cursoId;
       proponerOrden();
       abrirPestanaPanel('leccion');
-    }
-    function nuevoMaterialEn(cursoId) {
-      modoCrear(formMaterial);
-      formMaterial.curso_id.value = cursoId;
-      abrirPestanaPanel('material');
     }
 
     // Aviso en rojo encima de "Mis cursos" (quitar vídeo, borrar lección o material). Sustituye a alert().
@@ -294,10 +277,32 @@
       if (selCurso) selCurso.disabled = false;
       if (form === formLeccion) proponerOrden();
       if (form === formCurso) { fotoVista = null; form.imagen_x.value = 50; form.imagen_y.value = 50; explicarAjuste(); }
+      form.querySelector('.mensaje').classList.add('oculto'); // quita el aviso del curso anterior
+    }
+
+    // Al entrar en «Nuevo curso» o «Nueva lección» desde el menú, la plantilla empieza VACÍA
+    // (aunque antes se estuviera editando otro curso o se acabara de crear uno).
+    function formularioEnBlanco(pestana) {
+      if (pestana === 'curso') modoCrear(formCurso);
+      if (pestana === 'leccion') modoCrear(formLeccion);
     }
 
     document.querySelectorAll('.cancelar').forEach(boton =>
       boton.onclick = () => modoCrear(boton.closest('form')));
+
+    // «← Volver al curso» (en Nueva lección): abre «Mis cursos» con la ficha de ese curso desplegada
+    function volverAFicha(cursoId) {
+      abrirPestanaPanel('cursos');
+      if (!cursoId) return;               // sin curso elegido: solo vuelve a la lista
+      fichasAbiertas.add(cursoId);
+      pintarLista();
+      const ficha = document.querySelector(`details.ficha-curso[data-id="${cursoId}"]`);
+      if (ficha) ficha.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    document.getElementById('volver-curso-leccion').onclick = () => {
+      volverAFicha(Number(formLeccion.curso_id.value));
+      modoCrear(formLeccion);             // la plantilla queda en blanco para la próxima vez
+    };
 
     // ---------- Cargar datos ----------
     async function cargarCursos() {
@@ -309,21 +314,32 @@
       pintarLista();
     }
 
+    // Fichas de «Mis cursos»: cada curso es una ficha (<details>) que se despliega al pulsarla.
+    // Guardamos cuáles están abiertas para que no se cierren al recargar la lista (tras editar o borrar).
+    const fichasAbiertas = new Set();
     function pintarLista() {
       const html = Object.values(cursos).map(c => `
-        <div class="tarjeta" style="margin-bottom:10px">
-          <div class="fila" style="justify-content:space-between">
-            <div>
-              <strong>${esc(c.titulo)}</strong>
-              <span class="etiqueta" style="margin:0 0 0 6px">${esc(c.categoria)}</span>
-              <span class="precio" style="margin-left:6px">${Number(c.precio) === 0 ? 'Gratis' : c.precio + ' €'}</span>
-            </div>
-            <span class="fila" style="flex-wrap:wrap">
-              <button class="chip" onclick="editarCurso(${c.id})">Editar curso</button>
-              <button class="chip peligro" onclick="borrarCurso(this, ${c.id})">Borrar curso</button>
-              <button class="chip" onclick="nuevaLeccionEn(${c.id})">+ Lección</button>
-              <button class="chip" onclick="nuevoMaterialEn(${c.id})">+ Material</button>
+        <details class="ficha-curso" data-id="${c.id}" ${fichasAbiertas.has(c.id) ? 'open' : ''}>
+          <summary>
+            <span class="fc-foto">${c.imagen ? htmlPortada(c) : '<span class="fc-sin-foto">Sin foto</span>'}</span>
+            <span class="fc-info">
+              <strong class="fc-titulo">${esc(c.titulo)}</strong>
+              <span class="fc-datos">
+                <span class="etiqueta">${esc(c.categoria)}</span>
+                <span class="precio">${Number(c.precio) === 0 ? 'Gratis' : c.precio + ' €'}</span>
+              </span>
+              <span class="ayuda">${c.lecciones.length} ${c.lecciones.length === 1 ? 'lección' : 'lecciones'} ·
+                ${c.materiales.length} ${c.materiales.length === 1 ? 'material' : 'materiales'}</span>
             </span>
+            <span class="fc-flecha" aria-hidden="true">▾</span>
+          </summary>
+          <div class="fc-detalle">
+          ${c.descripcion ? `<p class="fc-descripcion">${esc(c.descripcion)}</p>` : ''}
+          <div class="fila fc-acciones">
+            <button class="chip" onclick="editarCurso(${c.id})">Editar curso</button>
+            <button class="chip" onclick="nuevaLeccionEn(${c.id})">+ Lección</button>
+            <a class="chip" href="/curso.html?id=${c.id}&desde=panel">Ver como alumna</a>
+            <button class="chip peligro" onclick="borrarCurso(this, ${c.id})">Borrar curso</button>
           </div>
           <p style="margin:10px 0 4px"><strong>Lecciones</strong></p>
           ${c.lecciones.map(l => `
@@ -344,21 +360,42 @@
             </div>`).join('') || '<p class="ayuda">Todavía no tiene lecciones.</p>'}
           <p style="margin:10px 0 4px"><strong>Materiales</strong></p>
           ${c.materiales.map(m => `
-            <div class="fila fila-lista" style="justify-content:space-between;margin-bottom:4px">
+            <div class="fila fila-lista mat-fila" data-material="${m.id}" style="justify-content:space-between;margin-bottom:4px">
               <span>${esc(m.nombre)}${m.cantidad ? ' (' + esc(m.cantidad) + ')' : ''}</span>
               <span class="fila">
                 <button class="chip" onclick="editarMaterial(${c.id}, ${m.id})">Editar</button>
                 <button class="chip" onclick="borrarMaterial(${m.id})">Borrar</button>
               </span>
             </div>`).join('') || '<p class="ayuda">Todavía no tiene materiales.</p>'}
-        </div>`).join('');
-      document.getElementById('lista-cursos').innerHTML = html || '<p>Todavía no hay cursos.</p>';
+          <!-- Añadir un material a ESTE curso, sin salir de la ficha -->
+          <form class="mat-form mat-nuevo" data-curso="${c.id}" autocomplete="off">
+            <input name="nombre" placeholder="Material (ej.: Lima 180/240)" maxlength="120" required>
+            <input name="cantidad" placeholder="Cantidad (ej.: 1 unidad)" maxlength="60">
+            <button class="boton">Añadir</button>
+            <p class="mensaje oculto"></p>
+          </form>
+          </div>
+        </details>`).join('');
+      const caja = document.getElementById('lista-cursos');
+      caja.classList.add('fichas-cursos');
+      caja.innerHTML = html || '<p>Todavía no hay cursos.</p>';
+      // Al abrir o cerrar una ficha, lo apuntamos
+      caja.querySelectorAll('details.ficha-curso').forEach(d => d.addEventListener('toggle', () => {
+        const id = Number(d.dataset.id);
+        d.open ? fichasAbiertas.add(id) : fichasAbiertas.delete(id);
+      }));
     }
 
     async function cargarSelects() {
       const categorias = await api('/api/categorias');
-      document.querySelectorAll('.sel-categoria').forEach(s =>
-        s.innerHTML = categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join(''));
+      // Se empieza con «Elige una categoría…» en vez de una categoría ya puesta.
+      // Recordamos la elegida para no perderla al recargar (por ejemplo, al añadir una categoría nueva).
+      document.querySelectorAll('.sel-categoria').forEach(s => {
+        const elegida = s.value;
+        s.innerHTML = '<option value="" disabled selected>Elige una categoría…</option>' +
+          categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+        if (elegida && categorias.some(c => String(c.id) === elegida)) s.value = elegida;
+      });
       document.querySelectorAll('.sel-curso').forEach(s => {
         const elegido = s.value; // recordamos el curso elegido para no perderlo al recargar
         s.innerHTML = Object.values(cursos).map(c => `<option value="${c.id}">${esc(c.titulo)}</option>`).join('');
@@ -417,14 +454,56 @@
       modoEditar(formLeccion, id);
     }
 
+    // Editar un material EN SU SITIO: la línea se cambia por dos casillas con Guardar y Cancelar
     function editarMaterial(cursoId, id) {
       const m = cursos[cursoId].materiales.find(m => m.id === id);
-      modoCrear(formMaterial);
-      formMaterial.curso_id.value = cursoId;
-      formMaterial.nombre.value = m.nombre;
-      formMaterial.cantidad.value = m.cantidad || '';
-      modoEditar(formMaterial, id);
+      const fila = document.querySelector(`.mat-fila[data-material="${id}"]`);
+      if (!m || !fila) return;
+      fila.outerHTML = `
+        <form class="mat-form mat-editar" data-curso="${cursoId}" data-material="${id}" autocomplete="off">
+          <input name="nombre" value="${esc(m.nombre)}" maxlength="120" required>
+          <input name="cantidad" value="${esc(m.cantidad || '')}" placeholder="Cantidad" maxlength="60">
+          <button class="boton">Guardar</button>
+          <button type="button" class="boton secundario" onclick="pintarLista()">Cancelar</button>
+          <p class="mensaje oculto"></p>
+        </form>`;
+      document.querySelector(`.mat-editar[data-material="${id}"]`).nombre.focus();
     }
+
+    // Aviso dentro del formulario del material (verde si va bien, rojo si hay error)
+    function avisarMaterial(form, texto, esError = false) {
+      const p = form.querySelector('.mensaje');
+      p.textContent = texto;
+      p.classList.toggle('error', esError);
+      p.classList.toggle('oculto', !texto);
+    }
+
+    // Un solo "escuchador" para todos los formularios de materiales (se vuelven a pintar al recargar)
+    document.getElementById('lista-cursos').addEventListener('submit', async (e) => {
+      const form = e.target.closest('.mat-form');
+      if (!form) return;
+      e.preventDefault();
+      const cursoId = Number(form.dataset.curso);
+      const id = form.dataset.material;  // solo al editar
+      const datos = { curso_id: cursoId, nombre: form.nombre.value.trim(), cantidad: form.cantidad.value.trim() };
+      if (!datos.nombre) return avisarMaterial(form, 'Escribe el nombre del material', true);
+      const boton = form.querySelector('.boton:not(.secundario)');
+      boton.disabled = true; // evita guardarlo dos veces
+      try {
+        if (id) await api('/api/cursos/materiales/' + id, { method: 'PUT', body: datos });
+        else await api(`/api/cursos/${cursoId}/materiales`, { method: 'POST', body: datos });
+        await recargar(); // vuelve a pintar las fichas (esta sigue abierta)
+        // Tras añadir, el cursor vuelve a «Material» para poder meter varios seguidos
+        const nuevo = document.querySelector(`.mat-nuevo[data-curso="${cursoId}"]`);
+        if (nuevo) {
+          avisarMaterial(nuevo, id ? 'Cambios guardados ✅' : 'Material añadido ✅');
+          if (!id) nuevo.nombre.focus();
+        }
+      } catch (err) {
+        avisarMaterial(form, err.message, true);
+        boton.disabled = false;
+      }
+    });
 
     // Cierra los menús "Opciones" al elegir algo dentro o al pulsar fuera
     document.addEventListener('click', (e) => {
@@ -556,7 +635,7 @@
         modoCrear(formCurso);
         await recargar();
         avisar(formCurso, id ? 'Cambios guardados ✅ (puedes verlo en «📚 Mis cursos»)'
-          : 'Curso creado ✅ Ahora añádele lecciones en «🎬 Nueva lección».');
+          : 'Curso creado ✅ Ahora añádele lecciones con «+ Lección» en su ficha de «📚 Mis cursos».');
       } catch (err) { avisar(formCurso, err.message, true); }
     };
 
@@ -577,24 +656,6 @@
         avisar(formLeccion, id ? 'Cambios guardados ✅' : 'Lección creada ✅');
       } catch (err) { avisar(formLeccion, err.message, true); }
       boton.disabled = false;
-    };
-
-    formMaterial.onsubmit = async (e) => {
-      e.preventDefault();
-      const id = formMaterial.dataset.editando;
-      const datos = { curso_id: formMaterial.curso_id.value, nombre: formMaterial.nombre.value, cantidad: formMaterial.cantidad.value };
-      try {
-        if (id) {
-          await api('/api/cursos/materiales/' + id, { method: 'PUT', body: datos });
-          modoCrear(formMaterial);
-        } else {
-          await api(`/api/cursos/${datos.curso_id}/materiales`, { method: 'POST', body: datos });
-          // Al añadir, dejamos el curso elegido para poder meter varios materiales seguidos
-          formMaterial.nombre.value = ''; formMaterial.cantidad.value = '';
-        }
-        await recargar();
-        avisar(formMaterial, id ? 'Cambios guardados ✅' : 'Material añadido ✅');
-      } catch (err) { avisar(formMaterial, err.message, true); }
     };
 
     document.getElementById('form-categoria').onsubmit = async (e) => {
@@ -986,8 +1047,19 @@
         document.querySelector('main').innerHTML = '<p class="mensaje">Solo la administradora puede ver este panel.</p>';
         return;
       }
-      abrirPestanaPanel(param('pestana') || 'resumen'); // la de la URL, o el Panel principal
+      // Al volver de «Ver como alumna» (?abierto=5): la ficha de ese curso aparece abierta y a la vista.
+      // Se lee ANTES de abrir la pestaña, porque abrirPestanaPanel() reescribe la URL y borraría el «abierto».
+      const abierto = Number(param('abierto'));
+      if (abierto) fichasAbiertas.add(abierto);
+      // «Nueva lección» ya no es pestaña propia: al recargar en ella (o con un enlace antiguo) se vuelve a «Mis cursos»
+      const pestanaUrl = param('pestana') === 'leccion' ? 'cursos' : param('pestana');
+      abrirPestanaPanel(pestanaUrl || 'resumen'); // la de la URL, o el Panel principal
       await recargar();
+      if (abierto) {
+        const ficha = document.querySelector(`details.ficha-curso[data-id="${abierto}"]`);
+        if (ficha) ficha.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', '?pestana=cursos'); // así, al recargar, no se queda el «abierto»
+      }
       cargarDiseno();
       cargarEstadisticas();
       cargarGuias();

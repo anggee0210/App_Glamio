@@ -189,8 +189,8 @@ const OPCIONES_LATERAL = [
   { grupo: 'Academia', clave: 'resumen', href: '/admin.html', texto: 'Panel principal', icono: 'resumen' },
   { grupo: 'Academia', clave: 'cursos', href: '/admin.html?pestana=cursos', texto: 'Mis cursos', icono: 'cursos' },
   { grupo: 'Academia', clave: 'curso', href: '/admin.html?pestana=curso', texto: 'Nuevo curso', icono: 'curso' },
-  { grupo: 'Academia', clave: 'leccion', href: '/admin.html?pestana=leccion', texto: 'Nueva lección', icono: 'leccion' },
-  { grupo: 'Academia', clave: 'material', href: '/admin.html?pestana=material', texto: 'Materiales', icono: 'material' },
+  // «Nueva lección» ya no tiene opción propia (28/11): se crea con «+ Lección» dentro de cada curso en «Mis cursos»
+  // «Materiales» ya no tiene opción propia (27/11): se añaden y editan dentro de cada curso en «Mis cursos»
   { grupo: 'Academia', clave: 'certificado', href: '/admin.html?pestana=certificado', texto: 'Certificado', icono: 'certificado' },
   { grupo: 'Academia', clave: 'guias', href: '/admin.html?pestana=guias', texto: 'Guías teóricas', icono: 'guias' },
   { grupo: 'Comunidad', clave: 'reportes', href: '/reportes.html', texto: 'Reportes', icono: 'reportes', extra: ' id="enlace-reportes" title="Reportes pendientes"', contador: '<span class="contador oculto"></span>' },
@@ -239,6 +239,7 @@ function claveLateral() {
   if (p.endsWith('/alumnas.html')) return param('perfil') === 'profesional' ? 'profesionales' : 'alumnas';
   if (p.endsWith('/simuladores/citas-agendadas.html')) return 'citasagendadas';
   if (p.endsWith('/simuladores/productos.html')) return 'productosventa';
+  if (param('pestana') === 'leccion') return 'cursos'; // la lección se edita desde «Mis cursos»
   return param('pestana') || 'resumen';
 }
 
@@ -263,6 +264,7 @@ function pintarLateral() {
   if (location.pathname.endsWith('/admin.html') && typeof abrirPestanaPanel === 'function') {
     envoltorio.querySelectorAll('a[href^="/admin.html"]').forEach(a => a.onclick = (e) => {
       e.preventDefault();
+      if (typeof formularioEnBlanco === 'function') formularioEnBlanco(a.dataset.clave); // plantilla vacía
       abrirPestanaPanel(a.dataset.clave);
     });
   }

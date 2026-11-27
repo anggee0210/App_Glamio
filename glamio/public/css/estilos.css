@@ -2347,3 +2347,164 @@ main.pagina-avisos { max-width: none; margin: 0; padding-left: 48px; padding-rig
 .prof-buscar .boton { width: auto; flex: none; padding: 10px 22px; }
 
 .prof-pie .catalogo-ver { white-space: nowrap; } /* «Ver perfil →» en una sola línea */
+
+/* ========== PANEL · Mis cursos en FICHAS que se despliegan (27/11) ==========
+   Cada curso es un <details>: cerrado se ve la ficha (foto, título, categoría, precio);
+   al pulsarla se abre a todo el ancho con las opciones, las lecciones y los materiales. */
+.fichas-cursos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.ficha-curso {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+.ficha-curso[open] { grid-column: 1 / -1; border-color: var(--principal); } /* abierta: fila entera */
+.ficha-curso summary {
+  list-style: none;            /* quita el triángulo del navegador */
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  cursor: pointer;
+}
+.ficha-curso summary::-webkit-details-marker { display: none; }
+.ficha-curso summary:hover { background: var(--principal-claro); }
+.fc-foto {
+  flex: 0 0 96px;
+  height: 96px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--principal-claro);
+  display: grid;
+  place-items: center;
+}
+.fc-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fc-foto .portada-completa { width: 100%; height: 100%; display: block; }
+.fc-foto .portada-completa img { object-fit: contain; }
+.fc-sin-foto { color: var(--gris); font-size: .8rem; }
+.fc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.fc-titulo { font-family: var(--serif); font-size: 1.15rem; color: var(--principal-oscuro); overflow-wrap: anywhere; }
+.fc-datos { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fc-datos .etiqueta { margin: 0; }
+.fc-flecha { font-size: 1.3rem; color: var(--principal); transition: transform .2s; }
+.ficha-curso[open] .fc-flecha { transform: rotate(180deg); }
+.fc-detalle { padding: 4px 18px 18px; border-top: 1px solid var(--borde); }
+.fc-descripcion { color: var(--gris); margin: 12px 0 0; }
+.fc-acciones { flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.fc-acciones a.chip { text-decoration: none; }
+@media (max-width: 640px) {
+  .fc-foto { flex-basis: 72px; height: 72px; }
+  .fc-detalle { padding: 4px 12px 14px; }
+}
+
+/* ========== CUENTAS BLOQUEADAS · a todo el ancho en la web y ajustada en el móvil (27/11) ========== */
+/* En el PC el recuadro, el aviso y la nota ocupan todo el ancho de la página (antes, máx. 1040px) */
+.bq-panel, .bq-nota, .bq-panel ~ .bq-nota, main > #msg { max-width: none; width: 100%; box-sizing: border-box; }
+@media (max-width: 640px) {
+  /* Cada cuenta: usuaria arriba, perfil y tiempo en medio, botón «Desbloquear» abajo a todo el ancho */
+  .bq-tabla tr { grid-template-columns: auto minmax(0, 1fr); padding: 14px 16px; }
+  .bq-tabla td.bq-celda-accion { grid-column: 1 / -1; text-align: left; }
+  .bq-celda-accion .al-accion { width: 100%; justify-content: center; }
+  .bq-cuando { white-space: normal; }
+  .bq-cabeza { padding: 14px 16px; }
+  .bq-nota, main > #msg { overflow-wrap: anywhere; }
+}
+
+/* ========== TIENDA (simulador) · Añadir y modificar productos (27/11) ========== */
+.pr-barra { display: flex; justify-content: flex-end; margin: 18px 0 12px; }
+.pr-form { margin: 0 0 18px; }
+.pr-form h2 { margin-top: 0; }
+.pr-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+.pr-campos label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; color: var(--principal-oscuro); }
+.pr-campos input, .pr-campos select { width: 100%; box-sizing: border-box; font-weight: 400; }
+.pr-campos .pr-ancho { grid-column: 1 / -1; }
+.pr-foto { margin: 14px 0 4px; }
+.pr-foto img { width: 140px; height: 140px; object-fit: cover; border-radius: 14px; border: 1px solid var(--borde); display: block; }
+.pr-form .fila { margin-top: 14px; }
+.pr-acciones { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.pr-acciones .al-accion { white-space: nowrap; }
+@media (max-width: 640px) {
+  .pr-barra .boton { width: 100%; }
+  .pr-campos { grid-template-columns: minmax(0, 1fr); }
+  .tabla-productos td:nth-child(6) .pr-acciones { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+/* ========== PANEL · Materiales dentro de la ficha del curso (27/11) ==========
+   Fila para añadir (Material | Cantidad | Añadir) y la misma fila al editar uno */
+.mat-form { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 6px; }
+.mat-form input { flex: 2 1 14rem; min-width: 0; margin: 0; }
+.mat-form input[name=cantidad] { flex: 1 1 9rem; }
+.mat-form .boton { flex: 0 0 auto; margin: 0; }
+.mat-form .mensaje { flex: 1 1 100%; margin: 2px 0 0; }
+.mat-nuevo { padding-top: 10px; border-top: 1px dashed var(--borde); }
+.mat-editar { background: var(--principal-claro); border-radius: 12px; padding: 8px; }
+@media (max-width: 640px) {
+  .mat-form input, .mat-form input[name=cantidad] { flex-basis: 100%; }
+  .mat-form .boton { flex: 1 1 0; }
+}
+
+/* ========== CURSO · «Volver al Panel de cursos» (solo la administradora desde «Ver como alumna») (27/11) ========== */
+.volver-panel { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0 0 18px;
+  padding: 12px 16px; background: var(--principal-claro); border: 1px solid var(--borde); border-radius: 14px; }
+.volver-panel.oculto { display: none; }
+.volver-panel .boton { margin: 0; text-decoration: none; }
+.volver-panel .ayuda { margin: 0; }
+@media (max-width: 640px) { .volver-panel .boton { width: 100%; text-align: center; } }
+
+/* ============================================================
+   FICHA · Fecha de nacimiento más grande (28/11)
+   El calendario desplegable lo dibuja el navegador (no se puede agrandar con CSS);
+   agrandamos la casilla y el icono para que sea fácil de pulsar, también en el móvil.
+   ============================================================ */
+input.fecha-grande {
+  font-size: 1.1rem;
+  min-height: 52px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+input.fecha-grande::-webkit-calendar-picker-indicator {
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  opacity: .8;
+}
+input.fecha-grande::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+/* Calendario GRANDE propio (ordenador). En el móvil se usa el del teléfono. */
+input.fecha-grande.sin-icono-nativo::-webkit-calendar-picker-indicator { display: none; }
+input.fecha-grande.sin-icono-nativo {
+  padding-right: 46px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b0467a' stroke-width='2' stroke-linecap='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") no-repeat right 12px center / 24px;
+}
+.cal-grande {
+  position: absolute; z-index: 1000;
+  width: 380px; max-width: calc(100vw - 16px);
+  background: #fff; border: 1.5px solid var(--lila); border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(60, 30, 50, .22);
+  padding: 16px;
+}
+.cal-cabeza { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.cal-cabeza select { flex: 1; font-size: 1.05rem; padding: 8px 10px; min-height: 44px; margin: 0; }
+.cal-cabeza .cal-anio { flex: 0 0 96px; }
+.cal-flecha {
+  width: 44px; height: 44px; flex: 0 0 44px; border-radius: 10px;
+  border: 1.5px solid var(--lila); background: #fff; color: var(--rosa);
+  font-size: 1.6rem; line-height: 1; cursor: pointer;
+}
+.cal-flecha:hover { background: var(--rosa-claro); }
+.cal-semana, .cal-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal-semana span { font-weight: 700; color: var(--principal-oscuro); font-size: .95rem; padding: 4px 0; }
+.cal-dias button {
+  height: 46px; border: 0; border-radius: 10px; background: transparent;
+  font-size: 1.1rem; font-family: inherit; cursor: pointer; color: inherit;
+}
+.cal-dias button:hover:not(:disabled) { background: var(--rosa-claro); }
+.cal-dias button.hoy { outline: 1.5px solid var(--lila); }
+.cal-dias button.elegido { background: var(--rosa); color: #fff; font-weight: 700; }
+.cal-dias button:disabled { color: #c9bcc4; cursor: not-allowed; }
